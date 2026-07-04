@@ -1,0 +1,6 @@
+{
+  "name": "PostoAdmin",
+  "description": "Sistema completo de gestão para postos de combustível, com controle de estoque, escala de turnos, agendamentos e relatórios diários.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
