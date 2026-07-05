@@ -166,6 +166,37 @@
             z-index: 5;
             border-radius: 12px;
         }
+
+        /* Subtle transitions and hover scaling effects for the tank cards */
+        .tank-card {
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            will-change: transform, box-shadow, border-color, background-color;
+        }
+        .tank-card:hover {
+            transform: scale(1.025) translateY(-4px);
+            box-shadow: 0 12px 24px -6px rgba(0, 90, 193, 0.08), 0 6px 12px -4px rgba(0, 90, 193, 0.04);
+            background-color: #ffffff;
+            border-color: rgba(0, 90, 193, 0.4);
+        }
+        /* Elevate cylinder container borders on card hover */
+        .tank-card:hover .tank-cylinder-container {
+            border-color: #005AC1;
+            box-shadow: inset 0 3px 10px rgba(0,0,0,0.04), 0 0 12px rgba(0, 90, 193, 0.2);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        /* Speed up wave animation speed on hover for a playful interactive effect */
+        .tank-card:hover .tank-wave {
+            animation-duration: 3s;
+        }
+        .tank-card:hover .tank-wave-secondary {
+            animation-duration: 4s;
+        }
+        /* Visual scale/bounce effect on percentage text overlay */
+        .tank-card:hover .tank-cylinder-container span {
+            transform: translate(-50%, -50%) scale(1.1);
+            background-color: rgba(255, 255, 255, 0.95);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
     </style>
 </head>
 <body class="text-hdTextPrimary min-h-screen flex flex-col antialiased">
@@ -914,6 +945,23 @@
                             </div>
                         </div>
 
+                        <!-- Backup Local Card -->
+                        <div class="bg-white border border-hdBorder rounded-3xl p-6 shadow-sm">
+                            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                                <div>
+                                    <h3 class="text-sm font-bold text-hdTextPrimary flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-hdPrimary">database</span>
+                                        Backup do Banco de Dados Local (Offline) 💾
+                                    </h3>
+                                    <p class="text-xs text-hdTextSecondary">Exporte todos os dados atuais do posto (tanques, frentistas, agendas, bicos, aferições e logs) para um arquivo JSON no seu dispositivo.</p>
+                                </div>
+                                <button onclick="downloadBackup()" class="bg-hdPrimary text-white font-semibold px-4 py-2.5 rounded-xl hover:bg-blue-700 transition text-xs flex items-center space-x-1.5 self-start sm:self-auto">
+                                    <span class="material-symbols-outlined text-sm">download</span>
+                                    <span>Baixar Backup (.json)</span>
+                                </button>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -989,6 +1037,17 @@
                         <label class="block text-xs font-bold text-hdTextSecondary mb-1">Preço do Litro (R$)</label>
                         <input type="number" step="0.001" id="tankPriceInput" value="5.899" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-hdPrimary">
                     </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-hdTextSecondary mb-1">Cor do Produto / Combustível</label>
+                    <select id="tankColorInput" class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                        <option value="#005AC1">Azul Comercial (#005AC1)</option>
+                        <option value="#0288D1">Ciano Premium (#0288D1)</option>
+                        <option value="#FF9800">Laranja Diesel (#FF9800)</option>
+                        <option value="#4CAF50">Verde Etanol (#4CAF50)</option>
+                        <option value="#9C27B0">Roxo Especial (#9C27B0)</option>
+                        <option value="#E91E63">Rosa Octanagem (#E91E63)</option>
+                    </select>
                 </div>
                 <div class="flex space-x-3 justify-end pt-2">
                     <button type="button" onclick="closeModal('addTankModal')" class="px-3 py-1.5 text-xs hover:bg-hdSurfaceContainer rounded-xl">Cancelar</button>
@@ -1186,6 +1245,18 @@
                             <option value="Diesel S10">Diesel S10</option>
                         </select>
                     </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-hdTextSecondary mb-1">Cor do Bico / Mangueira</label>
+                    <select id="nozColorInput" class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                        <option value="#005AC1">Azul (#005AC1)</option>
+                        <option value="#0288D1">Ciano (#0288D1)</option>
+                        <option value="#FF9800">Laranja (#FF9800)</option>
+                        <option value="#4CAF50">Verde (#4CAF50)</option>
+                        <option value="#9C27B0">Roxo (#9C27B0)</option>
+                        <option value="#E91E63">Rosa (#E91E63)</option>
+                        <option value="#1A1B20">Preto (#1A1B20)</option>
+                    </select>
                 </div>
                 <div class="flex space-x-3 justify-end pt-2">
                     <button type="button" onclick="closeModal('addNozzleModal')" class="px-3 py-1.5 text-xs hover:bg-hdSurfaceContainer rounded-xl">Cancelar</button>
@@ -2032,6 +2103,22 @@
             }
         };
 
+        window.downloadBackup = function() {
+            try {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 4));
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                const dateStr = new Date().toISOString().split('T')[0];
+                downloadAnchor.setAttribute("download", `backup_posto_admin_${dateStr}.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+                alert("Backup do banco local baixado com sucesso!");
+            } catch (e) {
+                alert("Erro ao gerar backup: " + e.message);
+            }
+        };
+
         // Render everything on UI based on memory state
         function renderWorkspace() {
             if (!state.activeUser) return;
@@ -2060,23 +2147,15 @@
                 const percent = Math.min(100, Math.round((tank.currentLevel / tank.capacity) * 100));
                 const isLow = tank.currentLevel <= tank.threshold;
                 const textColor = isLow ? 'text-red-600' : 'text-hdPrimary';
-
-                let fuelTypeColorClass = 'color-gasolina';
-                if (tank.name.toLowerCase().includes('etanol')) {
-                    fuelTypeColorClass = 'color-etanol';
-                } else if (tank.name.toLowerCase().includes('diesel')) {
-                    fuelTypeColorClass = 'color-diesel';
-                }
-                if (isLow) {
-                    fuelTypeColorClass = 'color-critical';
-                }
+                const tankColor = tank.color || (tank.name.toLowerCase().includes('etanol') ? '#4CAF50' : tank.name.toLowerCase().includes('diesel') ? '#FF9800' : '#005AC1');
+                const liquidBg = isLow ? '#EF4444' : tankColor;
                 
                 tanksHtml += `
-                    <div class="bg-hdSurfaceContainer border border-hdBorder/60 rounded-3xl p-5 flex items-center space-x-5 shadow-sm transition hover:shadow-md">
+                    <div class="tank-card bg-hdSurfaceContainer border border-hdBorder/60 rounded-3xl p-5 flex items-center space-x-5 shadow-sm cursor-pointer">
                         <!-- Left: Realistic Cylinder Visualizer -->
                         <div class="tank-cylinder-container flex-shrink-0">
                             <!-- Liquid level inside -->
-                            <div class="tank-liquid-body ${fuelTypeColorClass}" style="height: ${percent}%">
+                            <div class="tank-liquid-body" style="height: ${percent}%; background-color: ${liquidBg}">
                                 <!-- Wave layer 1 -->
                                 <div class="tank-wave"></div>
                                 <!-- Wave layer 2 -->
@@ -2124,10 +2203,11 @@
             let nozzlesHtml = '';
             
             state.nozzles.forEach(noz => {
+                const nozColor = noz.color || '#005AC1';
                 nozzlesHtml += `
-                    <div class="bg-hdSurfaceContainer border border-hdBorder/60 rounded-xl p-3 flex justify-between items-center">
+                    <div class="bg-hdSurfaceContainer border border-hdBorder/60 rounded-xl p-3 flex justify-between items-center" style="border-left: 4px solid ${nozColor}">
                         <div class="flex items-center space-x-2">
-                            <span class="material-symbols-outlined text-hdPrimary">water_drop</span>
+                            <span class="material-symbols-outlined" style="color: ${nozColor}">water_drop</span>
                             <div>
                                 <p class="font-bold text-xs">${noz.nozzleNumber} (${noz.fuelType})</p>
                                 <p class="text-[10px] text-hdTextSecondary">${noz.pumpName}</p>
@@ -2439,6 +2519,8 @@
             const price = parseFloat(document.getElementById('tankPriceInput').value);
             const cnpj = state.activeUser?.stationCnpj || "12.345.678/0001-99";
 
+            const color = document.getElementById('tankColorInput').value || "#005AC1";
+
             const newTank = {
                 id: Date.now(),
                 name,
@@ -2446,6 +2528,7 @@
                 currentLevel,
                 threshold,
                 pricePerLiter: price,
+                color,
                 stationCnpj: cnpj
             };
 
@@ -2575,6 +2658,8 @@
             const tank = state.tanks.find(t => t.id === tankId);
             const tankName = tank ? tank.name : "Tanque Geral";
 
+            const color = document.getElementById('nozColorInput').value || "#005AC1";
+
             const newNozzle = {
                 id: Date.now(),
                 nozzleNumber,
@@ -2583,6 +2668,7 @@
                 tankName,
                 fuelType,
                 status: "Ativo",
+                color,
                 stationCnpj: cnpj
             };
 
@@ -2616,16 +2702,23 @@
             },
 
             calculateCorrectedDensity: function(density, temperature, isEthanol) {
-                const factor = isEthanol ? 0.00084 : 0.0007;
-                return density + factor * (temperature - 20.0);
+                if (isEthanol) {
+                    const alpha = 0.00110;
+                    return density + alpha * density * (temperature - 20.0);
+                } else {
+                    const factor = 0.0007;
+                    return density + factor * (temperature - 20.0);
+                }
             },
 
             calculateEthanolINPM: function(correctedDensity) {
-                return 95.4 - 828.57 * (correctedDensity - 0.8075);
+                const rho20 = correctedDensity * 1000.0;
+                return 93.8 - (1.3 / 5.7) * (rho20 - 805.3);
             },
 
             calculateEthanolGL: function(correctedDensity) {
-                return 96.0 - 257.14 * (correctedDensity - 0.8075);
+                const rho20 = correctedDensity * 1000.0;
+                return 96.0 - (0.6 / 5.7) * (rho20 - 805.3);
             },
 
             calculateGasolineEthanolPercent: function(waterPhaseFinalVolume) {
@@ -2643,7 +2736,7 @@
                     return correctedDensity >= 0.715 && correctedDensity <= 0.775 && ethanolPercent >= 26.0 && ethanolPercent <= 28.0;
                 }
                 if (f.includes("etanol")) {
-                    return correctedDensity >= 0.8075 && correctedDensity <= 0.8110 && ethanolPercent >= 92.5 && ethanolPercent <= 95.4;
+                    return correctedDensity >= 0.8053 && correctedDensity <= 0.8110 && ethanolPercent >= 92.5 && ethanolPercent <= 93.8;
                 }
                 if (f.includes("diesel")) {
                     return correctedDensity >= 0.820 && correctedDensity <= 0.850;

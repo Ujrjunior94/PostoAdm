@@ -82,7 +82,8 @@ object FirebaseHelper {
             "currentLevel" to tank.currentLevel,
             "threshold" to tank.threshold,
             "pricePerLiter" to tank.pricePerLiter,
-            "stationCnpj" to tank.stationCnpj
+            "stationCnpj" to tank.stationCnpj,
+            "color" to tank.color
         )
     }
 
@@ -94,7 +95,8 @@ object FirebaseHelper {
             currentLevel = map["currentLevel"] as? Double ?: 0.0,
             threshold = map["threshold"] as? Double ?: 0.0,
             pricePerLiter = map["pricePerLiter"] as? Double ?: 0.0,
-            stationCnpj = map["stationCnpj"] as? String ?: "12.345.678/0001-99"
+            stationCnpj = map["stationCnpj"] as? String ?: "12.345.678/0001-99",
+            color = map["color"] as? String ?: "#005AC1"
         )
     }
 
@@ -205,7 +207,8 @@ object FirebaseHelper {
             "tankName" to nozzle.tankName,
             "fuelType" to nozzle.fuelType,
             "status" to nozzle.status,
-            "stationCnpj" to nozzle.stationCnpj
+            "stationCnpj" to nozzle.stationCnpj,
+            "color" to nozzle.color
         )
     }
 
@@ -218,7 +221,8 @@ object FirebaseHelper {
             tankName = map["tankName"] as? String ?: "",
             fuelType = map["fuelType"] as? String ?: "",
             status = map["status"] as? String ?: "Ativo",
-            stationCnpj = map["stationCnpj"] as? String ?: "12.345.678/0001-99"
+            stationCnpj = map["stationCnpj"] as? String ?: "12.345.678/0001-99",
+            color = map["color"] as? String ?: "#005AC1"
         )
     }
 

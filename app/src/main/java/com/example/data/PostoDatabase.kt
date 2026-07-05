@@ -18,7 +18,7 @@ import androidx.room.RoomDatabase
         AuditLogEntry::class,
         UserAccount::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class PostoDatabase : RoomDatabase() {

@@ -33,29 +33,36 @@ object ANPUtils {
     /**
      * Calculates the density corrected to the reference temperature of 20°C.
      * Formula:
-     * - For Ethanol: corrected = measuredDensity + 0.00084 * (temperature - 20.0)
+     * - For Ethanol: corrected = measuredDensity + alpha * measuredDensity * (temperature - 20.0)
      * - For others (Gasoline, Diesel): corrected = measuredDensity + 0.0007 * (temperature - 20.0)
      */
     fun calculateCorrectedDensity(density: Double, temperature: Double, isEthanol: Boolean): Double {
-        val factor = if (isEthanol) 0.00084 else 0.0007
-        return density + factor * (temperature - 20.0)
+        return if (isEthanol) {
+            val alpha = 0.00110
+            density + alpha * density * (temperature - 20.0)
+        } else {
+            val factor = 0.0007
+            density + factor * (temperature - 20.0)
+        }
     }
 
     /**
      * Calculates the alcohol content of Hydrated Ethanol (Etanol Hidratado) in INPM (% m/m).
-     * Formula based on official tables approximated for corrected density at 20°C:
-     * % INPM = 95.4 - 828.57 * (correctedDensity - 0.8075)
+     * Formula based on official tables/limits (Res. ANP 907/2022) for corrected density at 20°C:
+     * % INPM = 93.8 - (1.3 / 5.7) * (correctedDensity * 1000.0 - 805.3)
      */
     fun calculateEthanolINPM(correctedDensity: Double): Double {
-        return 95.4 - 828.57 * (correctedDensity - 0.8075)
+        val rho20 = correctedDensity * 1000.0
+        return 93.8 - (1.3 / 5.7) * (rho20 - 805.3)
     }
 
     /**
      * Calculates the alcohol content of Hydrated Ethanol (Etanol Hidratado) in GL (% v/v).
-     * Formula: % GL = 96.0 - 257.14 * (correctedDensity - 0.8075)
+     * Formula: % GL = 96.0 - (0.6 / 5.7) * (correctedDensity * 1000.0 - 805.3)
      */
     fun calculateEthanolGL(correctedDensity: Double): Double {
-        return 96.0 - 257.14 * (correctedDensity - 0.8075)
+        val rho20 = correctedDensity * 1000.0
+        return 96.0 - (0.6 / 5.7) * (rho20 - 805.3)
     }
 
     /**
@@ -91,7 +98,7 @@ object ANPUtils {
                 correctedDensity in 0.715..0.775 && ethanolPercent in 26.0..28.0
             }
             fuelType.contains("Etanol", ignoreCase = true) -> {
-                correctedDensity in 0.8075..0.8110 && ethanolPercent in 92.5..95.4
+                correctedDensity in 0.8053..0.8110 && ethanolPercent in 92.5..93.8
             }
             fuelType.contains("Diesel", ignoreCase = true) -> {
                 correctedDensity in 0.820..0.850

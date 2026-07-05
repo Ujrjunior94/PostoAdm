@@ -1186,6 +1186,7 @@ fun StockScreen(viewModel: PostoViewModel) {
     var tankLevel by remember { mutableStateOf("15000") }
     var tankThreshold by remember { mutableStateOf("4000") }
     var tankPrice by remember { mutableStateOf("5.89") }
+    var selectedTankColor by remember { mutableStateOf("#005AC1") }
 
     // Dialog & Form states for Nozzle
     var showAddNozzleDialog by remember { mutableStateOf(false) }
@@ -1193,6 +1194,12 @@ fun StockScreen(viewModel: PostoViewModel) {
     var nozzlePumpInput by remember { mutableStateOf("") }
     var nozzleTankSelectionId by remember { mutableIntStateOf(0) }
     var nozzleStatusInput by remember { mutableStateOf("Ativo") }
+    var selectedNozzleColor by remember { mutableStateOf("#005AC1") }
+
+    // Audit and Compliance Export Dialog states
+    var showExportPreviewDialog by remember { mutableStateOf(false) }
+    var exportPreviewText by remember { mutableStateOf("") }
+    var exportTypeSelected by remember { mutableStateOf("CSV_AUDITS") }
 
     // Dialog & Form states for Calibration
     var showAddCalibDialog by remember { mutableStateOf(false) }
@@ -1423,6 +1430,13 @@ fun StockScreen(viewModel: PostoViewModel) {
                                     }
 
                                     // Minimal thin progress bar for additional visual reference
+                                    val parsedProductColor = remember(tank.color) {
+                                        try {
+                                            Color(android.graphics.Color.parseColor(tank.color))
+                                        } catch (e: Exception) {
+                                            HdPrimary
+                                        }
+                                    }
                                     Box(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -1436,7 +1450,7 @@ fun StockScreen(viewModel: PostoViewModel) {
                                                 .fillMaxWidth(fillPercent)
                                                 .background(
                                                     if (isLow) Brush.horizontalGradient(colors = listOf(HdRed, Color(0xFFF87171)))
-                                                    else Brush.horizontalGradient(colors = listOf(HdPrimary, Color(0xFF60A5FA)))
+                                                    else Brush.horizontalGradient(colors = listOf(parsedProductColor, parsedProductColor.copy(alpha = 0.7f)))
                                                 )
                                         )
                                     }
@@ -1571,11 +1585,19 @@ fun StockScreen(viewModel: PostoViewModel) {
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                        val parsedNozzleColor = remember(nozzle.color) {
+                                            try {
+                                                Color(android.graphics.Color.parseColor(nozzle.color))
+                                            } catch (e: Exception) {
+                                                HdPrimary
+                                            }
+                                        }
                                         Box(
                                             modifier = Modifier
                                                 .size(40.dp)
                                                 .clip(CircleShape)
-                                                .background(HdPrimaryLight),
+                                                .background(parsedNozzleColor.copy(alpha = 0.15f))
+                                                .border(2.dp, parsedNozzleColor, CircleShape),
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Text(text = "⛽", fontSize = 18.sp)
@@ -2425,17 +2447,75 @@ fun StockScreen(viewModel: PostoViewModel) {
         
         // Filter chips
         item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                listOf("Todos", "Aferições", "Qualidade", "Auditorias").forEach { filterName ->
-                    val isSelected = selectedAuditFilter == filterName
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = { selectedAuditFilter = filterName },
-                        label = { Text(filterName, fontSize = 11.sp) }
-                    )
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf("Todos", "Aferições", "Qualidade", "Auditorias").forEach { filterName ->
+                        val isSelected = selectedAuditFilter == filterName
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { selectedAuditFilter = filterName },
+                            label = { Text(filterName, fontSize = 11.sp) }
+                        )
+                    }
+                }
+
+                // Export Buttons for Audit Logs
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            val logs = when (selectedAuditFilter) {
+                                "Aferições" -> auditLogEntries.filter { it.actionType.contains("Aferição") || it.actionType.contains("Exclusão de Aferição") }
+                                "Qualidade" -> auditLogEntries.filter { it.actionType.contains("Qualidade") || it.actionType.contains("Conformidade") }
+                                "Auditorias" -> auditLogEntries.filter { it.actionType.contains("Auditoria") || it.actionType.contains("Manual") }
+                                else -> auditLogEntries
+                            }
+                            if (logs.isEmpty()) {
+                                viewModel.addToast("Sem dados para exportar!")
+                            } else {
+                                exportTypeSelected = "CSV_AUDITS"
+                                exportPreviewText = generateAuditsCSV(logs)
+                                showExportPreviewDialog = true
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+                        modifier = Modifier.weight(1f).testTag("export_audits_csv_button"),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                    ) {
+                        Icon(Icons.Default.Share, contentDescription = "Exportar CSV", modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Exportar CSV", fontSize = 11.sp)
+                    }
+
+                    Button(
+                        onClick = {
+                            val logs = when (selectedAuditFilter) {
+                                "Aferições" -> auditLogEntries.filter { it.actionType.contains("Aferição") || it.actionType.contains("Exclusão de Aferição") }
+                                "Qualidade" -> auditLogEntries.filter { it.actionType.contains("Qualidade") || it.actionType.contains("Conformidade") }
+                                "Auditorias" -> auditLogEntries.filter { it.actionType.contains("Auditoria") || it.actionType.contains("Manual") }
+                                else -> auditLogEntries
+                            }
+                            if (logs.isEmpty()) {
+                                viewModel.addToast("Sem dados para exportar!")
+                            } else {
+                                exportTypeSelected = "TEXT_AUDITS"
+                                exportPreviewText = generateAuditsTextTable(logs)
+                                showExportPreviewDialog = true
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = PetrolDark),
+                        modifier = Modifier.weight(1f).testTag("copy_audits_table_button"),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Copiar Tabela", modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Copiar Tabela", fontSize = 11.sp)
+                    }
                 }
             }
         }
@@ -2638,6 +2718,33 @@ fun StockScreen(viewModel: PostoViewModel) {
                         modifier = Modifier.fillMaxWidth()
                     )
 
+                    Text(
+                        text = "Cor do Produto / Combustível:",
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.align(Alignment.Start)
+                    )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        val availableColors = listOf("#005AC1", "#0288D1", "#FF9800", "#4CAF50", "#9C27B0", "#E91E63")
+                        availableColors.forEach { colorStr ->
+                            val isSelected = selectedTankColor == colorStr
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .background(Color(android.graphics.Color.parseColor(colorStr)), shape = CircleShape)
+                                    .border(
+                                        width = if (isSelected) 3.dp else 1.dp,
+                                        color = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray,
+                                        shape = CircleShape
+                                    )
+                                    .clickable { selectedTankColor = colorStr }
+                            )
+                        }
+                    }
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -2660,7 +2767,8 @@ fun StockScreen(viewModel: PostoViewModel) {
                                         capacity = cap,
                                         currentLevel = lev,
                                         threshold = thr,
-                                        pricePerLiter = prc
+                                        pricePerLiter = prc,
+                                        color = selectedTankColor
                                     )
                                 }
                                 showAddTankDialog = false
@@ -2746,6 +2854,33 @@ fun StockScreen(viewModel: PostoViewModel) {
                         }
                     }
 
+                    Text(
+                        text = "Cor do Bico / Mangueira:",
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.align(Alignment.Start)
+                    )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        val availableNozzleColors = listOf("#005AC1", "#0288D1", "#FF9800", "#4CAF50", "#9C27B0", "#E91E63", "#1A1B20")
+                        availableNozzleColors.forEach { colorStr ->
+                            val isSelected = selectedNozzleColor == colorStr
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .background(Color(android.graphics.Color.parseColor(colorStr)), shape = CircleShape)
+                                    .border(
+                                        width = if (isSelected) 3.dp else 1.dp,
+                                        color = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray,
+                                        shape = CircleShape
+                                    )
+                                    .clickable { selectedNozzleColor = colorStr }
+                            )
+                        }
+                    }
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -2766,7 +2901,8 @@ fun StockScreen(viewModel: PostoViewModel) {
                                         tankId = selectedTank.id,
                                         tankName = selectedTank.name,
                                         fuelType = selectedTank.name,
-                                        status = nozzleStatusInput
+                                        status = nozzleStatusInput,
+                                        color = selectedNozzleColor
                                     )
                                 }
                                 showAddNozzleDialog = false
@@ -5526,15 +5662,22 @@ fun ReportsScreen(viewModel: PostoViewModel) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
+                    val titleText = when (exportTypeSelected) {
+                        "CSV" -> "Exportação de Vendas CSV 📄"
+                        "CSV_AUDITS" -> "Exportação de Auditoria CSV 📄"
+                        "TEXT_AUDITS" -> "Tabela de Auditoria Formatada 📋"
+                        else -> "Tabela de Vendas Formatada 📋"
+                    }
+
                     Text(
-                        text = if (exportTypeSelected == "CSV") "Visualização de Exportação CSV 📄" else "Tabela de Vendas Formatada 📋",
+                        text = titleText,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center
                     )
 
                     Text(
-                        text = "Dados prontos para exportar ou copiar. Use os botões abaixo para copiar ou compartilhar.",
+                        text = "Dados prontos para exportar ou copiar. Use os botões abaixo para copiar, compartilhar ou enviar por WhatsApp.",
                         style = MaterialTheme.typography.bodySmall,
                         color = HdTextSecondary,
                         textAlign = TextAlign.Center
@@ -5559,40 +5702,69 @@ fun ReportsScreen(viewModel: PostoViewModel) {
                         )
                     }
 
-                    Row(
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Button(
-                            onClick = {
-                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                val clip = ClipData.newPlainText("Relatorio Vendas", exportPreviewText)
-                                clipboard.setPrimaryClip(clip)
-                                viewModel.addToast("Copiado para a área de transferência!")
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = HdPrimary),
-                            modifier = Modifier.weight(1f)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Icon(Icons.Default.Check, contentDescription = "Copiar", modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Copiar", fontSize = 11.sp)
+                            Button(
+                                onClick = {
+                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                    val clip = ClipData.newPlainText("Relatorio Posto", exportPreviewText)
+                                    clipboard.setPrimaryClip(clip)
+                                    viewModel.addToast("Copiado para a área de transferência!")
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = HdPrimary),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(Icons.Default.Check, contentDescription = "Copiar", modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Copiar", fontSize = 11.sp)
+                            }
+
+                            Button(
+                                onClick = {
+                                    val intent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(Intent.EXTRA_SUBJECT, "Relatório Posto")
+                                        putExtra(Intent.EXTRA_TEXT, exportPreviewText)
+                                    }
+                                    context.startActivity(Intent.createChooser(intent, "Compartilhar Relatório"))
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(Icons.Default.Share, contentDescription = "Compartilhar", modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Compartilhar", fontSize = 11.sp)
+                            }
                         }
 
                         Button(
                             onClick = {
-                                val intent = Intent(Intent.ACTION_SEND).apply {
-                                    type = "text/plain"
-                                    putExtra(Intent.EXTRA_SUBJECT, "Relatório de Vendas - LMC")
-                                    putExtra(Intent.EXTRA_TEXT, exportPreviewText)
+                                try {
+                                    val intent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(Intent.EXTRA_TEXT, exportPreviewText)
+                                        setPackage("com.whatsapp")
+                                    }
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    val intent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(Intent.EXTRA_TEXT, exportPreviewText)
+                                    }
+                                    context.startActivity(Intent.createChooser(intent, "Compartilhar via..."))
+                                    viewModel.addToast("WhatsApp não instalado. Usando compartilhamento padrão.")
                                 }
-                                context.startActivity(Intent.createChooser(intent, "Compartilhar Relatório"))
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
-                            modifier = Modifier.weight(1f)
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Icon(Icons.Default.Share, contentDescription = "Compartilhar", modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Compartilhar", fontSize = 11.sp)
+                            Text("💬 Enviar via WhatsApp", fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold)
                         }
                     }
 
@@ -5643,6 +5815,233 @@ private fun generateTextTable(data: List<DailyReport>): String {
     sb.append("| TOTAL      |                    | $totalLiters | $totalRevenue | $totalTx |\n")
     sb.append("+------------+--------------------+------------------+------------------+------------+\n")
     return sb.toString()
+}
+
+private fun generateAuditsCSV(data: List<AuditLogEntry>): String {
+    val sb = java.lang.StringBuilder()
+    sb.append("Data,Hora,Acao,Alvo,Operador,Status,Detalhes\n")
+    data.forEach { l ->
+        sb.append("${l.date},${l.time},${l.actionType},${l.target},${l.operator},${l.complianceStatus},${l.details}\n")
+    }
+    return sb.toString()
+}
+
+private fun generateAuditsTextTable(data: List<AuditLogEntry>): String {
+    val sb = java.lang.StringBuilder()
+    sb.append("+------------+-------+-------------------------+----------------------+--------------------+------------+\n")
+    sb.append("| Data       | Hora  | Acao / Evento           | Alvo / Registro      | Operador / Respons.| Status     |\n")
+    sb.append("+------------+-------+-------------------------+----------------------+--------------------+------------+\n")
+    data.forEach { l ->
+        val datePadded = l.date.padEnd(10)
+        val timePadded = l.time.padEnd(5)
+        val actionPadded = if (l.actionType.length > 23) l.actionType.take(20) + "..." else l.actionType.padEnd(23)
+        val targetPadded = if (l.target.length > 20) l.target.take(17) + "..." else l.target.padEnd(20)
+        val opPadded = if (l.operator.length > 18) l.operator.take(15) + "..." else l.operator.padEnd(18)
+        val statusPadded = l.complianceStatus.padEnd(10)
+        sb.append("| $datePadded | $timePadded | $actionPadded | $targetPadded | $opPadded | $statusPadded |\n")
+    }
+    sb.append("+------------+-------+-------------------------+----------------------+--------------------+------------+\n")
+    return sb.toString()
+}
+
+private fun generateBackupJson(
+    fuelTanks: List<FuelTank>,
+    employees: List<Employee>,
+    shifts: List<ShiftSchedule>,
+    appointments: List<Appointment>,
+    reports: List<DailyReport>,
+    nozzles: List<Nozzle>,
+    calibrations: List<Calibration>,
+    conformity: List<FuelConformityRecord>,
+    audits: List<AuditLogEntry>,
+    credentials: List<SystemCredential>,
+    users: List<UserAccount>
+): String {
+    val backup = org.json.JSONObject()
+    
+    val tanksArray = org.json.JSONArray()
+    fuelTanks.forEach { t ->
+        val obj = org.json.JSONObject().apply {
+            put("id", t.id)
+            put("name", t.name)
+            put("capacity", t.capacity)
+            put("currentLevel", t.currentLevel)
+            put("threshold", t.threshold)
+            put("pricePerLiter", t.pricePerLiter)
+            put("stationCnpj", t.stationCnpj)
+            put("color", t.color)
+        }
+        tanksArray.put(obj)
+    }
+    backup.put("fuelTanks", tanksArray)
+
+    val empArray = org.json.JSONArray()
+    employees.forEach { e ->
+        val obj = org.json.JSONObject().apply {
+            put("id", e.id)
+            put("name", e.name)
+            put("role", e.role)
+            put("phone", e.phone)
+            put("activeShift", e.activeShift)
+            put("stationCnpj", e.stationCnpj)
+        }
+        empArray.put(obj)
+    }
+    backup.put("employees", empArray)
+
+    val shiftArray = org.json.JSONArray()
+    shifts.forEach { s ->
+        val obj = org.json.JSONObject().apply {
+            put("id", s.id)
+            put("employeeId", s.employeeId)
+            put("employeeName", s.employeeName)
+            put("dayOfWeek", s.dayOfWeek)
+            put("shift", s.shift)
+            put("stationCnpj", s.stationCnpj)
+        }
+        shiftArray.put(obj)
+    }
+    backup.put("shiftSchedules", shiftArray)
+
+    val appArray = org.json.JSONArray()
+    appointments.forEach { a ->
+        val obj = org.json.JSONObject().apply {
+            put("id", a.id)
+            put("title", a.title)
+            put("date", a.date)
+            put("time", a.time)
+            put("description", a.description)
+            put("stationCnpj", a.stationCnpj)
+        }
+        appArray.put(obj)
+    }
+    backup.put("appointments", appArray)
+
+    val repArray = org.json.JSONArray()
+    reports.forEach { r ->
+        val obj = org.json.JSONObject().apply {
+            put("id", r.id)
+            put("date", r.date)
+            put("fuelName", r.fuelName)
+            put("openingStock", r.openingStock)
+            put("receivedVolume", r.receivedVolume)
+            put("litersSold", r.litersSold)
+            put("closingStock", r.closingStock)
+            put("totalSales", r.totalSales)
+            put("transactionsCount", r.transactionsCount)
+            put("observation", r.observation)
+            put("stationCnpj", r.stationCnpj)
+        }
+        repArray.put(obj)
+    }
+    backup.put("dailyReports", repArray)
+
+    val nozArray = org.json.JSONArray()
+    nozzles.forEach { n ->
+        val obj = org.json.JSONObject().apply {
+            put("id", n.id)
+            put("nozzleNumber", n.nozzleNumber)
+            put("pumpName", n.pumpName)
+            put("tankId", n.tankId)
+            put("tankName", n.tankName)
+            put("fuelType", n.fuelType)
+            put("status", n.status)
+            put("stationCnpj", n.stationCnpj)
+            put("color", n.color)
+        }
+        nozArray.put(obj)
+    }
+    backup.put("nozzles", nozArray)
+
+    val calArray = org.json.JSONArray()
+    calibrations.forEach { c ->
+        val obj = org.json.JSONObject().apply {
+            put("id", c.id)
+            put("date", c.date)
+            put("referenceName", c.referenceName)
+            put("nominalVolume", c.nominalVolume)
+            put("measuredVolume", c.measuredVolume)
+            put("errorPercent", c.errorPercent)
+            put("inspector", c.inspector)
+            put("laudo", c.laudo)
+            put("isConforme", c.isConforme)
+            put("stationCnpj", c.stationCnpj)
+        }
+        calArray.put(obj)
+    }
+    backup.put("calibrations", calArray)
+
+    val confArray = org.json.JSONArray()
+    conformity.forEach { cf ->
+        val obj = org.json.JSONObject().apply {
+            put("id", cf.id)
+            put("date", cf.date)
+            put("fuelType", cf.fuelType)
+            put("densityMeasured", cf.densityMeasured)
+            put("temperature", cf.temperature)
+            put("ethanolPercent", cf.ethanolPercent)
+            put("aspectColor", cf.aspectColor)
+            put("isConforme", cf.isConforme)
+            put("technicianName", cf.technicianName)
+            put("observation", cf.observation)
+            put("stationCnpj", cf.stationCnpj)
+        }
+        confArray.put(obj)
+    }
+    backup.put("fuelConformityRecords", confArray)
+
+    val audArray = org.json.JSONArray()
+    audits.forEach { ad ->
+        val obj = org.json.JSONObject().apply {
+            put("id", ad.id)
+            put("date", ad.date)
+            put("time", ad.time)
+            put("actionType", ad.actionType)
+            put("target", ad.target)
+            put("details", ad.details)
+            put("operator", ad.operator)
+            put("complianceStatus", ad.complianceStatus)
+            put("stationCnpj", ad.stationCnpj)
+        }
+        audArray.put(obj)
+    }
+    backup.put("auditLogEntries", audArray)
+
+    val credArray = org.json.JSONArray()
+    credentials.forEach { cr ->
+        val obj = org.json.JSONObject().apply {
+            put("id", cr.id)
+            put("systemName", cr.systemName)
+            put("category", cr.category)
+            put("login", cr.login)
+            put("password", cr.password)
+            put("description", cr.description)
+        }
+        credArray.put(obj)
+    }
+    backup.put("systemCredentials", credArray)
+
+    val userArray = org.json.JSONArray()
+    users.forEach { u ->
+        val obj = org.json.JSONObject().apply {
+            put("email", u.email)
+            put("name", u.name)
+            put("role", u.role)
+            put("password", u.password)
+            put("stationName", u.stationName)
+            put("stationCnpj", u.stationCnpj)
+            put("stationEndereco", u.stationEndereco)
+            put("parentManagerEmail", u.parentManagerEmail)
+            put("bankName", u.bankName)
+            put("bankAgency", u.bankAgency)
+            put("bankAccount", u.bankAccount)
+            put("bankPixKey", u.bankPixKey)
+        }
+        userArray.put(obj)
+    }
+    backup.put("userAccounts", userArray)
+
+    return backup.toString(4)
 }
 
 private fun getMonthDetails(month: String): Pair<Int, Int> {

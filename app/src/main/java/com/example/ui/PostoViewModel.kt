@@ -914,7 +914,7 @@ class PostoViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     // Interactive operations
-    fun addFuelTank(name: String, capacity: Double, currentLevel: Double, threshold: Double, pricePerLiter: Double) {
+    fun addFuelTank(name: String, capacity: Double, currentLevel: Double, threshold: Double, pricePerLiter: Double, color: String = "#005AC1") {
         viewModelScope.launch {
             if (isReadOnly.value) {
                 addToast("Erro: Visualizadores não têm permissão para alterar dados!")
@@ -928,7 +928,8 @@ class PostoViewModel(application: Application) : AndroidViewModel(application) {
                         currentLevel = currentLevel,
                         threshold = threshold,
                         pricePerLiter = pricePerLiter,
-                        stationCnpj = _stationCnpj.value
+                        stationCnpj = _stationCnpj.value,
+                        color = color
                     )
                 )
                 addToast("Tanque '$name' cadastrado com sucesso!")
@@ -1208,7 +1209,7 @@ class PostoViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun addNozzle(nozzleNumber: String, pumpName: String, tankId: Int, tankName: String, fuelType: String, status: String) {
+    fun addNozzle(nozzleNumber: String, pumpName: String, tankId: Int, tankName: String, fuelType: String, status: String, color: String = "#005AC1") {
         viewModelScope.launch {
             if (isReadOnly.value) {
                 addToast("Erro: Visualizadores não têm permissão para alterar dados!")
@@ -1223,7 +1224,8 @@ class PostoViewModel(application: Application) : AndroidViewModel(application) {
                         tankName = tankName,
                         fuelType = fuelType,
                         status = status,
-                        stationCnpj = _stationCnpj.value
+                        stationCnpj = _stationCnpj.value,
+                        color = color
                     )
                 )
                 addToast("Bico de bomba '$nozzleNumber' adicionado com sucesso!")

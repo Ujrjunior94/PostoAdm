@@ -11,7 +11,8 @@ data class FuelTank(
     val currentLevel: Double,
     val threshold: Double,
     val pricePerLiter: Double,
-    val stationCnpj: String = "12.345.678/0001-99"
+    val stationCnpj: String = "12.345.678/0001-99",
+    val color: String = "#005AC1"
 ) {
     val isLowLevel: Boolean
         get() = currentLevel <= threshold
@@ -86,7 +87,8 @@ data class Nozzle(
     val tankName: String,
     val fuelType: String,
     val status: String, // "Ativo", "Em Manutenção", "Bloqueado"
-    val stationCnpj: String = "12.345.678/0001-99"
+    val stationCnpj: String = "12.345.678/0001-99",
+    val color: String = "#005AC1"
 )
 
 @Entity(tableName = "calibrations")
