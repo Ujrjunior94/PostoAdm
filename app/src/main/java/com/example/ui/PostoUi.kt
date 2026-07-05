@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -230,8 +231,31 @@ fun LoginScreen(viewModel: PostoViewModel) {
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(bottom = 8.dp)
+                        modifier = Modifier.padding(bottom = 4.dp)
                     )
+                }
+
+                item {
+                    val fbActive = FirebaseHelper.isAvailable
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (fbActive) Color(0xFFE6F4EA) else Color(0xFFFFF4E5),
+                        border = BorderStroke(1.dp, if (fbActive) Color(0xFF34A853).copy(alpha = 0.5f) else Color(0xFFFBBC05).copy(alpha = 0.5f)),
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = if (fbActive) "🔒 Autenticação Firebase Ativa" else "💻 Banco Local (Modo Off-line)",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (fbActive) Color(0xFF137333) else Color(0xFFB06000)
+                            )
+                        }
+                    }
                 }
 
                 // Tabs Selector
@@ -254,7 +278,7 @@ fun LoginScreen(viewModel: PostoViewModel) {
                         Tab(
                             selected = isRegisterTab,
                             onClick = { isRegisterTab = true },
-                            text = { Text("Cadastrar Posto", fontWeight = FontWeight.Bold) }
+                            text = { Text("Criar Conta", fontWeight = FontWeight.Bold) }
                         )
                     }
                 }
@@ -266,8 +290,8 @@ fun LoginScreen(viewModel: PostoViewModel) {
                         OutlinedTextField(
                             value = email,
                             onValueChange = { email = it },
-                            label = { Text("E-mail do Gerente ou Visualizador") },
-                            leadingIcon = { Icon(Icons.Default.Email, contentDescription = "Email") },
+                            label = { Text("Nome de Usuário (Login ou E-mail)") },
+                            leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Usuário") },
                             singleLine = true,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -324,11 +348,11 @@ fun LoginScreen(viewModel: PostoViewModel) {
                         }
                     }
                 } else {
-                    // Registration view
+                    // Registration view - Simplified to just Login and Password
                     item { Spacer(modifier = Modifier.height(4.dp)) }
                     item {
                         Text(
-                            text = "Cadastro de Novo Gerente",
+                            text = "Cadastrar Novo Usuário",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary,
@@ -337,21 +361,20 @@ fun LoginScreen(viewModel: PostoViewModel) {
                         )
                     }
                     item {
-                        OutlinedTextField(
-                            value = regName,
-                            onValueChange = { regName = it },
-                            label = { Text("Nome Completo") },
-                            leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Nome") },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
+                        Text(
+                            text = "Insira um nome de usuário (login) e senha. O sistema irá configurar o seu posto de combustível automaticamente.",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Start
                         )
                     }
                     item {
                         OutlinedTextField(
                             value = regEmail,
                             onValueChange = { regEmail = it },
-                            label = { Text("E-mail para Login") },
-                            leadingIcon = { Icon(Icons.Default.Email, contentDescription = "Email") },
+                            label = { Text("Nome de Usuário / Login") },
+                            leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Usuário") },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -364,48 +387,6 @@ fun LoginScreen(viewModel: PostoViewModel) {
                             leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Senha") },
                             visualTransformation = PasswordVisualTransformation(),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                    item {
-                        Text(
-                            text = "Configuração do Posto de Combustível",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 8.dp),
-                            textAlign = TextAlign.Start
-                        )
-                    }
-                    item {
-                        OutlinedTextField(
-                            value = regStationName,
-                            onValueChange = { regStationName = it },
-                            label = { Text("Razão Social") },
-                            leadingIcon = { Icon(Icons.Default.Home, contentDescription = "Posto") },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                    item {
-                        OutlinedTextField(
-                            value = regStationCnpj,
-                            onValueChange = { regStationCnpj = it },
-                            label = { Text("CNPJ") },
-                            leadingIcon = { Icon(Icons.Default.Info, contentDescription = "CNPJ") },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                    item {
-                        OutlinedTextField(
-                            value = regStationEndereco,
-                            onValueChange = { regStationEndereco = it },
-                            label = { Text("Endereço Completo") },
-                            leadingIcon = { Icon(Icons.Default.Place, contentDescription = "Endereço") },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -426,13 +407,9 @@ fun LoginScreen(viewModel: PostoViewModel) {
                     item {
                         Button(
                             onClick = {
-                                val ok = viewModel.registerManager(
-                                    email = regEmail,
-                                    name = regName,
-                                    pass = regPassword,
-                                    stationName = regStationName,
-                                    stationCnpj = regStationCnpj,
-                                    stationEndereco = regStationEndereco
+                                val ok = viewModel.registerSimplifiedManager(
+                                    login = regEmail,
+                                    pass = regPassword
                                 )
                                 if (ok) {
                                     email = regEmail
@@ -446,7 +423,7 @@ fun LoginScreen(viewModel: PostoViewModel) {
                                 .height(48.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) {
-                            Text("Cadastrar Gerente & Posto", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Text("Criar Conta e Iniciar", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         }
                     }
                 }
@@ -554,7 +531,7 @@ fun NavigationSidebar(viewModel: PostoViewModel, currentScreen: String) {
         Spacer(modifier = Modifier.weight(1f))
 
         NavigationRailItem(
-            icon = { Icon(Icons.Default.ExitToApp, contentDescription = "Sair", tint = MaterialTheme.colorScheme.error) },
+            icon = { Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Sair", tint = MaterialTheme.colorScheme.error) },
             label = { Text("Sair", color = MaterialTheme.colorScheme.error) },
             selected = false,
             onClick = { viewModel.logout() }
@@ -778,17 +755,28 @@ fun MainHeader(viewModel: PostoViewModel, isTablet: Boolean) {
                 }
 
                 // Logout Button
-                IconButton(
+                Button(
                     onClick = { viewModel.logout() },
-                    modifier = Modifier
-                        .size(42.dp)
-                        .background(HdRedLight.copy(alpha = 0.5f), CircleShape)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = HdRedLight,
+                        contentColor = HdRed
+                    ),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.height(36.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.ExitToApp,
+                        imageVector = Icons.AutoMirrored.Filled.ExitToApp,
                         contentDescription = "Sair",
                         tint = HdRed,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Sair",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = HdRed
                     )
                 }
             }
@@ -1694,7 +1682,7 @@ fun StockScreen(viewModel: PostoViewModel) {
                                 }
 
                                 Spacer(modifier = Modifier.height(12.dp))
-                                Divider(color = HdBorder, thickness = 0.5.dp)
+                                HorizontalDivider(color = HdBorder, thickness = 0.5.dp)
                                 Spacer(modifier = Modifier.height(8.dp))
 
                                 Row(
@@ -1757,7 +1745,7 @@ fun StockScreen(viewModel: PostoViewModel) {
 
                                 if (isExpanded) {
                                     Spacer(modifier = Modifier.height(12.dp))
-                                    Divider(color = HdBorder, thickness = 0.5.dp)
+                                    HorizontalDivider(color = HdBorder, thickness = 0.5.dp)
                                     Spacer(modifier = Modifier.height(12.dp))
 
                                     Text(
@@ -2030,8 +2018,8 @@ fun StockScreen(viewModel: PostoViewModel) {
                                     )
                                 }
                             }
-
-                            Divider(modifier = Modifier.padding(vertical = 10.dp), color = HdBorder)
+                            
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = HdBorder)
 
                             // Volume stats row
                             Row(
@@ -2222,8 +2210,8 @@ fun StockScreen(viewModel: PostoViewModel) {
                                     )
                                 }
                             }
-
-                            Divider(modifier = Modifier.padding(vertical = 10.dp), color = HdBorder)
+                            
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = HdBorder)
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -4153,7 +4141,7 @@ fun EmployeesScreen(viewModel: PostoViewModel) {
                             }
 
                             Spacer(modifier = Modifier.height(12.dp))
-                            Divider(color = HdBorder.copy(alpha = 0.5f))
+                            HorizontalDivider(color = HdBorder.copy(alpha = 0.5f))
                             Spacer(modifier = Modifier.height(12.dp))
 
                             val daySchedules = schedules.filter { it.dayOfWeek == selectedDayInCalendar }
@@ -4369,7 +4357,7 @@ fun EmployeesScreen(viewModel: PostoViewModel) {
                                     }
 
                                     Spacer(modifier = Modifier.height(12.dp))
-                                    Divider(color = HdBorder)
+                                    HorizontalDivider(color = HdBorder)
                                     Spacer(modifier = Modifier.height(8.dp))
 
                                     if (empSchedules.isEmpty()) {
@@ -5201,7 +5189,7 @@ fun ReportsScreen(viewModel: PostoViewModel) {
                                             Text("R$ ${String.format(Locale.getDefault(), "%,.2f", r.totalSales)}", modifier = Modifier.weight(1.5f), fontSize = 11.sp, textAlign = TextAlign.End, color = HdPrimary, fontWeight = FontWeight.SemiBold)
                                             Text("${r.transactionsCount}", modifier = Modifier.weight(0.9f), fontSize = 11.sp, textAlign = TextAlign.End, color = HdTextSecondary)
                                         }
-                                        Divider(color = HdBorder.copy(alpha = 0.5f))
+                                        HorizontalDivider(color = HdBorder.copy(alpha = 0.5f))
                                     }
 
                                     // TOTALS ROW
@@ -5262,7 +5250,7 @@ fun ReportsScreen(viewModel: PostoViewModel) {
                             colors = ButtonDefaults.buttonColors(containerColor = PetrolDark),
                             modifier = Modifier.weight(1f).testTag("copy_table_button")
                         ) {
-                            Icon(Icons.Default.List, contentDescription = "Copiar Tabela", modifier = Modifier.size(16.dp))
+                            Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Copiar Tabela", modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
                             Text("Copiar Tabela", fontSize = 11.sp)
                         }
@@ -5328,7 +5316,7 @@ fun ReportsScreen(viewModel: PostoViewModel) {
                             }
                         }
 
-                        Divider(modifier = Modifier.padding(vertical = 10.dp), color = HdBorder)
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = HdBorder)
 
                         // Stock movement table/row
                         Row(
@@ -5678,6 +5666,7 @@ fun SystemsScreen(viewModel: PostoViewModel) {
     val bankAccount by viewModel.bankAccount.collectAsStateWithLifecycle()
     val bankPixKey by viewModel.bankPixKey.collectAsStateWithLifecycle()
     val credentials by viewModel.systemCredentials.collectAsStateWithLifecycle()
+    val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
 
     val context = androidx.compose.ui.platform.LocalContext.current
 
@@ -6065,7 +6054,7 @@ fun SystemsScreen(viewModel: PostoViewModel) {
                                     }
 
                                     Spacer(modifier = Modifier.height(12.dp))
-                                    Divider(color = HdBorder.copy(alpha = 0.5f))
+                                    HorizontalDivider(color = HdBorder.copy(alpha = 0.5f))
                                     Spacer(modifier = Modifier.height(12.dp))
 
                                     // Login row
@@ -6244,11 +6233,11 @@ fun SystemsScreen(viewModel: PostoViewModel) {
                     ) {
                         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             BankInfoRow(context, viewModel, "Instituição Financeira", bankName)
-                            Divider(color = HdBorder.copy(alpha = 0.3f))
+                            HorizontalDivider(color = HdBorder.copy(alpha = 0.3f))
                             BankInfoRow(context, viewModel, "Agência", bankAgency)
-                            Divider(color = HdBorder.copy(alpha = 0.3f))
+                            HorizontalDivider(color = HdBorder.copy(alpha = 0.3f))
                             BankInfoRow(context, viewModel, "Conta Corrente PJ", bankAccount)
-                            Divider(color = HdBorder.copy(alpha = 0.3f))
+                            HorizontalDivider(color = HdBorder.copy(alpha = 0.3f))
                             BankInfoRow(context, viewModel, "Chave PIX (CNPJ)", bankPixKey)
                         }
                     }
@@ -6291,10 +6280,155 @@ fun SystemsScreen(viewModel: PostoViewModel) {
                     ) {
                         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             StationDetailItem(context, viewModel, "Razão Social", stationRazaoSocial, "🏢")
-                            Divider(color = HdBorder.copy(alpha = 0.4f))
+                            HorizontalDivider(color = HdBorder.copy(alpha = 0.4f))
                             StationDetailItem(context, viewModel, "CNPJ", stationCnpj, "📄")
-                            Divider(color = HdBorder.copy(alpha = 0.4f))
+                            HorizontalDivider(color = HdBorder.copy(alpha = 0.4f))
                             StationDetailItem(context, viewModel, "Endereço Completo", stationEndereco, "📍")
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = HdSurface),
+                        border = BorderStroke(1.dp, HdBorder)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "Sessão Ativa do Usuário 👤",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = HdTextPrimary,
+                                modifier = Modifier.padding(bottom = 4.dp)
+                            )
+                            Text(
+                                text = "Usuário conectado atualmente no aplicativo via autenticação integrada.",
+                                fontSize = 11.sp,
+                                color = HdTextSecondary,
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(HdGrayLight, RoundedCornerShape(8.dp))
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(
+                                        text = currentUser?.name ?: "Usuário Admin",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp,
+                                        color = HdTextPrimary
+                                    )
+                                    Text(
+                                        text = currentUser?.email ?: "admin@posto.com",
+                                        fontSize = 11.sp,
+                                        color = HdTextSecondary
+                                    )
+                                    Text(
+                                        text = "Perfil: ${currentUser?.role ?: "Gerente"}",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = HdPrimary,
+                                        modifier = Modifier.padding(top = 4.dp)
+                                    )
+                                }
+
+                                Button(
+                                    onClick = { viewModel.logout() },
+                                    colors = ButtonDefaults.buttonColors(containerColor = HdRed),
+                                    shape = RoundedCornerShape(8.dp),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                    modifier = Modifier.height(36.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                                        contentDescription = "Sair",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Sair da Conta", fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = HdSurface),
+                        border = BorderStroke(1.dp, HdBorder)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "Nuvem Firebase ☁️",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = HdTextPrimary,
+                                modifier = Modifier.padding(bottom = 4.dp)
+                            )
+                            Text(
+                                text = "Gerencie a sincronização de dados e backup do sistema de gestão com o Google Cloud Firestore em tempo real.",
+                                fontSize = 11.sp,
+                                color = HdTextSecondary,
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
+
+                            val firebaseAvailable = FirebaseHelper.isAvailable
+                            Surface(
+                                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (firebaseAvailable) Color(0xFFD4EDDA) else Color(0xFFFFF3CD),
+                                border = BorderStroke(1.dp, if (firebaseAvailable) Color(0xFFC3E6CB) else Color(0xFFFFEBAA))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = if (firebaseAvailable) "⚡ Firebase Auth & Firestore: ATIVO e CONFIGURADO" else "⚠️ Firebase Off-line (Usando banco Room local)",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (firebaseAvailable) Color(0xFF155724) else Color(0xFF856404)
+                                    )
+                                }
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = { viewModel.uploadToFirestore(stationCnpj) },
+                                    modifier = Modifier.weight(1f),
+                                    colors = ButtonDefaults.buttonColors(containerColor = if (firebaseAvailable) HdPrimary else Color.Gray),
+                                    shape = RoundedCornerShape(8.dp),
+                                    enabled = !viewModel.isReadOnly.value
+                                ) {
+                                    Icon(Icons.Default.CloudUpload, contentDescription = "Backup", modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Enviar Backup", fontSize = 11.sp)
+                                }
+
+                                Button(
+                                    onClick = { viewModel.downloadFromFirestore(stationCnpj) },
+                                    modifier = Modifier.weight(1f),
+                                    colors = ButtonDefaults.buttonColors(containerColor = if (firebaseAvailable) Color(0xFF0D6EFD) else Color.Gray),
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Icon(Icons.Default.CloudDownload, contentDescription = "Restaurar", modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Baixar Dados", fontSize = 11.sp)
+                                }
+                            }
                         }
                     }
                 }

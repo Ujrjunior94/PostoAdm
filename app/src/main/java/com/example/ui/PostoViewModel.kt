@@ -6,6 +6,9 @@ import androidx.lifecycle.viewModelScope
 import com.example.data.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import android.util.Log
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -274,31 +277,29 @@ class PostoViewModel(application: Application) : AndroidViewModel(application) {
     init {
         viewModelScope.launch {
             // Wait for DB, then seed data if empty
-            fuelTanks.take(2).collect { tanks ->
-                if (tanks.isEmpty()) {
-                    seedDatabase()
-                }
+            val tanks = repository.allFuelTanks.first()
+            if (tanks.isEmpty()) {
+                seedDatabase()
             }
         }
         viewModelScope.launch {
             // Seed default user if user accounts is empty
-            userAccounts.take(2).collect { accounts ->
-                if (accounts.isEmpty()) {
-                    val defaultManager = UserAccount(
-                        email = "admin@posto.com",
-                        name = "Carlos Gerente",
-                        role = "Gerente",
-                        password = "123456",
-                        stationName = "Auto Posto Estrela da Alvorada Ltda",
-                        stationCnpj = "12.345.678/0001-99",
-                        stationEndereco = "Av. das Nações, 1500 - Centro, São Paulo - SP",
-                        bankName = "Banco do Brasil",
-                        bankAgency = "1234-5",
-                        bankAccount = "98765-4",
-                        bankPixKey = "12.345.678/0001-99"
-                    )
-                    repository.insertUserAccount(defaultManager)
-                }
+            val accounts = repository.allUserAccounts.first()
+            if (accounts.isEmpty()) {
+                val defaultManager = UserAccount(
+                    email = "admin@posto.com",
+                    name = "Carlos Gerente",
+                    role = "Gerente",
+                    password = "123456",
+                    stationName = "Auto Posto Estrela da Alvorada Ltda",
+                    stationCnpj = "12.345.678/0001-99",
+                    stationEndereco = "Av. das Nações, 1500 - Centro, São Paulo - SP",
+                    bankName = "Banco do Brasil",
+                    bankAgency = "1234-5",
+                    bankAccount = "98765-4",
+                    bankPixKey = "12.345.678/0001-99"
+                )
+                repository.insertUserAccount(defaultManager)
             }
         }
     }
@@ -429,28 +430,129 @@ class PostoViewModel(application: Application) : AndroidViewModel(application) {
 
     // Actions
     fun login(email: String, password: String): Boolean {
-        val account = userAccounts.value.find { it.email.lowercase() == email.lowercase() && it.password == password }
-        if (account != null) {
-            _isLoggedIn.value = true
-            _currentUser.value = account
-            _currentUserRole.value = account.role
-            _stationCnpj.value = account.stationCnpj
-            _stationRazaoSocial.value = account.stationName
-            _stationEndereco.value = account.stationEndereco
-            _bankName.value = account.bankName
-            _bankAgency.value = account.bankAgency
-            _bankAccount.value = account.bankAccount
-            _bankPixKey.value = account.bankPixKey
-            _loginError.value = null
-            addToast("Bem-vindo, ${account.name}! (${account.role})")
-            return true
+        val formattedEmail = if (email.contains("@")) email.lowercase() else "${email.lowercase()}@posto.com"
+        val localAccount = userAccounts.value.find { 
+            val accEmail = it.email.lowercase()
+            accEmail == email.lowercase() || accEmail == formattedEmail
+        }
+        
+        if (FirebaseHelper.isAvailable) {
+            viewModelScope.launch {
+                try {
+                    val auth = FirebaseHelper.auth
+                    val db = FirebaseHelper.firestore
+                    if (auth != null && db != null) {
+                        auth.signInWithEmailAndPassword(formattedEmail, password)
+                            .addOnSuccessListener { authResult ->
+                                db.collection("users").document(formattedEmail).get()
+                                    .addOnSuccessListener { document ->
+                                        if (document.exists()) {
+                                            val firebaseUser = FirebaseHelper.mapToUser(document.data ?: emptyMap())
+                                            viewModelScope.launch {
+                                                repository.insertUserAccount(firebaseUser)
+                                                applyLoginState(firebaseUser)
+                                                downloadFromFirestore(firebaseUser.stationCnpj)
+                                                addToast("Login Firebase efetuado com sucesso!")
+                                            }
+                                        } else {
+                                            if (localAccount != null) {
+                                                applyLoginState(localAccount)
+                                                db.collection("users").document(formattedEmail).set(FirebaseHelper.userToMap(localAccount))
+                                            } else {
+                                                _loginError.value = "Usuário não encontrado no Firestore."
+                                            }
+                                        }
+                                    }
+                                    .addOnFailureListener { e ->
+                                        if (localAccount != null) {
+                                            applyLoginState(localAccount)
+                                        } else {
+                                            _loginError.value = "Erro ao buscar dados no Firestore: ${e.message}"
+                                        }
+                                    }
+                            }
+                            .addOnFailureListener { e ->
+                                if (localAccount != null) {
+                                    applyLoginState(localAccount)
+                                    addToast("Login off-line efetuado com sucesso (modo de segurança)")
+                                } else {
+                                    _loginError.value = "Erro de autenticação Firebase: ${e.message}"
+                                    addToast("Erro no login Firebase: ${e.message}")
+                                }
+                            }
+                    } else {
+                        if (localAccount != null) {
+                            applyLoginState(localAccount)
+                        } else {
+                            _loginError.value = "Serviço de autenticação indisponível."
+                        }
+                    }
+                } catch (e: Exception) {
+                    if (localAccount != null) {
+                        applyLoginState(localAccount)
+                    } else {
+                        _loginError.value = e.message
+                    }
+                }
+            }
         } else {
-            _loginError.value = "Credenciais inválidas. Verifique seu e-mail e senha."
+            if (localAccount != null) {
+                applyLoginState(localAccount)
+                return true
+            } else {
+                _loginError.value = "Credenciais inválidas. Verifique seu login e senha."
+                return false
+            }
+        }
+        return localAccount != null
+    }
+
+    fun registerSimplifiedManager(login: String, pass: String): Boolean {
+        if (login.isBlank() || pass.isBlank()) {
+            _loginError.value = "Todos os campos obrigatórios devem ser preenchidos!"
+            addToast("Preencha usuário e senha!")
             return false
         }
+        val formattedEmail = if (login.contains("@")) login.lowercase() else "${login.lowercase()}@posto.com"
+        val capitalizedName = login.lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+        val randomDigits = (10..99).random()
+        val stationCnpj = "12.345.678/0001-$randomDigits"
+        val stationName = "Posto $capitalizedName"
+        val stationEndereco = "Avenida Principal, ${(100..999).random()}"
+
+        return registerManager(
+            email = formattedEmail,
+            name = capitalizedName,
+            pass = pass,
+            stationName = stationName,
+            stationCnpj = stationCnpj,
+            stationEndereco = stationEndereco
+        )
+    }
+
+    private fun applyLoginState(account: UserAccount) {
+        _isLoggedIn.value = true
+        _currentUser.value = account
+        _currentUserRole.value = account.role
+        _stationCnpj.value = account.stationCnpj
+        _stationRazaoSocial.value = account.stationName
+        _stationEndereco.value = account.stationEndereco
+        _bankName.value = account.bankName
+        _bankAgency.value = account.bankAgency
+        _bankAccount.value = account.bankAccount
+        _bankPixKey.value = account.bankPixKey
+        _loginError.value = null
+        addToast("Bem-vindo, ${account.name}! (${account.role})")
     }
 
     fun logout() {
+        if (FirebaseHelper.isAvailable) {
+            try {
+                FirebaseHelper.auth?.signOut()
+            } catch (e: Exception) {
+                Log.e("PostoViewModel", "Error signing out from Firebase", e)
+            }
+        }
         _isLoggedIn.value = false
         _currentUser.value = null
         _currentUserRole.value = "Gerente"
@@ -478,22 +580,42 @@ class PostoViewModel(application: Application) : AndroidViewModel(application) {
             addToast("Este e-mail já está cadastrado!")
             return false
         }
+        
+        val newManager = UserAccount(
+            email = email,
+            name = name,
+            role = "Gerente",
+            password = pass,
+            stationName = stationName,
+            stationCnpj = stationCnpj,
+            stationEndereco = stationEndereco
+        )
+
         viewModelScope.launch {
-            val newManager = UserAccount(
-                email = email,
-                name = name,
-                role = "Gerente",
-                password = pass,
-                stationName = stationName,
-                stationCnpj = stationCnpj,
-                stationEndereco = stationEndereco
-            )
             repository.insertUserAccount(newManager)
-            
-            // Seed template data automatically so they have a fully functional app out of the box
             seedStationTemplateData(stationCnpj)
-            
-            addToast("Gerente '$name' e Posto cadastrados com sucesso!")
+            addToast("Gerente '$name' cadastrado localmente!")
+
+            if (FirebaseHelper.isAvailable) {
+                val auth = FirebaseHelper.auth
+                val db = FirebaseHelper.firestore
+                if (auth != null && db != null) {
+                    auth.createUserWithEmailAndPassword(email, pass)
+                        .addOnSuccessListener {
+                            db.collection("users").document(email.lowercase()).set(FirebaseHelper.userToMap(newManager))
+                                .addOnSuccessListener {
+                                    addToast("Conta sincronizada com a nuvem Firebase!")
+                                    uploadToFirestore(stationCnpj)
+                                }
+                                .addOnFailureListener { e ->
+                                    addToast("Perfil não pôde ser salvo na nuvem: ${e.message}")
+                                }
+                        }
+                        .addOnFailureListener { e ->
+                            addToast("Erro ao criar conta no Firebase Auth: ${e.message}")
+                        }
+                }
+            }
         }
         return true
     }
@@ -508,7 +630,6 @@ class PostoViewModel(application: Application) : AndroidViewModel(application) {
             addToast("Preencha todos os campos obrigatórios!")
             return false
         }
-        // Limit to 5 viewers as requested
         val currentViewers = userAccounts.value.filter { it.parentManagerEmail == manager.email }
         if (currentViewers.size >= 5) {
             addToast("Limite máximo de 5 visualizadores atingido para este posto!")
@@ -519,23 +640,42 @@ class PostoViewModel(application: Application) : AndroidViewModel(application) {
             addToast("Este e-mail já está cadastrado!")
             return false
         }
+
+        val newViewer = UserAccount(
+            email = email,
+            name = name,
+            role = "Visualizador",
+            password = pass,
+            stationName = manager.stationName,
+            stationCnpj = manager.stationCnpj,
+            stationEndereco = manager.stationEndereco,
+            parentManagerEmail = manager.email,
+            bankName = manager.bankName,
+            bankAgency = manager.bankAgency,
+            bankAccount = manager.bankAccount,
+            bankPixKey = manager.bankPixKey
+        )
+
         viewModelScope.launch {
-            val newViewer = UserAccount(
-                email = email,
-                name = name,
-                role = "Visualizador",
-                password = pass,
-                stationName = manager.stationName,
-                stationCnpj = manager.stationCnpj,
-                stationEndereco = manager.stationEndereco,
-                parentManagerEmail = manager.email,
-                bankName = manager.bankName,
-                bankAgency = manager.bankAgency,
-                bankAccount = manager.bankAccount,
-                bankPixKey = manager.bankPixKey
-            )
             repository.insertUserAccount(newViewer)
-            addToast("Visualizador '$name' cadastrado com sucesso (Apenas Leitura)!")
+            addToast("Visualizador '$name' cadastrado localmente!")
+
+            if (FirebaseHelper.isAvailable) {
+                val auth = FirebaseHelper.auth
+                val db = FirebaseHelper.firestore
+                if (auth != null && db != null) {
+                    auth.createUserWithEmailAndPassword(email, pass)
+                        .addOnSuccessListener {
+                            db.collection("users").document(email.lowercase()).set(FirebaseHelper.userToMap(newViewer))
+                                .addOnSuccessListener {
+                                    addToast("Acesso do visualizador salvo na nuvem!")
+                                }
+                        }
+                        .addOnFailureListener { e ->
+                            addToast("Erro ao sincronizar visualizador na nuvem: ${e.message}")
+                        }
+                }
+            }
         }
         return true
     }
@@ -545,7 +685,170 @@ class PostoViewModel(application: Application) : AndroidViewModel(application) {
             val target = userAccounts.value.find { it.email == email }
             if (target != null && target.role == "Visualizador") {
                 repository.deleteUserAccount(target)
-                addToast("Acesso do visualizador '${target.name}' revogado.")
+                addToast("Acesso do visualizador '${target.name}' revogado localmente.")
+
+                if (FirebaseHelper.isAvailable) {
+                    val db = FirebaseHelper.firestore
+                    db?.collection("users")?.document(email.lowercase())?.delete()
+                        ?.addOnSuccessListener {
+                            addToast("Acesso removido da nuvem com sucesso.")
+                        }
+                }
+            }
+        }
+    }
+
+    fun uploadToFirestore(cnpj: String) {
+        if (!FirebaseHelper.isAvailable) {
+            addToast("Firebase não está ativo/configurado.")
+            return
+        }
+        val db = FirebaseHelper.firestore ?: return
+        
+        viewModelScope.launch {
+            addToast("Fazendo backup de dados na nuvem...")
+            try {
+                fuelTanks.value.forEach { tank ->
+                    db.collection("stations").document(cnpj)
+                        .collection("fuel_tanks").document(tank.id.toString())
+                        .set(FirebaseHelper.tankToMap(tank))
+                }
+
+                employees.value.forEach { emp ->
+                    db.collection("stations").document(cnpj)
+                        .collection("employees").document(emp.id.toString())
+                        .set(FirebaseHelper.employeeToMap(emp))
+                }
+
+                shiftSchedules.value.forEach { sched ->
+                    db.collection("stations").document(cnpj)
+                        .collection("shift_schedules").document(sched.id.toString())
+                        .set(FirebaseHelper.scheduleToMap(sched))
+                }
+
+                appointments.value.forEach { appt ->
+                    db.collection("stations").document(cnpj)
+                        .collection("appointments").document(appt.id.toString())
+                        .set(FirebaseHelper.appointmentToMap(appt))
+                }
+
+                dailyReports.value.forEach { report ->
+                    db.collection("stations").document(cnpj)
+                        .collection("daily_reports").document(report.id.toString())
+                        .set(FirebaseHelper.dailyReportToMap(report))
+                }
+
+                nozzles.value.forEach { noz ->
+                    db.collection("stations").document(cnpj)
+                        .collection("nozzles").document(noz.id.toString())
+                        .set(FirebaseHelper.nozzleToMap(noz))
+                }
+
+                calibrations.value.forEach { cal ->
+                    db.collection("stations").document(cnpj)
+                        .collection("calibrations").document(cal.id.toString())
+                        .set(FirebaseHelper.calibrationToMap(cal))
+                }
+
+                fuelConformityRecords.value.forEach { rec ->
+                    db.collection("stations").document(cnpj)
+                        .collection("conformity_records").document(rec.id.toString())
+                        .set(FirebaseHelper.conformityToMap(rec))
+                }
+
+                auditLogEntries.value.forEach { log ->
+                    db.collection("stations").document(cnpj)
+                        .collection("audit_logs").document(log.id.toString())
+                        .set(FirebaseHelper.auditToMap(log))
+                }
+
+                addToast("Sincronização de backup enviada para a nuvem!")
+            } catch (e: Exception) {
+                addToast("Erro no backup: ${e.message}")
+            }
+        }
+    }
+
+    fun downloadFromFirestore(cnpj: String) {
+        if (!FirebaseHelper.isAvailable) return
+        val db = FirebaseHelper.firestore ?: return
+
+        viewModelScope.launch {
+            try {
+                db.collection("stations").document(cnpj).collection("fuel_tanks").get()
+                    .addOnSuccessListener { snap ->
+                        snap.documents.forEach { doc ->
+                            val tank = FirebaseHelper.mapToTank(doc.data ?: emptyMap())
+                            viewModelScope.launch { repository.insertFuelTank(tank) }
+                        }
+                    }
+
+                db.collection("stations").document(cnpj).collection("employees").get()
+                    .addOnSuccessListener { snap ->
+                        snap.documents.forEach { doc ->
+                            val emp = FirebaseHelper.mapToEmployee(doc.data ?: emptyMap())
+                            viewModelScope.launch { repository.insertEmployee(emp) }
+                        }
+                    }
+
+                db.collection("stations").document(cnpj).collection("shift_schedules").get()
+                    .addOnSuccessListener { snap ->
+                        snap.documents.forEach { doc ->
+                            val sched = FirebaseHelper.mapToSchedule(doc.data ?: emptyMap())
+                            viewModelScope.launch { repository.insertShiftSchedule(sched) }
+                        }
+                    }
+
+                db.collection("stations").document(cnpj).collection("appointments").get()
+                    .addOnSuccessListener { snap ->
+                        snap.documents.forEach { doc ->
+                            val appt = FirebaseHelper.mapToAppointment(doc.data ?: emptyMap())
+                            viewModelScope.launch { repository.insertAppointment(appt) }
+                        }
+                    }
+
+                db.collection("stations").document(cnpj).collection("daily_reports").get()
+                    .addOnSuccessListener { snap ->
+                        snap.documents.forEach { doc ->
+                            val report = FirebaseHelper.mapToDailyReport(doc.data ?: emptyMap())
+                            viewModelScope.launch { repository.insertDailyReport(report) }
+                        }
+                    }
+
+                db.collection("stations").document(cnpj).collection("nozzles").get()
+                    .addOnSuccessListener { snap ->
+                        snap.documents.forEach { doc ->
+                            val noz = FirebaseHelper.mapToNozzle(doc.data ?: emptyMap())
+                            viewModelScope.launch { repository.insertNozzle(noz) }
+                        }
+                    }
+
+                db.collection("stations").document(cnpj).collection("calibrations").get()
+                    .addOnSuccessListener { snap ->
+                        snap.documents.forEach { doc ->
+                            val cal = FirebaseHelper.mapToCalibration(doc.data ?: emptyMap())
+                            viewModelScope.launch { repository.insertCalibration(cal) }
+                        }
+                    }
+
+                db.collection("stations").document(cnpj).collection("conformity_records").get()
+                    .addOnSuccessListener { snap ->
+                        snap.documents.forEach { doc ->
+                            val rec = FirebaseHelper.mapToConformity(doc.data ?: emptyMap())
+                            viewModelScope.launch { repository.insertFuelConformityRecord(rec) }
+                        }
+                    }
+
+                db.collection("stations").document(cnpj).collection("audit_logs").get()
+                    .addOnSuccessListener { snap ->
+                        snap.documents.forEach { doc ->
+                            val log = FirebaseHelper.mapToAudit(doc.data ?: emptyMap())
+                            viewModelScope.launch { repository.insertAuditLogEntry(log) }
+                        }
+                    }
+                addToast("Dados sincronizados da nuvem com sucesso!")
+            } catch (e: Exception) {
+                Log.e("PostoViewModel", "Error downloading from Firestore", e)
             }
         }
     }

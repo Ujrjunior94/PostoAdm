@@ -1,0 +1,3267 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Posto - Painel Administrativo Web ⛽</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind Configuration for Slate Theme -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        hdPrimary: '#005AC1',
+                        hdPrimaryContainer: '#D8E2FF',
+                        hdSurface: '#F8F9FF',
+                        hdSurfaceContainer: '#EFF0F7',
+                        hdTextPrimary: '#1A1B20',
+                        hdTextSecondary: '#44474F',
+                        hdBorder: '#C4C6D0',
+                        hdGreen: '#137333',
+                        hdGreenLight: '#E6F4EA',
+                        hdRed: '#BA1A1A',
+                        hdRedLight: '#FFDAD6'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts & Material Symbols -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0..1,0" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8F9FF;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #C4C6D0;
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #9094A6;
+        }
+
+        /* Custom progress bar styles with animations */
+        @keyframes grow-width {
+            from { width: 0%; }
+            to { width: var(--target-width, 0%); }
+        }
+
+        @keyframes stripe-shimmer {
+            from { background-position: 0 0; }
+            to { background-position: 40px 0; }
+        }
+
+        .tank-progress-bar {
+            --target-width: 0%;
+            animation: grow-width 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Diagonal stripe overlay for an extremely polished, high-tech look */
+        .tank-progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background-image: linear-gradient(
+                45deg, 
+                rgba(255, 255, 255, 0.15) 25%, 
+                transparent 25%, 
+                transparent 50%, 
+                rgba(255, 255, 255, 0.15) 50%, 
+                rgba(255, 255, 255, 0.15) 75%, 
+                transparent 75%, 
+                transparent
+            );
+            background-size: 20px 20px;
+            animation: stripe-shimmer 1.5s linear infinite;
+            opacity: 0.8;
+        }
+
+        /* Premium Tank Visualization with Liquid Wave Animation */
+        .tank-cylinder-container {
+            width: 75px;
+            height: 120px;
+            background: rgba(220, 225, 235, 0.35);
+            border: 2.5px solid #dcdfe6;
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: flex-end;
+            box-shadow: inset 0 3px 10px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04);
+        }
+        .tank-liquid-body {
+            width: 100%;
+            position: relative;
+            transition: height 1s ease-in-out;
+            border-radius: 0 0 12px 12px;
+            overflow: hidden;
+        }
+        /* Fuel types color schema */
+        .color-gasolina {
+            background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+        }
+        .color-etanol {
+            background: linear-gradient(180deg, #fbbf24 0%, #d97706 100%);
+        }
+        .color-diesel {
+            background: linear-gradient(180deg, #6b7280 0%, #374151 100%);
+        }
+        .color-critical {
+            background: linear-gradient(180deg, #f87171 0%, #dc2626 100%);
+        }
+
+        /* Wave effect */
+        .tank-wave {
+            position: absolute;
+            width: 200%;
+            height: 16px;
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 38% 42% 40% 40%;
+            top: -12px;
+            left: -50%;
+            animation: wave-animation 6s infinite linear;
+        }
+        .tank-wave-secondary {
+            position: absolute;
+            width: 210%;
+            height: 18px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 43% 38% 44% 40%;
+            top: -14px;
+            left: -55%;
+            animation: wave-animation-reverse 8s infinite linear;
+        }
+
+        @keyframes wave-animation {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes wave-animation-reverse {
+            0% { transform: rotate(360deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        /* Glass reflection overlay */
+        .tank-glass-sheen {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(90deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.2) 10%, rgba(255,255,255,0) 25%, rgba(255,255,255,0) 80%, rgba(255,255,255,0.1) 95%);
+            pointer-events: none;
+            z-index: 5;
+            border-radius: 12px;
+        }
+    </style>
+</head>
+<body class="text-hdTextPrimary min-h-screen flex flex-col antialiased">
+
+    <!-- TOP GLOBAL BAR -->
+    <header class="bg-white border-b border-hdBorder h-16 px-6 flex items-center justify-between z-20 shrink-0">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-hdPrimary flex items-center justify-center text-white shadow-md shadow-hdPrimary/20">
+                <span class="material-symbols-outlined text-2xl font-bold">local_gas_station</span>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg leading-tight tracking-tight text-hdPrimary">Meu Posto</h1>
+                <p class="text-[10px] text-hdTextSecondary uppercase font-semibold tracking-wider">Painel Administrativo Web</p>
+            </div>
+        </div>
+
+        <!-- Connection and Account Indicators -->
+        <div class="flex items-center space-x-4">
+            <!-- Firebase Connection Status Badge -->
+            <button id="connectionBadgeBtn" onclick="toggleConfigModal()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition hover:opacity-90">
+                <span id="connectionBadgeDot" class="w-2.5 h-2.5 rounded-full bg-yellow-500 animate-pulse"></span>
+                <span id="connectionBadgeText">Verificando Firebase...</span>
+            </button>
+
+            <!-- User profile header (hidden when logged out) -->
+            <div id="userHeaderProfile" class="hidden flex items-center space-x-3 border-l border-hdBorder pl-4">
+                <div class="text-right">
+                    <p id="userNameHeader" class="text-xs font-bold text-hdTextPrimary">Usuário Admin</p>
+                    <p id="userRoleHeader" class="text-[10px] text-hdPrimary font-semibold">Gerente</p>
+                </div>
+                <button onclick="logoutUser()" class="w-8 h-8 rounded-lg bg-hdRedLight text-hdRed flex items-center justify-center hover:bg-hdRed hover:text-white transition" title="Sair da Conta">
+                    <span class="material-symbols-outlined text-sm font-bold">logout</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <div class="flex-1 flex overflow-hidden">
+        
+        <!-- SIDEBAR (Navigation) - Hidden on Logged Out -->
+        <aside id="sidebarNav" class="hidden w-64 bg-white border-r border-hdBorder flex flex-col justify-between shrink-0">
+            <div class="p-4 space-y-1">
+                <div class="px-3 py-2 text-[11px] font-bold text-hdTextSecondary uppercase tracking-widest opacity-60">Sectores do Sistema</div>
+                
+                <button onclick="switchTab('dashboard')" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-left bg-hdPrimaryContainer text-hdPrimary" data-tab="dashboard">
+                    <span class="material-symbols-outlined">dashboard</span>
+                    <span>Visão Geral</span>
+                </button>
+
+                <button onclick="switchTab('tanks')" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-left text-hdTextSecondary hover:bg-hdSurfaceContainer hover:text-hdTextPrimary" data-tab="tanks">
+                    <span class="material-symbols-outlined">propane_tank</span>
+                    <span>Tanques de Combustível</span>
+                </button>
+
+                <button onclick="switchTab('employees')" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-left text-hdTextSecondary hover:bg-hdSurfaceContainer hover:text-hdTextPrimary" data-tab="employees">
+                    <span class="material-symbols-outlined">badge</span>
+                    <span>Equipe e Escalas</span>
+                </button>
+
+                <button onclick="switchTab('reports')" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-left text-hdTextSecondary hover:bg-hdSurfaceContainer hover:text-hdTextPrimary" data-tab="reports">
+                    <span class="material-symbols-outlined">analytics</span>
+                    <span>Relatórios Diários</span>
+                </button>
+
+                <button onclick="switchTab('nozzles')" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-left text-hdTextSecondary hover:bg-hdSurfaceContainer hover:text-hdTextPrimary" data-tab="nozzles">
+                    <span class="material-symbols-outlined">water_drop</span>
+                    <span>Bicos e Bombas</span>
+                </button>
+
+                <button onclick="switchTab('compliance')" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-left text-hdTextSecondary hover:bg-hdSurfaceContainer hover:text-hdTextPrimary" data-tab="compliance">
+                    <span class="material-symbols-outlined">gavel</span>
+                    <span>Calibração e Testes</span>
+                </button>
+
+                <button onclick="switchTab('audits')" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-left text-hdTextSecondary hover:bg-hdSurfaceContainer hover:text-hdTextPrimary" data-tab="audits">
+                    <span class="material-symbols-outlined">history</span>
+                    <span>Auditoria e Compliance</span>
+                </button>
+
+                <button onclick="switchTab('calendar')" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-left text-hdTextSecondary hover:bg-hdSurfaceContainer hover:text-hdTextPrimary" data-tab="calendar">
+                    <span class="material-symbols-outlined">calendar_today</span>
+                    <span>Calendário e Agendas</span>
+                </button>
+
+                <button onclick="switchTab('systems')" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-left text-hdTextSecondary hover:bg-hdSurfaceContainer hover:text-hdTextPrimary" data-tab="systems">
+                    <span class="material-symbols-outlined">shield_lock</span>
+                    <span>Sistemas e Segurança</span>
+                </button>
+            </div>
+
+            <!-- Station Details Card on Bottom -->
+            <div class="p-4 border-t border-hdBorder">
+                <div class="bg-hdSurfaceContainer p-3 rounded-xl border border-hdBorder/60">
+                    <div class="flex items-center space-x-2 text-hdPrimary mb-1">
+                        <span class="material-symbols-outlined text-base">store</span>
+                        <span id="sidebarStationName" class="text-xs font-bold truncate">Posto Desconectado</span>
+                    </div>
+                    <p id="sidebarStationCnpj" class="text-[10px] text-hdTextSecondary">CNPJ: --.---.---/----.--</p>
+                    <p id="sidebarStationEndereco" class="text-[10px] text-hdTextSecondary mt-1 truncate">Carregando...</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN SCROLLABLE BODY -->
+        <main class="flex-1 overflow-y-auto bg-hdSurface p-6 custom-scrollbar flex flex-col justify-between">
+            
+            <!-- ====== VIEW 1: AUTHENTICATION (LOGIN / REGISTER) ====== -->
+            <section id="authView" class="max-w-md w-full mx-auto my-auto py-8">
+                <div class="bg-white border border-hdBorder rounded-3xl p-8 shadow-xl relative overflow-hidden">
+                    
+                    <!-- App Mascot Header -->
+                    <div class="text-center mb-6">
+                        <span class="material-symbols-outlined text-5xl text-hdPrimary font-bold animate-bounce mb-2">local_gas_station</span>
+                        <h2 id="authTitle" class="text-2xl font-bold tracking-tight text-hdTextPrimary">Acesso ao PostoAdmin</h2>
+                        <p class="text-xs text-hdTextSecondary mt-1">Conecte-se para gerenciar tanques, equipes, vendas e conformidade.</p>
+                    </div>
+
+                    <!-- Tabs: Login / Register -->
+                    <div class="flex border-b border-hdBorder mb-6">
+                        <button onclick="switchAuthTab('login')" id="tabAuthLogin" class="flex-1 pb-3 text-sm font-bold text-center border-b-2 border-hdPrimary text-hdPrimary transition">
+                            Entrar
+                        </button>
+                        <button onclick="switchAuthTab('register')" id="tabAuthRegister" class="flex-1 pb-3 text-sm font-bold text-center border-b-2 border-transparent text-hdTextSecondary hover:text-hdTextPrimary transition">
+                            Criar Conta
+                        </button>
+                    </div>
+
+                    <!-- Notification Banner for status/error -->
+                    <div id="authAlert" class="hidden mb-4 p-3 rounded-xl text-xs font-semibold flex items-center space-x-2">
+                        <span class="material-symbols-outlined text-base">error</span>
+                        <span id="authAlertText">Erro ao autenticar.</span>
+                    </div>
+
+                    <!-- Forms -->
+                    <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+                        <!-- Login / Username -->
+                        <div>
+                            <label class="block text-xs font-bold text-hdTextSecondary mb-1.5 uppercase">Nome de Usuário (Login ou E-mail)</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute left-3 top-3.5 text-hdTextSecondary text-lg">person</span>
+                                <input type="text" id="authEmailInput" placeholder="Ex: guto ou guto@posto.com" required
+                                       class="w-full bg-hdSurface border border-hdBorder rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-hdPrimary transition">
+                            </div>
+                        </div>
+
+                        <!-- Password -->
+                        <div>
+                            <label class="block text-xs font-bold text-hdTextSecondary mb-1.5 uppercase">Senha de Acesso</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute left-3 top-3.5 text-hdTextSecondary text-lg">lock</span>
+                                <input type="password" id="authPasswordInput" placeholder="Sua senha secreta" required
+                                       class="w-full bg-hdSurface border border-hdBorder rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-hdPrimary transition">
+                            </div>
+                        </div>
+
+                        <!-- Extra Register Fields (Hidden by default) -->
+                        <div id="registerExtraFields" class="hidden space-y-3 pt-2 border-t border-dashed border-hdBorder">
+                            <p class="text-[10px] text-hdPrimary font-semibold uppercase tracking-wider mb-2">Configuração Automática do Posto</p>
+                            
+                            <div>
+                                <label class="block text-[11px] font-bold text-hdTextSecondary mb-1">Nome Fantasia do Posto</label>
+                                <input type="text" id="regStationName" placeholder="Ex: Posto Alvorada Ltda" 
+                                       class="w-full bg-hdSurface border border-hdBorder rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-hdPrimary transition">
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-[11px] font-bold text-hdTextSecondary mb-1">CNPJ</label>
+                                    <input type="text" id="regStationCnpj" placeholder="Ex: 12.345.678/0001-99" 
+                                           class="w-full bg-hdSurface border border-hdBorder rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-hdPrimary transition">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-hdTextSecondary mb-1">Cidade / Estado</label>
+                                    <input type="text" id="regStationEndereco" placeholder="Ex: Curitiba - PR" 
+                                           class="w-full bg-hdSurface border border-hdBorder rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-hdPrimary transition">
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="authSubmitBtn" class="w-full bg-hdPrimary text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition duration-150 flex items-center justify-center space-x-2 shadow-lg shadow-hdPrimary/20">
+                            <span class="material-symbols-outlined">login</span>
+                            <span>Entrar no Sistema</span>
+                        </button>
+                    </form>
+
+                    <!-- Setup Warning Footer -->
+                    <div class="mt-6 text-center text-[11px] text-hdTextSecondary border-t border-hdBorder/60 pt-4">
+                        <button onclick="toggleConfigModal()" class="text-hdPrimary font-semibold hover:underline flex items-center justify-center mx-auto space-x-1">
+                            <span class="material-symbols-outlined text-xs">settings</span>
+                            <span>Configurar credenciais Firebase do seu projeto</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ====== VIEW 2: THE MAIN SYSTEM WORKSPACE ====== -->
+            <section id="workspaceView" class="hidden flex-1 flex flex-col space-y-6">
+                
+                <!-- SCREEN A: DASHBOARD VIEW -->
+                <div id="screen-dashboard" class="space-y-6">
+                    <!-- Banner -->
+                    <div class="bg-gradient-to-r from-blue-700 to-hdPrimary text-white rounded-3xl p-6 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold flex items-center gap-2">
+                                Bem-vindo ao PostoAdmin <span class="animate-pulse">✨</span>
+                            </h2>
+                            <p id="welcomeStationInfo" class="text-sm opacity-90 mt-1">Gerenciando as operações do Posto...</p>
+                        </div>
+                        <div class="flex items-center space-x-3 shrink-0">
+                            <div class="bg-white/20 px-4 py-2 rounded-2xl border border-white/10 text-center">
+                                <p class="text-[10px] uppercase font-bold text-blue-200">Total Tanques</p>
+                                <p id="totalTanksBadge" class="text-lg font-bold">0</p>
+                            </div>
+                            <div class="bg-white/20 px-4 py-2 rounded-2xl border border-white/10 text-center">
+                                <p class="text-[10px] uppercase font-bold text-blue-200">Equipe Ativa</p>
+                                <p id="activeStaffBadge" class="text-lg font-bold">0</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Grid -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        
+                        <!-- Column 1 & 2: Fuel Tanks Live Monitor -->
+                        <div class="lg:col-span-2 bg-white border border-hdBorder rounded-3xl p-6 shadow-sm">
+                            <div class="flex justify-between items-center mb-6">
+                                <div>
+                                    <h3 class="text-base font-bold text-hdTextPrimary flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-hdPrimary">propane_tank</span>
+                                        Monitoramento em Tempo Real dos Tanques
+                                    </h3>
+                                    <p class="text-xs text-hdTextSecondary">Capacidade atual comparada ao volume de reserva mínima.</p>
+                                </div>
+                                <button onclick="switchTab('tanks')" class="text-xs font-bold text-hdPrimary hover:underline flex items-center gap-0.5">
+                                    <span>Gerenciar</span>
+                                    <span class="material-symbols-outlined text-sm font-bold">arrow_forward</span>
+                                </button>
+                            </div>
+                            <!-- Tanks grid container -->
+                            <div id="dashboardTanksGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <!-- Dynamically loaded tanks go here -->
+                                <div class="col-span-2 text-center py-8 text-hdTextSecondary text-xs">
+                                    Nenhum tanque registrado ainda. Vá para a aba "Tanques" para adicionar.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Column 3: Nozzles and System Status -->
+                        <div class="bg-white border border-hdBorder rounded-3xl p-6 shadow-sm flex flex-col justify-between">
+                            <div>
+                                <h3 class="text-base font-bold text-hdTextPrimary mb-4 flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-hdPrimary">water_drop</span>
+                                    Status dos Bicos e Bombas
+                                </h3>
+                                <div id="dashboardNozzlesList" class="space-y-3">
+                                    <!-- Dynamic list of nozzles -->
+                                    <p class="text-xs text-hdTextSecondary text-center py-4">Nenhum bico cadastrado.</p>
+                                </div>
+                            </div>
+
+                            <div class="border-t border-hdBorder pt-4 mt-4">
+                                <h3 class="text-sm font-bold text-hdTextPrimary mb-2">Escala de Turno Atual</h3>
+                                <div id="dashboardActiveShift" class="bg-hdSurfaceContainer p-3 rounded-xl border border-hdBorder/60 flex items-center justify-between text-xs">
+                                    <div>
+                                        <p id="dashboardShiftEmployee" class="font-bold">Nenhum frentista alocado</p>
+                                        <p id="dashboardShiftTime" class="text-hdTextSecondary text-[11px]">Turno: --</p>
+                                    </div>
+                                    <span class="material-symbols-outlined text-hdPrimary text-lg">calendar_today</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Row 2: Sales and Reports Quick Overview -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Recent reports -->
+                        <div class="bg-white border border-hdBorder rounded-3xl p-6 shadow-sm">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-sm font-bold text-hdTextPrimary flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-hdPrimary">analytics</span>
+                                    Vendas e Relatórios Recentes
+                                </h3>
+                                <button onclick="switchTab('reports')" class="text-xs text-hdPrimary hover:underline">Ver Todos</button>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-xs text-left">
+                                    <thead>
+                                        <tr class="text-[10px] text-hdTextSecondary uppercase font-bold border-b border-hdBorder bg-hdSurface">
+                                            <th class="py-2.5 px-3">Data</th>
+                                            <th class="py-2.5 px-3">Combustível</th>
+                                            <th class="py-2.5 px-3 text-right">Liters Vendidos</th>
+                                            <th class="py-2.5 px-3 text-right">Total Faturamento</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dashboardReportsTable">
+                                        <tr>
+                                            <td colspan="4" class="py-4 text-center text-hdTextSecondary">Nenhum relatório diário registrado ainda.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- System Audit Log Summary -->
+                        <div class="bg-white border border-hdBorder rounded-3xl p-6 shadow-sm">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-sm font-bold text-hdTextPrimary flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-hdPrimary">history</span>
+                                    Log de Atividades e Auditoria Recente
+                                </h3>
+                                <button onclick="switchTab('audits')" class="text-xs text-hdPrimary hover:underline">Ver Histórico</button>
+                            </div>
+                            <div id="dashboardAuditTimeline" class="space-y-3">
+                                <!-- Timeline items go here -->
+                                <p class="text-xs text-hdTextSecondary text-center py-4">Sem eventos de auditoria.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SCREEN B: FUEL TANKS VIEW -->
+                <div id="screen-tanks" class="hidden space-y-6">
+                    <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                        <div>
+                            <h2 class="text-xl font-bold">Tanques de Combustível</h2>
+                            <p class="text-xs text-hdTextSecondary">Monitore a capacidade, configure limites mínimos e gerencie preços por litro.</p>
+                        </div>
+                        <button onclick="openAddTankModal()" class="bg-hdPrimary text-white font-bold px-4 py-2.5 rounded-xl hover:bg-blue-700 transition flex items-center space-x-1.5 self-start text-xs">
+                            <span class="material-symbols-outlined text-sm font-bold">add</span>
+                            <span>Adicionar Novo Tanque</span>
+                        </button>
+                    </div>
+
+                    <!-- Tanks complete layout -->
+                    <div id="tanksListContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Tank Cards loaded dynamically -->
+                    </div>
+                </div>
+
+                <!-- SCREEN C: EMPLOYEES VIEW -->
+                <div id="screen-employees" class="hidden space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-xl font-bold">Equipe e Escalas de Trabalho</h2>
+                            <p class="text-xs text-hdTextSecondary">Gerencie funcionários, cargos, telefones de contato e aloque turnos.</p>
+                        </div>
+                        <button onclick="openAddEmployeeModal()" class="bg-hdPrimary text-white font-bold px-4 py-2.5 rounded-xl hover:bg-blue-700 transition flex items-center space-x-1.5 text-xs">
+                            <span class="material-symbols-outlined text-sm font-bold">add_moderator</span>
+                            <span>Novo Frentista/Funcionário</span>
+                        </button>
+                    </div>
+
+                    <!-- Tab Row for Employees View -->
+                    <div class="border-b border-hdBorder flex space-x-6 text-xs font-bold mb-2">
+                        <button onclick="setEmployeeViewTab('list')" id="btnEmpTabList" class="pb-3 border-b-2 border-hdPrimary text-hdPrimary transition focus:outline-none">Equipe & Escalas Gerais</button>
+                        <button onclick="setEmployeeViewTab('calendar')" id="btnEmpTabCalendar" class="pb-3 border-b-2 border-transparent text-hdTextSecondary hover:text-hdTextPrimary transition focus:outline-none">📅 Calendário Mensal de Escalas</button>
+                    </div>
+
+                    <!-- View Section A: Traditional List & Roster list -->
+                    <div id="employeeViewSection-list" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Column 1: Employees List -->
+                        <div class="lg:col-span-2 bg-white border border-hdBorder rounded-3xl p-6 shadow-sm">
+                            <h3 class="text-base font-bold text-hdTextPrimary mb-4">Lista de Funcionários</h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-xs text-left">
+                                    <thead>
+                                        <tr class="text-[10px] text-hdTextSecondary uppercase font-bold border-b border-hdBorder bg-hdSurface">
+                                            <th class="py-3 px-4">Nome</th>
+                                            <th class="py-3 px-4">Cargo</th>
+                                            <th class="py-3 px-4">Telefone</th>
+                                            <th class="py-3 px-4">Turno Atual</th>
+                                            <th class="py-3 px-4 text-right">Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="employeesTableBody">
+                                        <!-- Loaded dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Column 2: Shift Allocations / Rosters -->
+                        <div class="bg-white border border-hdBorder rounded-3xl p-6 shadow-sm">
+                            <h3 class="text-base font-bold text-hdTextPrimary mb-4">Escala Geral de Turnos</h3>
+                            <div id="shiftsAllocationContainer" class="space-y-3">
+                                <!-- Loaded dynamically -->
+                            </div>
+                            <button onclick="openAddShiftModal()" class="w-full border-2 border-dashed border-hdBorder text-hdPrimary font-semibold hover:bg-hdSurfaceContainer hover:border-hdPrimary transition mt-4 py-2.5 rounded-xl text-xs flex items-center justify-center space-x-1">
+                                <span class="material-symbols-outlined text-sm">schedule</span>
+                                <span>Alocar Novo Turno na Agenda</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- View Section B: Interactive Monthly Shift Calendar -->
+                    <div id="employeeViewSection-calendar" class="hidden space-y-6">
+                        <div class="bg-white border border-hdBorder rounded-3xl p-6 shadow-sm">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-base font-bold text-hdTextPrimary flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-hdPrimary">calendar_month</span>
+                                    Painel Mensal de Plantões (31 Dias)
+                                </h3>
+                                <div class="text-[11px] text-hdTextSecondary font-semibold">👉 Selecione qualquer dia na grade para visualizar ou alocar plantões.</div>
+                            </div>
+                            
+                            <!-- 7 Column Calendar Grid Header -->
+                            <div class="grid grid-cols-7 gap-2 bg-hdSurface border border-hdBorder rounded-2xl p-2.5 text-center text-[10px] font-bold text-hdPrimary uppercase tracking-wider mb-3">
+                                <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
+                            </div>
+
+                            <!-- Calendar Grid Container -->
+                            <div id="shiftCalendarGrid" class="grid grid-cols-7 gap-2">
+                                <!-- Loaded dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Selected Day Details Panel -->
+                        <div id="calendarSelectedDayPanel" class="bg-white border border-hdBorder rounded-3xl p-6 shadow-sm space-y-4">
+                            <div class="flex justify-between items-center border-b border-hdBorder/60 pb-3">
+                                <h4 class="font-bold text-sm text-hdTextPrimary" id="calendarSelectedDayTitle">Plantonistas do Dia 01</h4>
+                                <button onclick="openAddShiftForSelectedDay()" class="bg-hdPrimary hover:bg-blue-700 text-white font-bold px-3.5 py-1.5 rounded-xl text-xs flex items-center space-x-1">
+                                    <span class="material-symbols-outlined text-xs font-bold">add</span>
+                                    <span>Escalar Colaborador</span>
+                                </button>
+                            </div>
+                            <div id="calendarSelectedDayList" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <!-- Loaded dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SCREEN D: DAILY REPORTS VIEW -->
+                <div id="screen-reports" class="hidden space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-xl font-bold">Relatórios Diários de Operação</h2>
+                            <p class="text-xs text-hdTextSecondary">Fechamento de caixa, litros de combustíveis vendidos, recebimentos e faturamento.</p>
+                        </div>
+                        <button onclick="openAddReportModal()" class="bg-hdPrimary text-white font-bold px-4 py-2.5 rounded-xl hover:bg-blue-700 transition flex items-center space-x-1.5 text-xs">
+                            <span class="material-symbols-outlined text-sm font-bold">playlist_add</span>
+                            <span>Lançar Relatório Diário</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-white border border-hdBorder rounded-3xl p-6 shadow-sm">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs text-left">
+                                <thead>
+                                    <tr class="text-[10px] text-hdTextSecondary uppercase font-bold border-b border-hdBorder bg-hdSurface">
+                                        <th class="py-3 px-4">Data</th>
+                                        <th class="py-3 px-4">Combustível</th>
+                                        <th class="py-3 px-4 text-right">Estoque Inicial (L)</th>
+                                        <th class="py-3 px-4 text-right">Volume Recebido (L)</th>
+                                        <th class="py-3 px-4 text-right">Liters Vendidos (L)</th>
+                                        <th class="py-3 px-4 text-right">Estoque Final (L)</th>
+                                        <th class="py-3 px-4 text-right">Total Faturamento</th>
+                                        <th class="py-3 px-4">Observação</th>
+                                        <th class="py-3 px-4 text-right">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reportsTableBody">
+                                    <!-- Dynamic rows loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SCREEN E: NOZZLES VIEW -->
+                <div id="screen-nozzles" class="hidden space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-xl font-bold">Bicos e Bombas de Combustível</h2>
+                            <p class="text-xs text-hdTextSecondary">Gerencie bicos injetores ativos, associados aos tanques de armazenamento.</p>
+                        </div>
+                        <button onclick="openAddNozzleModal()" class="bg-hdPrimary text-white font-bold px-4 py-2.5 rounded-xl hover:bg-blue-700 transition flex items-center space-x-1.5 text-xs">
+                            <span class="material-symbols-outlined text-sm font-bold">add</span>
+                            <span>Cadastrar Novo Bico</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-white border border-hdBorder rounded-3xl p-6 shadow-sm">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="nozzlesGridContainer">
+                            <!-- Loaded dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SCREEN F: COMPLIANCE & CALIBRATION VIEW -->
+                <div id="screen-compliance" class="hidden space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <h2 class="text-xl font-bold">Calibração de Bombas e Testes de Qualidade</h2>
+                            <p class="text-xs text-hdTextSecondary">Laudos de aferição das bombas (Inmetro) e análises de densidade e aspecto do combustível.</p>
+                        </div>
+                        <div class="flex items-center space-x-2 shrink-0">
+                            <button onclick="openAddCalibrationModal()" class="bg-hdPrimary text-white font-semibold px-3 py-2 rounded-xl hover:bg-blue-700 transition text-xs flex items-center space-x-1">
+                                <span class="material-symbols-outlined text-sm">construction</span>
+                                <span>Lançar Calibração</span>
+                            </button>
+                            <button onclick="openAddConformityModal()" class="bg-green-700 text-white font-semibold px-3 py-2 rounded-xl hover:bg-green-800 transition text-xs flex items-center space-x-1">
+                                <span class="material-symbols-outlined text-sm">science</span>
+                                <span>Lançar Qualidade</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Left Panel: Calibration Records -->
+                        <div class="bg-white border border-hdBorder rounded-3xl p-6 shadow-sm">
+                            <h3 class="text-sm font-bold text-hdTextPrimary mb-4 flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-hdPrimary">verified</span>
+                                Registros de Calibração (Bombas)
+                            </h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-xs text-left">
+                                    <thead>
+                                        <tr class="text-[10px] text-hdTextSecondary uppercase font-bold border-b border-hdBorder bg-hdSurface">
+                                            <th class="py-2.5 px-3">Data</th>
+                                            <th class="py-2.5 px-3">Referência</th>
+                                            <th class="py-2.5 px-3 text-right">Vol Nom/Med (L)</th>
+                                            <th class="py-2.5 px-3 text-right">Erro %</th>
+                                            <th class="py-2.5 px-3">Laudo Inmetro</th>
+                                            <th class="py-2.5 px-3">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="calibrationsTableBody">
+                                        <!-- Loaded dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Right Panel: Fuel Conformity (Quality Tests) -->
+                        <div class="bg-white border border-hdBorder rounded-3xl p-6 shadow-sm">
+                            <h3 class="text-sm font-bold text-hdTextPrimary mb-4 flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-green-700">science</span>
+                                Análises de Conformidade do Combustível
+                            </h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-xs text-left">
+                                    <thead>
+                                        <tr class="text-[10px] text-hdTextSecondary uppercase font-bold border-b border-hdBorder bg-hdSurface">
+                                            <th class="py-2.5 px-3">Data</th>
+                                            <th class="py-2.5 px-3">Combustível</th>
+                                            <th class="py-2.5 px-3 text-right">Densidade / Temp</th>
+                                            <th class="py-2.5 px-3 text-right">Etanol %</th>
+                                            <th class="py-2.5 px-3">Técnico</th>
+                                            <th class="py-2.5 px-3">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="conformityTableBody">
+                                        <!-- Loaded dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SCREEN G: AUDIT LOGS VIEW -->
+                <div id="screen-audits" class="hidden space-y-6">
+                    <div>
+                        <h2 class="text-xl font-bold">Livro de Auditoria e Conformidade</h2>
+                        <p class="text-xs text-hdTextSecondary">Linha do tempo oficial registrando todas as ações efetuadas por gerentes e operadores no sistema.</p>
+                    </div>
+
+                    <div class="bg-white border border-hdBorder rounded-3xl p-6 shadow-sm">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-base font-bold text-hdTextPrimary">Histórico de Alterações</h3>
+                            <button onclick="clearAuditLogs()" class="text-xs text-hdRed hover:underline flex items-center gap-0.5">
+                                <span class="material-symbols-outlined text-sm">delete_sweep</span>
+                                <span>Limpar Logs</span>
+                            </button>
+                        </div>
+                        <div class="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar" id="auditsListTimeline">
+                            <!-- Loaded dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SCREEN H: CALENDAR VIEW -->
+                <div id="screen-calendar" class="hidden space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                        <div>
+                            <h2 class="text-xl font-bold">Calendário de Marcações e Compromissos 📅</h2>
+                            <p class="text-xs text-hdTextSecondary">Gerencie manutenções programadas, inspeções do Inmetro/ANP, auditorias fiscais e entregas de combustíveis.</p>
+                        </div>
+                        <button onclick="openAddAppointmentModal()" class="bg-hdPrimary text-white font-bold px-4 py-2.5 rounded-xl hover:bg-blue-700 transition flex items-center justify-center space-x-1.5 text-xs self-start sm:self-auto">
+                            <span class="material-symbols-outlined text-sm font-bold">add</span>
+                            <span>Agendar Compromisso</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-white border border-hdBorder rounded-3xl p-6 shadow-sm">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="appointmentsGridContainer">
+                            <!-- Loaded dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SCREEN I: SYSTEMS & SECURITY VIEW -->
+                <div id="screen-systems" class="hidden space-y-6">
+                    <!-- Lock State View -->
+                    <div id="systemsLockContainer" class="max-w-md w-full mx-auto my-12 bg-white border border-hdBorder rounded-3xl p-8 shadow-xl text-center">
+                        <div class="w-16 h-16 rounded-full bg-blue-100 text-hdPrimary flex items-center justify-center mx-auto mb-4">
+                            <span class="material-symbols-outlined text-3xl font-bold">lock</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-hdTextPrimary mb-2">Área Restrita da Gerência</h3>
+                        <p class="text-xs text-hdTextSecondary mb-6 leading-relaxed">
+                            Para acessar as credenciais de sistemas do posto, dados bancários de faturamento PJ e cadastrar visualizadores de equipe, digite a senha administrativa.
+                        </p>
+                        <form onsubmit="unlockSystemsArea(event)" class="space-y-4">
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute left-3 top-3.5 text-hdTextSecondary text-lg">lock</span>
+                                <input type="password" id="systemsManagerPasswordInput" placeholder="Digite a senha (padrão: admin123)" required
+                                       class="w-full bg-hdSurface border border-hdBorder rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-hdPrimary transition">
+                            </div>
+                            <button type="submit" class="w-full bg-hdPrimary text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition flex items-center justify-center space-x-2">
+                                <span class="material-symbols-outlined text-sm">lock_open</span>
+                                <span>Desbloquear Área</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Unlocked State View -->
+                    <div id="systemsContentContainer" class="hidden space-y-6">
+                        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                            <div>
+                                <h2 class="text-xl font-bold">Sistemas, Finanças e Segurança 🔒</h2>
+                                <p class="text-xs text-hdTextSecondary">Área Restrita do Gerente. Configure dados de faturamento PJ, contas bancárias PJ e logins de terceiros.</p>
+                            </div>
+                            <button onclick="lockSystemsArea()" class="border border-hdBorder text-hdTextSecondary hover:bg-hdSurfaceContainer px-4 py-2 rounded-xl transition text-xs flex items-center space-x-1 self-start sm:self-auto">
+                                <span class="material-symbols-outlined text-sm">lock</span>
+                                <span>Bloquear Acesso</span>
+                            </button>
+                        </div>
+
+                        <!-- 2 columns/grids for settings -->
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            
+                            <!-- Left: PJ Bank Info Card -->
+                            <div class="bg-white border border-hdBorder rounded-3xl p-6 shadow-sm flex flex-col justify-between">
+                                <div>
+                                    <h3 class="text-sm font-bold text-hdTextPrimary mb-1 flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-hdPrimary">account_balance</span>
+                                        Dados PJ & Conta Bancária
+                                    </h3>
+                                    <p class="text-[11px] text-hdTextSecondary mb-4">Informações de faturamento e chave de recebimento PIX corporativo.</p>
+                                    
+                                    <div class="space-y-3.5">
+                                        <div class="bg-hdSurfaceContainer p-3.5 rounded-2xl border border-hdBorder/60">
+                                            <p class="text-[10px] text-hdTextSecondary uppercase font-bold mb-1">Instituição</p>
+                                            <p id="systemsBankName" class="text-sm font-bold text-hdTextPrimary">Banco do Brasil</p>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <div class="bg-hdSurfaceContainer p-3.5 rounded-2xl border border-hdBorder/60">
+                                                <p class="text-[10px] text-hdTextSecondary uppercase font-bold mb-1">Agência</p>
+                                                <p id="systemsBankAgency" class="text-sm font-bold text-hdTextPrimary">1234-5</p>
+                                            </div>
+                                            <div class="bg-hdSurfaceContainer p-3.5 rounded-2xl border border-hdBorder/60">
+                                                <p class="text-[10px] text-hdTextSecondary uppercase font-bold mb-1">Conta Corrente</p>
+                                                <p id="systemsBankAccount" class="text-sm font-bold text-hdTextPrimary">98765-4</p>
+                                            </div>
+                                        </div>
+                                        <div class="bg-hdSurfaceContainer p-3.5 rounded-2xl border border-hdBorder/60">
+                                            <p class="text-[10px] text-hdTextSecondary uppercase font-bold mb-1">Chave Pix (PJ)</p>
+                                            <p id="systemsBankPix" class="text-xs font-bold text-hdTextPrimary truncate">12.345.678/0001-99</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button onclick="openEditBankModal()" class="w-full bg-hdPrimary text-white font-semibold py-2.5 rounded-xl hover:bg-blue-700 transition mt-4 text-xs flex items-center justify-center space-x-1">
+                                    <span class="material-symbols-outlined text-sm">edit</span>
+                                    <span>Editar Dados PJ e Banco</span>
+                                </button>
+                            </div>
+
+                            <!-- Right: Credentials management -->
+                            <div class="lg:col-span-2 bg-white border border-hdBorder rounded-3xl p-6 shadow-sm">
+                                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+                                    <div>
+                                        <h3 class="text-sm font-bold text-hdTextPrimary flex items-center gap-1.5">
+                                            <span class="material-symbols-outlined text-hdPrimary">key</span>
+                                            Credenciais de Acesso de Sistemas
+                                        </h3>
+                                        <p class="text-[11px] text-hdTextSecondary">Logins, links e senhas dos concentradores, SEFAZ e câmeras.</p>
+                                    </div>
+                                    <button onclick="openAddCredentialModal()" class="bg-hdPrimary text-white font-bold px-3 py-2 rounded-xl hover:bg-blue-700 transition text-xs flex items-center space-x-1">
+                                        <span class="material-symbols-outlined text-sm">add</span>
+                                        <span>Nova Credencial</span>
+                                    </button>
+                                </div>
+
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-xs text-left">
+                                        <thead>
+                                            <tr class="text-[10px] text-hdTextSecondary uppercase font-bold border-b border-hdBorder bg-hdSurface">
+                                                <th class="py-2.5 px-3">Sistema / Serviço</th>
+                                                <th class="py-2.5 px-3">Categoria</th>
+                                                <th class="py-2.5 px-3">Usuário</th>
+                                                <th class="py-2.5 px-3">Senha</th>
+                                                <th class="py-2.5 px-3 text-right">Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="systemsCredentialsTableBody">
+                                            <!-- Loaded dynamically -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Secondary card: Viewers accounts -->
+                        <div class="bg-white border border-hdBorder rounded-3xl p-6 shadow-sm">
+                            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+                                <div>
+                                    <h3 class="text-sm font-bold text-hdTextPrimary flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-hdPrimary">badge_visibility</span>
+                                        Visualizadores Autorizados
+                                    </h3>
+                                    <p class="text-xs text-hdTextSecondary">Contas de equipe secundárias com acesso somente-leitura ao painel.</p>
+                                </div>
+                                <button onclick="openAddViewerModal()" class="bg-green-700 text-white font-semibold px-3 py-2 rounded-xl hover:bg-green-800 transition text-xs flex items-center space-x-1">
+                                    <span class="material-symbols-outlined text-sm font-bold">add_moderator</span>
+                                    <span>Adicionar Visualizador</span>
+                                </button>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-xs text-left">
+                                    <thead>
+                                        <tr class="text-[10px] text-hdTextSecondary uppercase font-bold border-b border-hdBorder bg-hdSurface">
+                                            <th class="py-2.5 px-3">Nome</th>
+                                            <th class="py-2.5 px-3">E-mail (Login)</th>
+                                            <th class="py-2.5 px-3">Senha</th>
+                                            <th class="py-2.5 px-3">Role</th>
+                                            <th class="py-2.5 px-3 text-right">Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="systemsViewersTableBody">
+                                        <!-- Loaded dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </section>
+
+        </main>
+    </div>
+
+    <!-- FOOTER WITH COPYRIGHT -->
+    <footer class="bg-white border-t border-hdBorder py-3 text-center text-[11px] text-hdTextSecondary shrink-0 flex justify-between px-6">
+        <p>&copy; 2026 PostoAdmin. Todos os direitos reservados.</p>
+        <p class="flex items-center gap-1">
+            <span class="material-symbols-outlined text-xs">shield_lock</span>
+            <span>Segurança de Dados Firebase AES-256</span>
+        </p>
+    </footer>
+
+    <!-- ====== MODALS CONTAINER ====== -->
+
+    <!-- 1. Firebase Credentials Setup Modal -->
+    <div id="configModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white border border-hdBorder rounded-3xl max-w-lg w-full p-6 shadow-2xl relative">
+            <button onclick="toggleConfigModal()" class="absolute right-4 top-4 w-8 h-8 rounded-full hover:bg-hdSurfaceContainer flex items-center justify-center">
+                <span class="material-symbols-outlined text-lg">close</span>
+            </button>
+            <h3 class="text-lg font-bold text-hdPrimary flex items-center gap-2 mb-2">
+                <span class="material-symbols-outlined">settings_suggest</span>
+                Integração com seu Console Firebase
+            </h3>
+            <p class="text-xs text-hdTextSecondary mb-4">
+                Cole abaixo o seu objeto <code class="bg-hdSurfaceContainer px-1 py-0.5 rounded font-mono text-hdRed">firebaseConfig</code> obtido no painel de configurações do seu projeto do Firebase.
+            </p>
+
+            <textarea id="firebaseConfigInput" rows="10" placeholder='const firebaseConfig = {
+  apiKey: "AIzaSy...",
+  authDomain: "seu-projeto.firebaseapp.com",
+  projectId: "seu-projeto",
+  ...
+};' class="w-full font-mono text-xs p-4 bg-hdSurface border border-hdBorder rounded-xl focus:outline-none focus:border-hdPrimary custom-scrollbar mb-4"></textarea>
+
+            <div class="flex space-x-3 justify-end">
+                <button onclick="toggleConfigModal()" class="px-4 py-2 text-xs font-semibold hover:bg-hdSurfaceContainer rounded-xl transition">Cancelar</button>
+                <button onclick="saveFirebaseConfig()" class="bg-hdPrimary text-white font-bold px-4 py-2 rounded-xl hover:bg-blue-700 transition text-xs">Salvar e Conectar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Modal: Add Tank -->
+    <div id="addTankModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white border border-hdBorder rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
+            <h3 class="text-base font-bold mb-4">Adicionar Tanque</h3>
+            <form onsubmit="submitAddTank(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-hdTextSecondary mb-1">Identificação / Nome</label>
+                    <input type="text" id="tankNameInput" placeholder="Ex: Tanque 01 - Diesel S10" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-hdPrimary">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Capacidade Total (Litros)</label>
+                        <input type="number" id="tankCapacityInput" value="30000" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-hdPrimary">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Limite Crítico Mínimo (Litros)</label>
+                        <input type="number" id="tankThresholdInput" value="5000" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-hdPrimary">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Nível Atual (Litros)</label>
+                        <input type="number" id="tankCurrentLevelInput" value="20000" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-hdPrimary">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Preço do Litro (R$)</label>
+                        <input type="number" step="0.001" id="tankPriceInput" value="5.899" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-hdPrimary">
+                    </div>
+                </div>
+                <div class="flex space-x-3 justify-end pt-2">
+                    <button type="button" onclick="closeModal('addTankModal')" class="px-3 py-1.5 text-xs hover:bg-hdSurfaceContainer rounded-xl">Cancelar</button>
+                    <button type="submit" class="bg-hdPrimary text-white font-bold px-4 py-1.5 rounded-xl text-xs">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. Modal: Add Employee -->
+    <div id="addEmployeeModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white border border-hdBorder rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
+            <h3 class="text-base font-bold mb-4">Novo Funcionário</h3>
+            <form onsubmit="submitAddEmployee(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-hdTextSecondary mb-1">Nome Completo</label>
+                    <input type="text" id="empNameInput" placeholder="Ex: Roberto Carlos" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-hdTextSecondary mb-1">Cargo / Função</label>
+                    <select id="empRoleInput" class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                        <option value="Frentista">Frentista</option>
+                        <option value="Operador de Caixa">Operador de Caixa</option>
+                        <option value="Supervisor">Supervisor</option>
+                        <option value="Gerente Geral">Gerente Geral</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-hdTextSecondary mb-1">Telefone Celular</label>
+                    <input type="text" id="empPhoneInput" placeholder="Ex: (11) 98765-4321" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                </div>
+                <div class="flex space-x-3 justify-end pt-2">
+                    <button type="button" onclick="closeModal('addEmployeeModal')" class="px-3 py-1.5 text-xs hover:bg-hdSurfaceContainer rounded-xl">Cancelar</button>
+                    <button type="submit" class="bg-hdPrimary text-white font-bold px-4 py-1.5 rounded-xl text-xs">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 4. Modal: Add Shift -->
+    <div id="addShiftModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white border border-hdBorder rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
+            <h3 class="text-base font-bold mb-4">Alocar Funcionário em Turno</h3>
+            <form onsubmit="submitAddShift(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-hdTextSecondary mb-1">Escolher Funcionário</label>
+                    <select id="shiftEmployeeSelect" class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                        <!-- Loaded dynamically -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-hdTextSecondary mb-1">Dia de Trabalho / Dia do Mês</label>
+                    <select id="shiftDaySelect" class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                        <option value="Dia 01">Dia 01</option>
+                        <option value="Dia 02">Dia 02</option>
+                        <option value="Dia 03">Dia 03</option>
+                        <option value="Dia 04">Dia 04</option>
+                        <option value="Dia 05">Dia 05</option>
+                        <option value="Dia 06">Dia 06</option>
+                        <option value="Dia 07">Dia 07</option>
+                        <option value="Dia 08">Dia 08</option>
+                        <option value="Dia 09">Dia 09</option>
+                        <option value="Dia 10">Dia 10</option>
+                        <option value="Dia 11">Dia 11</option>
+                        <option value="Dia 12">Dia 12</option>
+                        <option value="Dia 13">Dia 13</option>
+                        <option value="Dia 14">Dia 14</option>
+                        <option value="Dia 15">Dia 15</option>
+                        <option value="Dia 16">Dia 16</option>
+                        <option value="Dia 17">Dia 17</option>
+                        <option value="Dia 18">Dia 18</option>
+                        <option value="Dia 19">Dia 19</option>
+                        <option value="Dia 20">Dia 20</option>
+                        <option value="Dia 21">Dia 21</option>
+                        <option value="Dia 22">Dia 22</option>
+                        <option value="Dia 23">Dia 23</option>
+                        <option value="Dia 24">Dia 24</option>
+                        <option value="Dia 25">Dia 25</option>
+                        <option value="Dia 26">Dia 26</option>
+                        <option value="Dia 27">Dia 27</option>
+                        <option value="Dia 28">Dia 28</option>
+                        <option value="Dia 29">Dia 29</option>
+                        <option value="Dia 30">Dia 30</option>
+                        <option value="Dia 31">Dia 31</option>
+                        <option value="Segunda-feira">Segunda-feira</option>
+                        <option value="Terça-feira">Terça-feira</option>
+                        <option value="Quarta-feira">Quarta-feira</option>
+                        <option value="Quinta-feira">Quinta-feira</option>
+                        <option value="Sexta-feira">Sexta-feira</option>
+                        <option value="Sábado">Sábado</option>
+                        <option value="Domingo">Domingo</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-hdTextSecondary mb-1">Horário do Turno</label>
+                    <select id="shiftPeriodSelect" class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                        <option value="Manhã (06h - 14h)">Manhã (06h - 14h)</option>
+                        <option value="Tarde (14h - 22h)">Tarde (14h - 22h)</option>
+                        <option value="Noite (22h - 06h)">Noite (22h - 06h)</option>
+                        <option value="Folga">Folga</option>
+                    </select>
+                </div>
+                <div class="flex space-x-3 justify-end pt-2">
+                    <button type="button" onclick="closeModal('addShiftModal')" class="px-3 py-1.5 text-xs hover:bg-hdSurfaceContainer rounded-xl">Cancelar</button>
+                    <button type="submit" class="bg-hdPrimary text-white font-bold px-4 py-1.5 rounded-xl text-xs">Lançar Escala</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 5. Modal: Add Daily Report -->
+    <div id="addReportModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white border border-hdBorder rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
+            <h3 class="text-base font-bold mb-4">Lançar Relatório Diário de Operação</h3>
+            <form onsubmit="submitAddReport(event)" class="space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Data</label>
+                        <input type="date" id="repDateInput" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Combustível</label>
+                        <select id="repFuelSelect" class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                            <option value="Gasolina Comum">Gasolina Comum</option>
+                            <option value="Gasolina Aditivada">Gasolina Aditivada</option>
+                            <option value="Etanol Comum">Etanol Comum</option>
+                            <option value="Diesel S10">Diesel S10</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <label class="block text-[11px] font-bold text-hdTextSecondary mb-1">Estoque Inicial (L)</label>
+                        <input type="number" id="repOpenInput" value="15000" class="w-full bg-hdSurface border border-hdBorder rounded-xl px-2 py-2 text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-hdTextSecondary mb-1">Recebido (L)</label>
+                        <input type="number" id="repRecInput" value="0" class="w-full bg-hdSurface border border-hdBorder rounded-xl px-2 py-2 text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-hdTextSecondary mb-1">Vendido (L)</label>
+                        <input type="number" id="repSoldInput" value="2200" class="w-full bg-hdSurface border border-hdBorder rounded-xl px-2 py-2 text-xs">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Faturamento Bruto (R$)</label>
+                        <input type="number" step="0.01" id="repRevenueInput" value="12977.80" class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Quantidade Cupons</label>
+                        <input type="number" id="repCountInput" value="85" class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-hdTextSecondary mb-1">Observações do Dia</label>
+                    <input type="text" id="repObsInput" placeholder="Ex: Fechamento normal sem diferenças" class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                </div>
+                <div class="flex space-x-3 justify-end pt-2">
+                    <button type="button" onclick="closeModal('addReportModal')" class="px-3 py-1.5 text-xs hover:bg-hdSurfaceContainer rounded-xl">Cancelar</button>
+                    <button type="submit" class="bg-hdPrimary text-white font-bold px-4 py-1.5 rounded-xl text-xs">Registrar Fechamento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 6. Modal: Add Nozzle -->
+    <div id="addNozzleModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white border border-hdBorder rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
+            <h3 class="text-base font-bold mb-4">Adicionar Novo Bico de Abastecimento</h3>
+            <form onsubmit="submitAddNozzle(event)" class="space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Número do Bico</label>
+                        <input type="text" id="nozNumInput" placeholder="Ex: Bico 03" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Nome da Bomba</label>
+                        <input type="text" id="nozPumpInput" placeholder="Ex: Bomba Dupla Sul" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Vincular ao Tanque</label>
+                        <select id="nozTankSelect" class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                            <!-- Loaded dynamically -->
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Combustível</label>
+                        <select id="nozTypeSelect" class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                            <option value="Gasolina Comum">Gasolina Comum</option>
+                            <option value="Gasolina Aditivada">Gasolina Aditivada</option>
+                            <option value="Etanol Comum">Etanol Comum</option>
+                            <option value="Diesel S10">Diesel S10</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex space-x-3 justify-end pt-2">
+                    <button type="button" onclick="closeModal('addNozzleModal')" class="px-3 py-1.5 text-xs hover:bg-hdSurfaceContainer rounded-xl">Cancelar</button>
+                    <button type="submit" class="bg-hdPrimary text-white font-bold px-4 py-1.5 rounded-xl text-xs">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 7. Modal: Add Calibration -->
+    <div id="addCalibrationModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white border border-hdBorder rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
+            <h3 class="text-base font-bold mb-4">Lançar Calibração de Bomba (Aferição)</h3>
+            <form onsubmit="submitAddCalibration(event)" class="space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Data do Teste</label>
+                        <input type="date" id="calDateInput" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Bico / Bomba Referência</label>
+                        <input type="text" id="calRefInput" placeholder="Ex: Bico 01 - Bomba Sul" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-hdTextSecondary mb-1">Desvio Volumétrico (ml)</label>
+                    <div class="flex space-x-2">
+                        <input type="number" id="calibDeviationMl" value="0" min="-200" max="200" step="5" class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs font-semibold" oninput="updateCalibrationCalculator()">
+                        <span class="text-xs text-hdTextSecondary self-center">ml</span>
+                    </div>
+                </div>
+                <!-- Shortcut buttons in a grid -->
+                <div>
+                    <label class="block text-[10px] font-bold text-hdTextSecondary uppercase tracking-wider mb-1.5">Atalhos de Desvio (ml)</label>
+                    <div class="grid grid-cols-5 gap-1.5">
+                        <button type="button" onclick="setCalibDeviation(-100)" class="bg-hdSurface border border-hdBorder hover:bg-hdPrimaryContainer hover:text-hdPrimary rounded-lg py-1 text-[10px] font-bold">-100</button>
+                        <button type="button" onclick="setCalibDeviation(-50)" class="bg-hdSurface border border-hdBorder hover:bg-hdPrimaryContainer hover:text-hdPrimary rounded-lg py-1 text-[10px] font-bold">-50</button>
+                        <button type="button" onclick="setCalibDeviation(-20)" class="bg-hdSurface border border-hdBorder hover:bg-hdPrimaryContainer hover:text-hdPrimary rounded-lg py-1 text-[10px] font-bold">-20</button>
+                        <button type="button" onclick="setCalibDeviation(0)" class="bg-hdSurface border border-hdBorder hover:bg-hdPrimaryContainer hover:text-hdPrimary rounded-lg py-1 text-[10px] font-bold">0</button>
+                        <button type="button" onclick="setCalibDeviation(20)" class="bg-hdSurface border border-hdBorder hover:bg-hdPrimaryContainer hover:text-hdPrimary rounded-lg py-1 text-[10px] font-bold">+20</button>
+                        <button type="button" onclick="setCalibDeviation(40)" class="bg-hdSurface border border-hdBorder hover:bg-hdPrimaryContainer hover:text-hdPrimary rounded-lg py-1 text-[10px] font-bold">+40</button>
+                        <button type="button" onclick="setCalibDeviation(50)" class="bg-hdSurface border border-hdBorder hover:bg-hdPrimaryContainer hover:text-hdPrimary rounded-lg py-1 text-[10px] font-bold">+50</button>
+                        <button type="button" onclick="setCalibDeviation(60)" class="bg-hdSurface border border-hdBorder hover:bg-hdPrimaryContainer hover:text-hdPrimary rounded-lg py-1 text-[10px] font-bold">+60</button>
+                        <button type="button" onclick="setCalibDeviation(80)" class="bg-hdSurface border border-hdBorder hover:bg-hdPrimaryContainer hover:text-hdPrimary rounded-lg py-1 text-[10px] font-bold">+80</button>
+                        <button type="button" onclick="setCalibDeviation(100)" class="bg-hdSurface border border-hdBorder hover:bg-hdPrimaryContainer hover:text-hdPrimary rounded-lg py-1 text-[10px] font-bold">+100</button>
+                    </div>
+                </div>
+
+                <!-- Dynamic Realtime Feedback block -->
+                <div id="calibrationPreviewCard" class="bg-hdSurfaceContainer border border-hdBorder/60 rounded-2xl p-4 space-y-2">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-hdTextSecondary">Pré-visualização do Laudo</p>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div>Vol. Nominal: <span class="font-bold">20 Litros</span></div>
+                        <div>Vol. Medido: <span id="calibPreviewVol" class="font-bold text-hdPrimary">20,000 L</span></div>
+                        <div>Erro Percentual: <span id="calibPreviewErr" class="font-bold text-hdPrimary">0,000 %</span></div>
+                        <div class="flex items-center space-x-1 col-span-2">
+                            <span>Status:</span>
+                            <span id="calibPreviewStatus" class="font-black px-2 py-0.5 rounded text-[10px] bg-green-100 text-green-800">CONFORME</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Fiscal / Responsável</label>
+                        <input type="text" id="calInspectorInput" placeholder="Ex: Marcos Inmetro" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Laudo Oficial Nº</label>
+                        <input type="text" id="calLaudoInput" placeholder="Ex: 876342/2026" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                    </div>
+                </div>
+                <div class="flex space-x-3 justify-end pt-2">
+                    <button type="button" onclick="closeModal('addCalibrationModal')" class="px-3 py-1.5 text-xs hover:bg-hdSurfaceContainer rounded-xl">Cancelar</button>
+                    <button type="submit" class="bg-hdPrimary text-white font-bold px-4 py-1.5 rounded-xl text-xs">Registrar Aferição</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 8. Modal: Add Quality Test -->
+    <div id="addConformityModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white border border-hdBorder rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
+            <h3 class="text-base font-bold mb-4">Lançar Teste de Conformidade de Combustível</h3>
+            <form onsubmit="submitAddConformity(event)" class="space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Data do Teste</label>
+                        <input type="date" id="confDateInput" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Combustível</label>
+                        <select id="confFuelSelect" class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs" onchange="toggleWaterPhaseInput(); updateConformityCalculator();">
+                            <option value="Gasolina Comum">Gasolina Comum</option>
+                            <option value="Etanol Comum">Etanol Comum</option>
+                            <option value="Diesel S10">Diesel S10</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Densidade Medida (g/cm³)</label>
+                        <input type="number" step="0.0001" id="confDensityInput" value="0.7420" class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs" oninput="updateConformityCalculator()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Temperatura Medida (ºC)</label>
+                        <input type="number" step="0.1" id="confTempInput" value="20.0" class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs" oninput="updateConformityCalculator()">
+                    </div>
+                </div>
+                <!-- Water Phase input (Proveta NBR 13992) - Visible only for Gasoline -->
+                <div id="confWaterPhaseContainer" class="block">
+                    <label class="block text-xs font-bold text-hdTextSecondary mb-1">Vol. Fase Água na Proveta (ml)</label>
+                    <div class="flex space-x-2">
+                        <input type="number" step="0.5" id="confWaterPhaseInput" value="63.5" min="50" max="100" class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs" oninput="updateConformityCalculator()">
+                        <span class="text-xs text-hdTextSecondary self-center">ml</span>
+                    </div>
+                    <p class="text-[10px] text-hdTextSecondary mt-1">Mistura inicial recomendada: 50ml de gasolina + 50ml de água.</p>
+                </div>
+
+                <!-- Dynamic Live Preview Card -->
+                <div id="conformityPreviewCard" class="bg-hdSurfaceContainer border border-hdBorder/60 rounded-2xl p-4 space-y-2">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-hdTextSecondary">Pré-visualização da Análise</p>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div>Dens. Corrigida (20ºC): <span id="confPreviewCorrectedDensity" class="font-bold text-hdPrimary">0.7420 g/cm³</span></div>
+                        <div id="confPreviewEthanolRow">Teor Etanol: <span id="confPreviewEthanol" class="font-bold text-hdPrimary">28.0 %</span></div>
+                        <div class="flex items-center space-x-1 col-span-2">
+                            <span>Conclusão:</span>
+                            <span id="confPreviewStatus" class="font-black px-2 py-0.5 rounded text-[10px] bg-green-100 text-green-800">CONFORME</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Aspecto / CorVisual</label>
+                        <input type="text" id="confColorInput" placeholder="Ex: Límpido e Isento" value="Límpido e Isento" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Técnico / Químico</label>
+                        <input type="text" id="confTechInput" placeholder="Ex: Carlos Albuquerque" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                    </div>
+                </div>
+                <div class="flex space-x-3 justify-end pt-2">
+                    <button type="button" onclick="closeModal('addConformityModal')" class="px-3 py-1.5 text-xs hover:bg-hdSurfaceContainer rounded-xl">Cancelar</button>
+                    <button type="submit" class="bg-hdPrimary text-white font-bold px-4 py-1.5 rounded-xl text-xs">Gravar Laudo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL H: ADD APPOINTMENT -->
+    <div id="addAppointmentModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl relative">
+            <h3 class="text-base font-bold text-hdTextPrimary mb-2 flex items-center gap-2">
+                <span class="material-symbols-outlined text-hdPrimary">calendar_today</span>
+                Agendar Compromisso
+            </h3>
+            <p class="text-[11px] text-hdTextSecondary mb-4">Insira o título e detalhes do compromisso ou manutenção agendada.</p>
+            <form onsubmit="submitAddAppointment(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-hdTextSecondary mb-1">Título do Compromisso</label>
+                    <input type="text" id="appTitleInput" placeholder="Ex: Manutenção da Bomba 02" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2.5 text-xs">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Data</label>
+                        <input type="date" id="appDateInput" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2.5 text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Hora</label>
+                        <input type="time" id="appTimeInput" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2.5 text-xs">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-hdTextSecondary mb-1">Descrição / Detalhes</label>
+                    <textarea id="appDescInput" placeholder="Detalhes da visita ou serviço programado..." rows="3" class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs"></textarea>
+                </div>
+                <div class="flex space-x-3 justify-end pt-2">
+                    <button type="button" onclick="closeModal('addAppointmentModal')" class="px-3 py-1.5 text-xs hover:bg-hdSurfaceContainer rounded-xl">Cancelar</button>
+                    <button type="submit" class="bg-hdPrimary text-white font-bold px-4 py-1.5 rounded-xl text-xs">Salvar Compromisso</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL I: EDIT BANK INFO -->
+    <div id="editBankModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl relative">
+            <h3 class="text-base font-bold text-hdTextPrimary mb-2 flex items-center gap-2">
+                <span class="material-symbols-outlined text-hdPrimary">account_balance</span>
+                Editar Dados PJ e Conta
+            </h3>
+            <p class="text-[11px] text-hdTextSecondary mb-4">Atualize as informações do posto e os dados bancários de faturamento.</p>
+            <form onsubmit="submitEditBank(event)" class="space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Razão Social / Nome Fantasia</label>
+                        <input type="text" id="editStationNameInput" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Endereço</label>
+                        <input type="text" id="editStationEnderecoInput" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-hdTextSecondary mb-1">Instituição Bancária</label>
+                    <input type="text" id="editBankNameInput" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Agência</label>
+                        <input type="text" id="editBankAgencyInput" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Conta Corrente</label>
+                        <input type="text" id="editBankAccountInput" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-hdTextSecondary mb-1">Chave Pix (PJ)</label>
+                    <input type="text" id="editBankPixInput" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                </div>
+                <div class="flex space-x-3 justify-end pt-2">
+                    <button type="button" onclick="closeModal('editBankModal')" class="px-3 py-1.5 text-xs hover:bg-hdSurfaceContainer rounded-xl">Cancelar</button>
+                    <button type="submit" class="bg-hdPrimary text-white font-bold px-4 py-1.5 rounded-xl text-xs">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL J: ADD CREDENTIAL -->
+    <div id="addCredentialModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl relative">
+            <h3 class="text-base font-bold text-hdTextPrimary mb-2 flex items-center gap-2">
+                <span class="material-symbols-outlined text-hdPrimary">key</span>
+                Nova Credencial de Sistema
+            </h3>
+            <p class="text-[11px] text-hdTextSecondary mb-4">Guarde chaves ou credenciais de sistemas administrativos de forma segura.</p>
+            <form onsubmit="submitAddCredential(event)" class="space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Nome do Sistema / IP</label>
+                        <input type="text" id="credNameInput" placeholder="Ex: SEFAZ Portal" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Categoria</label>
+                        <select id="credCategoryInput" class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                            <option value="Operacional">Operacional</option>
+                            <option value="Fiscal">Fiscal</option>
+                            <option value="Equipamentos">Equipamentos</option>
+                            <option value="Segurança">Segurança</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Usuário / Login</label>
+                        <input type="text" id="credLoginInput" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Senha</label>
+                        <input type="password" id="credPasswordInput" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-hdTextSecondary mb-1">Observações / Links</label>
+                    <input type="text" id="credDescInput" placeholder="Ex: link de acesso ou IP da máquina" class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                </div>
+                <div class="flex space-x-3 justify-end pt-2">
+                    <button type="button" onclick="closeModal('addCredentialModal')" class="px-3 py-1.5 text-xs hover:bg-hdSurfaceContainer rounded-xl">Cancelar</button>
+                    <button type="submit" class="bg-hdPrimary text-white font-bold px-4 py-1.5 rounded-xl text-xs">Criar Credencial</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL K: ADD VIEWER ACCOUNT -->
+    <div id="addViewerModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl relative">
+            <h3 class="text-base font-bold text-hdTextPrimary mb-2 flex items-center gap-2">
+                <span class="material-symbols-outlined text-hdPrimary">badge_visibility</span>
+                Adicionar Visualizador Secundário
+            </h3>
+            <p class="text-[11px] text-hdTextSecondary mb-4">Crie uma conta de equipe com permissões estritas de somente-leitura.</p>
+            <form onsubmit="submitAddViewer(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-hdTextSecondary mb-1">Nome Completo</label>
+                    <input type="text" id="viewerNameInput" placeholder="Ex: Marcelo frentista-líder" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2.5 text-xs">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-hdTextSecondary mb-1">E-mail (Login de Acesso)</label>
+                    <input type="email" id="viewerEmailInput" placeholder="Ex: marcelo@posto.com" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2.5 text-xs">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-hdTextSecondary mb-1">Senha Provisória</label>
+                    <input type="password" id="viewerPasswordInput" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2.5 text-xs">
+                </div>
+                <div class="flex space-x-3 justify-end pt-2">
+                    <button type="button" onclick="closeModal('addViewerModal')" class="px-3 py-1.5 text-xs hover:bg-hdSurfaceContainer rounded-xl">Cancelar</button>
+                    <button type="submit" class="bg-hdPrimary text-white font-bold px-4 py-1.5 rounded-xl text-xs">Cadastrar Conta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- ================== CORE JAVASCRIPT & FIREBASE INTEGRATION ================== -->
+    <!-- We dynamically load Firebase modules in modular script to ensure high quality execution -->
+    <script type="module">
+        // Global variables inside ES Module context
+        let isFirebaseActive = false;
+        let firebaseApp = null;
+        let authService = null;
+        let firestoreDb = null;
+
+        let activeSubscriptions = [];
+
+        function clearActiveSubscriptions() {
+            activeSubscriptions.forEach(unsub => {
+                try {
+                    unsub();
+                } catch (e) {
+                    console.error("Unsub error:", e);
+                }
+            });
+            activeSubscriptions = [];
+        }
+
+        // In-memory local state fallback to act as "Demo / Local Storage Mode"
+        const defaultState = {
+            tanks: [
+                { id: 1, name: "Tanque 01 - Gasolina Comum", capacity: 30000.0, currentLevel: 18500.0, threshold: 5000.0, pricePerLiter: 5.799, stationCnpj: "12.345.678/0001-99" },
+                { id: 2, name: "Tanque 02 - Etanol Comum", capacity: 20000.0, currentLevel: 3200.0, threshold: 4000.0, pricePerLiter: 3.899, stationCnpj: "12.345.678/0001-99" },
+                { id: 3, name: "Tanque 03 - Diesel S10", capacity: 25000.0, currentLevel: 14000.0, threshold: 5000.0, pricePerLiter: 5.999, stationCnpj: "12.345.678/0001-99" }
+            ],
+            employees: [
+                { id: 1, name: "Guto Antunes", role: "Frentista", phone: "(11) 98111-2222", activeShift: "Tarde", stationCnpj: "12.345.678/0001-99" },
+                { id: 2, name: "Fernanda Lima", role: "Frentista", phone: "(11) 98222-3333", activeShift: "Manhã", stationCnpj: "12.345.678/0001-99" },
+                { id: 3, name: "Aline Santos", role: "Supervisor", phone: "(11) 98333-4444", activeShift: "Administrativo", stationCnpj: "12.345.678/0001-99" }
+            ],
+            shifts: [
+                { id: 1, employeeId: 1, employeeName: "Guto Antunes", dayOfWeek: "Dia 01", shift: "Tarde (14h - 22h)", stationCnpj: "12.345.678/0001-99" },
+                { id: 2, employeeId: 2, employeeName: "Fernanda Lima", dayOfWeek: "Dia 01", shift: "Manhã (06h - 14h)", stationCnpj: "12.345.678/0001-99" },
+                { id: 3, employeeId: 3, employeeName: "Aline Santos", dayOfWeek: "Dia 02", shift: "Manhã (06h - 14h)", stationCnpj: "12.345.678/0001-99" },
+                { id: 4, employeeId: 1, employeeName: "Guto Antunes", dayOfWeek: "Dia 03", shift: "Noite (22h - 06h)", stationCnpj: "12.345.678/0001-99" },
+                { id: 5, employeeId: 2, employeeName: "Fernanda Lima", dayOfWeek: "Dia 04", shift: "Folga", stationCnpj: "12.345.678/0001-99" }
+            ],
+            reports: [
+                { id: 1, date: "2026-07-04", fuelName: "Gasolina Comum", openingStock: 18500, receivedVolume: 5000, litersSold: 3200, closingStock: 20300, totalSales: 18556.80, transactionsCount: 140, observation: "Carregamento recebido sem alterações.", stationCnpj: "12.345.678/0001-99" }
+            ],
+            nozzles: [
+                { id: 1, nozzleNumber: "Bico 01", pumpName: "Bomba Principal 01", tankId: 1, tankName: "Tanque 01 - Gasolina Comum", fuelType: "Gasolina Comum", status: "Ativo", stationCnpj: "12.345.678/0001-99" },
+                { id: 2, nozzleNumber: "Bico 02", pumpName: "Bomba Principal 01", tankId: 2, tankName: "Tanque 02 - Etanol Comum", fuelType: "Etanol Comum", status: "Ativo", stationCnpj: "12.345.678/0001-99" },
+                { id: 3, nozzleNumber: "Bico 03", pumpName: "Bomba Lateral 02", tankId: 3, tankName: "Tanque 03 - Diesel S10", fuelType: "Diesel S10", status: "Ativo", stationCnpj: "12.345.678/0001-99" }
+            ],
+            calibrations: [
+                { id: 1, date: "2026-06-15", referenceName: "Bico 01 - Bomba 01", nominalVolume: 20.0, measuredVolume: 20.01, errorPercent: 0.05, inspector: "Fiscal Inmetro", laudo: "6543/2026", isConforme: true, stationCnpj: "12.345.678/0001-99" }
+            ],
+            conformities: [
+                { id: 1, date: "2026-07-02", fuelType: "Gasolina Comum", densityMeasured: 0.742, temperature: 20.0, ethanolPercent: 27, aspectColor: "Límpido, isento de impurezas", isConforme: true, technicianName: "Roberto Técnico", observation: "Análise perfeita dentro dos limites da ANP.", stationCnpj: "12.345.678/0001-99" }
+            ],
+            audits: [
+                { id: 1, date: "2026-07-05", time: "09:30:15", actionType: "LOGIN", target: "Autenticação", details: "Gerente fez login no painel administrativo", operator: "admin@posto.com", complianceStatus: "Regular", stationCnpj: "12.345.678/0001-99" }
+            ],
+            users: [
+                { email: "admin@posto.com", name: "Gerente Geral", role: "Gerente", password: "admin123", stationName: "Posto Central Alvorada", stationCnpj: "12.345.678/0001-99", stationEndereco: "Avenida Principal, 777" }
+            ],
+            appointments: [
+                { id: 1, title: "Inspeção do Inmetro", date: "2026-07-10", time: "09:00", description: "Verificação anual das bombas e bicos de combustível.", stationCnpj: "12.345.678/0001-99" },
+                { id: 2, title: "Entrega de Combustível S10", date: "2026-07-08", time: "14:30", description: "Recebimento de 10.000L de Diesel S10 da distribuidora.", stationCnpj: "12.345.678/0001-99" }
+            ],
+            systemCredentials: [
+                { id: 1, systemName: "Sistema de Frente de Caixa (PDV)", category: "Operacional", login: "gerente_pdv", password: "pdv_safe_2026", description: "Acesso no terminal principal da gerência" },
+                { id: 2, systemName: "Portal SEFAZ (Emissor NF-e)", category: "Fiscal", login: "financeiro@estrela.com.br", password: "sefaz_password_secure", description: "https://nfe.fazenda.sp.gov.br" },
+                { id: 3, systemName: "Concentrador de Bombas", category: "Equipamentos", login: "admin_bomba", password: "bomba_con_123!", description: "Acesso direto via IP 192.168.1.50" },
+                { id: 4, systemName: "Monitoramento de Tanques (Veeder-Root)", category: "Segurança & Estoque", login: "veeder_root", password: "vr_monitor_2026", description: "Console Veeder-Root TLS-450" },
+                { id: 5, systemName: "Monitoramento de Câmeras CFTV", category: "Segurança", login: "cftv_gerente", password: "cftv_password_99", description: "Acesso via app Intelbras ISIC Lite" }
+            ],
+            activeUser: null,
+            activeTab: 'dashboard',
+            isRegisterForm: false
+        };
+
+        // Initialize state from LocalStorage or use Default
+        let state = JSON.parse(localStorage.getItem('posto_admin_local_db')) || defaultState;
+        
+        if (!state.appointments) state.appointments = [...defaultState.appointments];
+        if (!state.systemCredentials) state.systemCredentials = [...defaultState.systemCredentials];
+        
+        // Ensure local admin account exists in list
+        if (!state.users.some(u => u.email === "admin@posto.com")) {
+            state.users.push(defaultState.users[0]);
+        }
+
+        // Functions to persist local state
+        function saveLocalDb() {
+            localStorage.setItem('posto_admin_local_db', JSON.stringify(state));
+        }
+
+        // Dynamic modules imports for Firebase
+        async function initFirebase(config) {
+            try {
+                // Import Firebase modules dynamically
+                const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js");
+                const { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js");
+                const { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, addDoc, query, where, onSnapshot } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+
+                firebaseApp = initializeApp(config);
+                authService = getAuth(firebaseApp);
+                firestoreDb = getFirestore(firebaseApp);
+                isFirebaseActive = true;
+
+                // Configure Badge
+                const badge = document.getElementById('connectionBadgeBtn');
+                const dot = document.getElementById('connectionBadgeDot');
+                const text = document.getElementById('connectionBadgeText');
+                
+                badge.className = "flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border border-green-500/30 bg-hdGreenLight text-hdGreen transition hover:opacity-90";
+                dot.className = "w-2.5 h-2.5 rounded-full bg-green-600 animate-none";
+                text.innerText = "Firebase Ativo";
+
+                // Setup Firebase Authentication listener
+                onAuthStateChanged(authService, async (fbUser) => {
+                    if (fbUser) {
+                        // User connected via Firebase, pull user doc
+                        const emailKey = fbUser.email.toLowerCase();
+                        const userRef = doc(firestoreDb, "users", emailKey);
+                        const userSnap = await getDoc(userRef);
+
+                        if (userSnap.exists()) {
+                            state.activeUser = userSnap.data();
+                        } else {
+                            // Document not in firestore, fallback local metadata
+                            state.activeUser = {
+                                email: fbUser.email,
+                                name: fbUser.displayName || fbUser.email.split('@')[0],
+                                role: "Gerente",
+                                stationName: "Posto Conectado",
+                                stationCnpj: "12.345.678/0001-99",
+                                stationEndereco: "Nuvem Firebase"
+                            };
+                            await setDoc(userRef, state.activeUser);
+                        }
+                        
+                        // Sync database collections from Firebase for this station
+                        await syncCollectionsFromFirebase();
+                        showWorkspace();
+                    } else {
+                        // Disconnected
+                        state.activeUser = null;
+                        showAuthScreen();
+                    }
+                });
+
+                // Set up visual feedback in console
+                console.log("Firebase initialized successfully on PostoAdmin Web!");
+                return true;
+            } catch (err) {
+                console.warn("Could not connect to Firebase. Falling back to local offline mode.", err);
+                fallbackToLocal();
+                return false;
+            }
+        }
+
+        function fallbackToLocal() {
+            isFirebaseActive = false;
+            const badge = document.getElementById('connectionBadgeBtn');
+            const dot = document.getElementById('connectionBadgeDot');
+            const text = document.getElementById('connectionBadgeText');
+            
+            badge.className = "flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border border-yellow-500/30 bg-yellow-50 text-yellow-800 transition hover:opacity-90";
+            dot.className = "w-2.5 h-2.5 rounded-full bg-yellow-500";
+            text.innerText = "Modo Off-line / Local";
+            
+            // Check if activeUser is already saved locally
+            if (state.activeUser) {
+                showWorkspace();
+            } else {
+                showAuthScreen();
+            }
+        }
+
+        // Auto-check on boot for saved configuration
+        window.addEventListener('load', async () => {
+            // Check if user has predefined firebase configuration saved in localStorage
+            const savedConfig = localStorage.getItem('posto_firebase_config_web');
+            if (savedConfig) {
+                try {
+                    const parsed = JSON.parse(savedConfig);
+                    await initFirebase(parsed);
+                } catch (e) {
+                    console.error("Invalid Firebase config in storage, falling back to local database", e);
+                    fallbackToLocal();
+                }
+            } else {
+                // No saved config, try standard defaults or run offline
+                fallbackToLocal();
+            }
+        });
+
+        // Save Custom configuration
+        window.saveFirebaseConfig = async function() {
+            const val = document.getElementById('firebaseConfigInput').value.trim();
+            if (!val) {
+                alert("Por favor insira um objeto de configuração do Firebase!");
+                return;
+            }
+
+            try {
+                // Extract JSON-like config block from user input using dynamic extraction
+                let cleanObj = val;
+                if (val.includes("firebaseConfig =")) {
+                    cleanObj = val.split("firebaseConfig =")[1].split(";")[0].trim();
+                } else if (val.includes("const firebaseConfig =")) {
+                    cleanObj = val.split("const firebaseConfig =")[1].split(";")[0].trim();
+                }
+                
+                // Evaluate or parse safely
+                const configEvaluated = new Function(`return (${cleanObj})`)();
+                
+                if (configEvaluated && configEvaluated.apiKey) {
+                    localStorage.setItem('posto_firebase_config_web', JSON.stringify(configEvaluated));
+                    toggleConfigModal();
+                    
+                    const success = await initFirebase(configEvaluated);
+                    if (success) {
+                        alert("Conectado com sucesso ao Firebase! O banco em tempo real foi sincronizado.");
+                    } else {
+                        alert("Falha ao inicializar o Firebase. Verifique suas credenciais.");
+                    }
+                } else {
+                    alert("Configuração inválida. Certifique-se de colar o objeto contendo 'apiKey', 'projectId', etc.");
+                }
+            } catch (err) {
+                alert("Erro ao decodificar a configuração: " + err.message);
+            }
+        };
+
+        // Firebase real-time collection loading / push sync
+        async function syncCollectionsFromFirebase() {
+            if (!isFirebaseActive || !state.activeUser) return;
+            const cnpj = state.activeUser.stationCnpj || "12.345.678/0001-99";
+            
+            try {
+                const { collection, onSnapshot, getFirestore } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+                const dbRef = getFirestore(firebaseApp);
+
+                clearActiveSubscriptions();
+
+                const setupListener = (colName, stateKey) => {
+                    const colRef = collection(dbRef, "stations", cnpj, colName);
+                    const unsub = onSnapshot(colRef, (snapshot) => {
+                        const items = [];
+                        snapshot.forEach((doc) => {
+                            const parsedId = (isNaN(doc.id) || doc.id.trim() === "") ? doc.id : Number(doc.id);
+                            items.push({ id: parsedId, ...doc.data() });
+                        });
+                        state[stateKey] = items;
+                        
+                        // Save locally and re-render immediately
+                        saveLocalDb();
+                        renderWorkspace();
+                    }, (error) => {
+                        console.error(`Error in real-time listener for ${colName}:`, error);
+                    });
+                    activeSubscriptions.push(unsub);
+                };
+
+                setupListener("fuel_tanks", "tanks");
+                setupListener("employees", "employees");
+                setupListener("shift_schedules", "shifts");
+                setupListener("daily_reports", "reports");
+                setupListener("nozzles", "nozzles");
+                setupListener("calibrations", "calibrations");
+                setupListener("conformity_records", "conformities");
+                setupListener("audit_logs", "audits");
+                setupListener("appointments", "appointments");
+
+            } catch (error) {
+                console.error("Error setting up real-time onSnapshot listeners from Firestore", error);
+            }
+        }
+
+        async function saveToFirestore(colName, docId, data) {
+            if (!isFirebaseActive || !state.activeUser) return;
+            const cnpj = state.activeUser.stationCnpj || "12.345.678/0001-99";
+            try {
+                const { doc, setDoc, getFirestore } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+                const dbRef = getFirestore(firebaseApp);
+                await setDoc(doc(dbRef, "stations", cnpj, colName, docId.toString()), data);
+            } catch (e) {
+                console.error("Error syncing document to firestore", e);
+            }
+        }
+
+        async function deleteFromFirestore(colName, docId) {
+            if (!isFirebaseActive || !state.activeUser) return;
+            const cnpj = state.activeUser.stationCnpj || "12.345.678/0001-99";
+            try {
+                const { doc, deleteDoc, getFirestore } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+                const dbRef = getFirestore(firebaseApp);
+                await deleteDoc(doc(dbRef, "stations", cnpj, colName, docId.toString()));
+            } catch (e) {
+                console.error("Error deleting document in firestore", e);
+            }
+        }
+
+        // Authentication Submission Handler
+        window.handleAuthSubmit = async function(event) {
+            event.preventDefault();
+            const alertBox = document.getElementById('authAlert');
+            alertBox.className = "hidden";
+
+            const login = document.getElementById('authEmailInput').value.trim();
+            const pass = document.getElementById('authPasswordInput').value;
+
+            // Simplified username formulation
+            const formattedEmail = login.includes('@') ? login.toLowerCase() : `${login.toLowerCase()}@posto.com`;
+
+            if (state.isRegisterForm) {
+                // REGISTER ACCOUNT PROCESS
+                const name = login.split('@')[0];
+                const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
+                
+                const stationName = document.getElementById('regStationName').value.trim() || `Posto ${capitalizedName}`;
+                const stationCnpj = document.getElementById('regStationCnpj').value.trim() || "12.345.678/0001-" + Math.floor(Math.random() * 90 + 10);
+                const stationEndereco = document.getElementById('regStationEndereco').value.trim() || "Avenida Principal, " + Math.floor(Math.random() * 900 + 100);
+
+                const newAccount = {
+                    email: formattedEmail,
+                    name: capitalizedName,
+                    role: "Gerente",
+                    password: pass,
+                    stationName: stationName,
+                    stationCnpj: stationCnpj,
+                    stationEndereco: stationEndereco,
+                    bankName: "Banco do Brasil",
+                    bankAgency: "1234-5",
+                    bankAccount: "98765-4",
+                    bankPixKey: formattedEmail
+                };
+
+                if (isFirebaseActive) {
+                    try {
+                        const { createUserWithEmailAndPassword, getAuth } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js");
+                        const { doc, setDoc, getFirestore } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+                        
+                        const auth = getAuth(firebaseApp);
+                        const dbRef = getFirestore(firebaseApp);
+                        
+                        const authResult = await createUserWithEmailAndPassword(auth, formattedEmail, pass);
+                        await setDoc(doc(dbRef, "users", formattedEmail), newAccount);
+                        
+                        // Setup default station items on Firebase automatically
+                        for (const tank of defaultState.tanks) {
+                            const tWithCnpj = { ...tank, stationCnpj };
+                            await setDoc(doc(dbRef, "stations", stationCnpj, "fuel_tanks", tank.id.toString()), tWithCnpj);
+                        }
+                        for (const noz of defaultState.nozzles) {
+                            const nWithCnpj = { ...noz, stationCnpj };
+                            await setDoc(doc(dbRef, "stations", stationCnpj, "nozzles", noz.id.toString()), nWithCnpj);
+                        }
+                        for (const app of defaultState.appointments) {
+                            const appWithCnpj = { ...app, stationCnpj };
+                            await setDoc(doc(dbRef, "stations", stationCnpj, "appointments", app.id.toString()), appWithCnpj);
+                        }
+
+                        state.activeUser = newAccount;
+                        alert("Conta Firebase criada com sucesso! Posto configurado.");
+                    } catch (err) {
+                        alertBox.className = "mb-4 p-3 rounded-xl text-xs font-semibold flex items-center space-x-2 bg-hdRedLight text-hdRed";
+                        document.getElementById('authAlertText').innerText = "Erro ao criar conta: " + err.message;
+                        return;
+                    }
+                } else {
+                    // Local register
+                    state.users.push(newAccount);
+                    state.activeUser = newAccount;
+                    // Add default demo tanks to this station
+                    state.tanks = defaultState.tanks.map(t => ({ ...t, stationCnpj }));
+                    state.nozzles = defaultState.nozzles.map(n => ({ ...n, stationCnpj }));
+                    state.appointments = defaultState.appointments.map(a => ({ ...a, stationCnpj }));
+                    state.systemCredentials = defaultState.systemCredentials.map(s => ({ ...s, stationCnpj }));
+                    saveLocalDb();
+                    alert("Conta local criada com sucesso! Rodando em modo off-line.");
+                }
+                
+                showWorkspace();
+            } else {
+                // LOGIN PROCESS
+                if (isFirebaseActive) {
+                    try {
+                        const { signInWithEmailAndPassword, getAuth } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js");
+                        const { doc, getDoc, getFirestore } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+                        
+                        const auth = getAuth(firebaseApp);
+                        const dbRef = getFirestore(firebaseApp);
+                        
+                        await signInWithEmailAndPassword(auth, formattedEmail, pass);
+                        // Handled by onAuthStateChanged listener
+                    } catch (err) {
+                        alertBox.className = "mb-4 p-3 rounded-xl text-xs font-semibold flex items-center space-x-2 bg-hdRedLight text-hdRed";
+                        document.getElementById('authAlertText').innerText = "Senha incorreta ou usuário não encontrado.";
+                    }
+                } else {
+                    // Local login fallback
+                    const acc = state.users.find(u => u.email.toLowerCase() === formattedEmail || u.email.toLowerCase() === login.toLowerCase());
+                    if (acc && acc.password === pass) {
+                        state.activeUser = acc;
+                        saveLocalDb();
+                        
+                        // Add audit log for login
+                        logActivity("LOGIN", "Autenticação", "Gerente fez login no painel em modo offline");
+                        
+                        showWorkspace();
+                    } else {
+                        alertBox.className = "mb-4 p-3 rounded-xl text-xs font-semibold flex items-center space-x-2 bg-hdRedLight text-hdRed";
+                        document.getElementById('authAlertText').innerText = "Credenciais off-line inválidas. Dica: use admin@posto.com / admin123";
+                    }
+                }
+            }
+        };
+
+        // Switch screen views
+        function showWorkspace() {
+            document.getElementById('authView').classList.add('hidden');
+            document.getElementById('workspaceView').classList.remove('hidden');
+            document.getElementById('sidebarNav').classList.remove('hidden');
+            document.getElementById('userHeaderProfile').classList.remove('hidden');
+            
+            renderWorkspace();
+        }
+
+        function showAuthScreen() {
+            document.getElementById('workspaceView').classList.add('hidden');
+            document.getElementById('sidebarNav').classList.add('hidden');
+            document.getElementById('userHeaderProfile').classList.add('hidden');
+            document.getElementById('authView').classList.remove('hidden');
+        }
+
+        window.logoutUser = async function() {
+            clearActiveSubscriptions();
+            if (isFirebaseActive && authService) {
+                try {
+                    const { signOut } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js");
+                    await signOut(authService);
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+            state.activeUser = null;
+            saveLocalDb();
+            showAuthScreen();
+        };
+
+        // Navigation Tabs switching
+        window.switchTab = function(tabName) {
+            state.activeTab = tabName;
+            
+            // Hide all sub screens
+            ['dashboard', 'tanks', 'employees', 'reports', 'nozzles', 'compliance', 'audits', 'calendar', 'systems'].forEach(scr => {
+                const element = document.getElementById(`screen-${scr}`);
+                if (element) {
+                    element.classList.add('hidden');
+                }
+            });
+
+            // Show target
+            const targetScreen = document.getElementById(`screen-${tabName}`);
+            if (targetScreen) {
+                targetScreen.classList.remove('hidden');
+            }
+
+            // Style buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                if (btn.getAttribute('data-tab') === tabName) {
+                    btn.className = "tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-left bg-hdPrimaryContainer text-hdPrimary";
+                } else {
+                    btn.className = "tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-left text-hdTextSecondary hover:bg-hdSurfaceContainer hover:text-hdTextPrimary";
+                }
+            });
+        };
+
+        window.switchAuthTab = function(mode) {
+            const btnLogin = document.getElementById('tabAuthLogin');
+            const btnReg = document.getElementById('tabAuthRegister');
+            const extraFields = document.getElementById('registerExtraFields');
+            const submitText = document.getElementById('authSubmitBtn').querySelector('span:last-child');
+            const authTitle = document.getElementById('authTitle');
+
+            if (mode === 'register') {
+                state.isRegisterForm = true;
+                btnLogin.className = "flex-1 pb-3 text-sm font-bold text-center border-b-2 border-transparent text-hdTextSecondary hover:text-hdTextPrimary transition";
+                btnReg.className = "flex-1 pb-3 text-sm font-bold text-center border-b-2 border-hdPrimary text-hdPrimary transition";
+                extraFields.classList.remove('hidden');
+                submitText.innerText = "Cadastrar & Criar Posto";
+                authTitle.innerText = "Criar Nova Conta Administrativa";
+            } else {
+                state.isRegisterForm = false;
+                btnLogin.className = "flex-1 pb-3 text-sm font-bold text-center border-b-2 border-hdPrimary text-hdPrimary transition";
+                btnReg.className = "flex-1 pb-3 text-sm font-bold text-center border-b-2 border-transparent text-hdTextSecondary hover:text-hdTextPrimary transition";
+                extraFields.classList.add('hidden');
+                submitText.innerText = "Entrar no Sistema";
+                authTitle.innerText = "Acesso ao PostoAdmin";
+            }
+        };
+
+        // Utility to write Logs
+        function logActivity(action, target, details, status = "Regular") {
+            const today = new Date().toISOString().split('T')[0];
+            const time = new Date().toLocaleTimeString('pt-BR');
+            const cnpj = state.activeUser?.stationCnpj || "12.345.678/0001-99";
+            
+            const newAudit = {
+                id: Date.now(),
+                date: today,
+                time: time,
+                actionType: action,
+                target: target,
+                details: details,
+                operator: state.activeUser?.email || "admin@posto.com",
+                complianceStatus: status,
+                stationCnpj: cnpj
+            };
+
+            state.audits.unshift(newAudit);
+            saveLocalDb();
+            
+            if (isFirebaseActive) {
+                saveToFirestore("audit_logs", newAudit.id, newAudit);
+            }
+            renderWorkspace();
+        }
+
+        window.clearAuditLogs = function() {
+            if (confirm("Tem certeza que deseja apagar todo o livro de auditoria?")) {
+                if (isFirebaseActive) {
+                    state.audits.forEach(aud => {
+                        deleteFromFirestore("audit_logs", aud.id);
+                    });
+                }
+                state.audits = [];
+                logActivity("DELETE", "Auditoria", "Livro de auditoria limpo pelo administrador");
+                renderWorkspace();
+            }
+        };
+
+        // Render everything on UI based on memory state
+        function renderWorkspace() {
+            if (!state.activeUser) return;
+
+            const u = state.activeUser;
+            const cnpj = u.stationCnpj || "12.345.678/0001-99";
+
+            // Update user headers
+            document.getElementById('userNameHeader').innerText = u.name;
+            document.getElementById('userRoleHeader').innerText = u.role;
+            document.getElementById('sidebarStationName').innerText = u.stationName || "Posto Central";
+            document.getElementById('sidebarStationCnpj').innerText = "CNPJ: " + cnpj;
+            document.getElementById('sidebarStationEndereco').innerText = u.stationEndereco || "Avenida Principal";
+            document.getElementById('welcomeStationInfo').innerText = `Posto: ${u.stationName} | CNPJ: ${cnpj} | Endereço: ${u.stationEndereco}`;
+
+            // Sync badges
+            document.getElementById('totalTanksBadge').innerText = state.tanks.length;
+            document.getElementById('activeStaffBadge').innerText = state.employees.length;
+
+            // 1. Dashboard & Tanks rendering
+            const dashTanks = document.getElementById('dashboardTanksGrid');
+            const fullTanks = document.getElementById('tanksListContainer');
+            
+            let tanksHtml = '';
+            state.tanks.forEach(tank => {
+                const percent = Math.min(100, Math.round((tank.currentLevel / tank.capacity) * 100));
+                const isLow = tank.currentLevel <= tank.threshold;
+                const textColor = isLow ? 'text-red-600' : 'text-hdPrimary';
+
+                let fuelTypeColorClass = 'color-gasolina';
+                if (tank.name.toLowerCase().includes('etanol')) {
+                    fuelTypeColorClass = 'color-etanol';
+                } else if (tank.name.toLowerCase().includes('diesel')) {
+                    fuelTypeColorClass = 'color-diesel';
+                }
+                if (isLow) {
+                    fuelTypeColorClass = 'color-critical';
+                }
+                
+                tanksHtml += `
+                    <div class="bg-hdSurfaceContainer border border-hdBorder/60 rounded-3xl p-5 flex items-center space-x-5 shadow-sm transition hover:shadow-md">
+                        <!-- Left: Realistic Cylinder Visualizer -->
+                        <div class="tank-cylinder-container flex-shrink-0">
+                            <!-- Liquid level inside -->
+                            <div class="tank-liquid-body ${fuelTypeColorClass}" style="height: ${percent}%">
+                                <!-- Wave layer 1 -->
+                                <div class="tank-wave"></div>
+                                <!-- Wave layer 2 -->
+                                <div class="tank-wave-secondary"></div>
+                            </div>
+                            <!-- Glass gloss reflection -->
+                            <div class="tank-glass-sheen"></div>
+                            <!-- Visual percent text badge overlay -->
+                            <span class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[10px] font-black text-hdTextPrimary bg-white/75 px-1.5 py-0.5 rounded shadow-sm z-10">${percent}%</span>
+                        </div>
+
+                        <!-- Right: Tank Info and Details -->
+                        <div class="flex-1 space-y-2">
+                            <div class="flex justify-between items-center">
+                                <h4 class="font-bold text-xs text-hdTextPrimary">${tank.name}</h4>
+                                <span class="text-[9px] uppercase font-bold px-2 py-0.5 rounded-full ${isLow ? 'bg-red-100 text-red-700 animate-pulse' : 'bg-blue-100 text-blue-800'}">
+                                    ${isLow ? 'Crítico' : 'Normal'}
+                                </span>
+                            </div>
+                            <div class="space-y-1 text-[11px] font-semibold text-hdTextSecondary">
+                                <div>Nível Atual: <span class="${textColor} font-black">${tank.currentLevel.toLocaleString('pt-BR')} L</span></div>
+                                <div>Capacidade: <span class="text-hdTextPrimary">${tank.capacity.toLocaleString('pt-BR')} L</span></div>
+                                <div>Gatilho Mín: <span class="text-hdTextPrimary">${tank.threshold.toLocaleString('pt-BR')} L</span></div>
+                            </div>
+                            <div class="border-t border-hdBorder/60 pt-2.5 mt-2.5 flex justify-between items-center text-xs">
+                                <span class="text-hdTextSecondary font-bold text-[10px]">Preço do Litro:</span>
+                                <span class="font-black text-hdGreen text-sm">R$ ${tank.pricePerLiter.toFixed(3)}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            if (state.tanks.length > 0) {
+                dashTanks.innerHTML = tanksHtml;
+                fullTanks.innerHTML = tanksHtml;
+            } else {
+                dashTanks.innerHTML = `<div class="col-span-2 text-center py-6 text-xs text-hdTextSecondary">Nenhum tanque cadastrado.</div>`;
+                fullTanks.innerHTML = `<div class="col-span-3 text-center py-12 text-xs text-hdTextSecondary">Nenhum tanque cadastrado.</div>`;
+            }
+
+            // 2. Nozzles rendering
+            const dashNozzles = document.getElementById('dashboardNozzlesList');
+            const nozzlesGrid = document.getElementById('nozzlesGridContainer');
+            let nozzlesHtml = '';
+            
+            state.nozzles.forEach(noz => {
+                nozzlesHtml += `
+                    <div class="bg-hdSurfaceContainer border border-hdBorder/60 rounded-xl p-3 flex justify-between items-center">
+                        <div class="flex items-center space-x-2">
+                            <span class="material-symbols-outlined text-hdPrimary">water_drop</span>
+                            <div>
+                                <p class="font-bold text-xs">${noz.nozzleNumber} (${noz.fuelType})</p>
+                                <p class="text-[10px] text-hdTextSecondary">${noz.pumpName}</p>
+                            </div>
+                        </div>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Ativo</span>
+                    </div>
+                `;
+            });
+            dashNozzles.innerHTML = nozzlesHtml || '<p class="text-xs text-hdTextSecondary text-center py-4">Nenhum bico cadastrado.</p>';
+            nozzlesGrid.innerHTML = nozzlesHtml || '<p class="text-xs text-hdTextSecondary text-center py-12">Nenhum bico cadastrado.</p>';
+
+            // 3. Shift and active scale
+            const currentShiftBlock = document.getElementById('dashboardActiveShift');
+            const allocationsContainer = document.getElementById('shiftsAllocationContainer');
+            
+            let allocationHtml = '';
+            state.shifts.forEach(sh => {
+                allocationHtml += `
+                    <div class="bg-hdSurfaceContainer border border-hdBorder/60 p-3 rounded-xl flex justify-between items-center text-xs">
+                        <div>
+                            <p class="font-bold text-hdTextPrimary">${sh.employeeName}</p>
+                            <p class="text-[10px] text-hdTextSecondary">${sh.dayOfWeek} • ${sh.shift}</p>
+                        </div>
+                        <button onclick="deleteShift(${sh.id})" class="text-hdRed hover:underline text-[10px] font-bold">Apagar</button>
+                    </div>
+                `;
+            });
+            allocationsContainer.innerHTML = allocationHtml || '<p class="text-xs text-hdTextSecondary text-center py-4">Nenhuma escala programada.</p>';
+
+            if (state.shifts.length > 0) {
+                document.getElementById('dashboardShiftEmployee').innerText = state.shifts[0].employeeName;
+                document.getElementById('dashboardShiftTime').innerText = `Turno: ${state.shifts[0].shift}`;
+            } else {
+                document.getElementById('dashboardShiftEmployee').innerText = "Nenhum frentista alocado";
+                document.getElementById('dashboardShiftTime').innerText = "Turno: --";
+            }
+
+            // 4. Employees table rendering
+            const employeesTable = document.getElementById('employeesTableBody');
+            let empHtml = '';
+            state.employees.forEach(emp => {
+                empHtml += `
+                    <tr class="border-b border-hdBorder/60 text-xs hover:bg-hdSurfaceContainer/40">
+                        <td class="py-3 px-4 font-bold text-hdTextPrimary">${emp.name}</td>
+                        <td class="py-3 px-4 text-hdTextSecondary">${emp.role}</td>
+                        <td class="py-3 px-4 text-hdTextSecondary">${emp.phone}</td>
+                        <td class="py-3 px-4"><span class="bg-blue-50 text-hdPrimary font-semibold px-2 py-0.5 rounded">${emp.activeShift || 'Tarde'}</span></td>
+                        <td class="py-3 px-4 text-right">
+                            <button onclick="deleteEmployee(${emp.id})" class="text-hdRed hover:underline font-bold text-[11px]">Remover</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            employeesTable.innerHTML = empHtml || '<tr><td colspan="5" class="py-6 text-center text-hdTextSecondary">Nenhum funcionário cadastrado.</td></tr>';
+
+            // 5. Daily Reports rendering
+            const dashReports = document.getElementById('dashboardReportsTable');
+            const reportsTable = document.getElementById('reportsTableBody');
+            
+            let reportsHtml = '';
+            state.reports.forEach(rep => {
+                reportsHtml += `
+                    <tr class="border-b border-hdBorder/60 text-xs hover:bg-hdSurfaceContainer/40">
+                        <td class="py-3 px-4 font-semibold">${rep.date}</td>
+                        <td class="py-3 px-4 font-bold text-hdPrimary">${rep.fuelName}</td>
+                        <td class="py-3 px-4 text-right">${rep.openingStock.toLocaleString()} L</td>
+                        <td class="py-3 px-4 text-right">${rep.receivedVolume.toLocaleString()} L</td>
+                        <td class="py-3 px-4 text-right font-bold text-hdPrimary">${rep.litersSold.toLocaleString()} L</td>
+                        <td class="py-3 px-4 text-right">${rep.closingStock.toLocaleString()} L</td>
+                        <td class="py-3 px-4 text-right font-bold text-hdGreen">R$ ${rep.totalSales.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                        <td class="py-3 px-4 text-hdTextSecondary max-w-[120px] truncate">${rep.observation || '--'}</td>
+                        <td class="py-3 px-4 text-right">
+                            <button onclick="deleteReport(${rep.id})" class="text-hdRed hover:underline font-bold">Apagar</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            reportsTable.innerHTML = reportsHtml || '<tr><td colspan="9" class="py-8 text-center text-hdTextSecondary">Nenhum relatório diário registrado ainda.</td></tr>';
+
+            // Dashboard mini-reports view
+            let miniReportsHtml = '';
+            state.reports.slice(0, 5).forEach(rep => {
+                miniReportsHtml += `
+                    <tr class="border-b border-hdBorder/40">
+                        <td class="py-2.5 px-3 font-semibold text-[11px]">${rep.date}</td>
+                        <td class="py-2.5 px-3 font-bold">${rep.fuelName}</td>
+                        <td class="py-2.5 px-3 text-right font-semibold text-hdPrimary">${rep.litersSold.toLocaleString()} L</td>
+                        <td class="py-2.5 px-3 text-right font-bold text-hdGreen">R$ ${rep.totalSales.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                    </tr>
+                `;
+            });
+            dashReports.innerHTML = miniReportsHtml || '<tr><td colspan="4" class="py-4 text-center text-hdTextSecondary">Sem faturamento registrado.</td></tr>';
+
+            // 6. Calibration & Compliance rendering
+            const calibrationsTable = document.getElementById('calibrationsTableBody');
+            let calHtml = '';
+            state.calibrations.forEach(cal => {
+                calHtml += `
+                    <tr class="border-b border-hdBorder/60 hover:bg-hdSurfaceContainer/40">
+                        <td class="py-2.5 px-3">${cal.date}</td>
+                        <td class="py-2.5 px-3 font-bold">${cal.referenceName}</td>
+                        <td class="py-2.5 px-3 text-right">${cal.nominalVolume}L / ${cal.measuredVolume}L</td>
+                        <td class="py-2.5 px-3 text-right font-semibold text-hdPrimary">${cal.errorPercent}%</td>
+                        <td class="py-2.5 px-3 text-hdTextSecondary">Laudo #${cal.laudo}</td>
+                        <td class="py-2.5 px-3">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${cal.isConforme ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                ${cal.isConforme ? 'Aprovado' : 'Ajustar'}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            });
+            calibrationsTable.innerHTML = calHtml || '<tr><td colspan="6" class="py-4 text-center text-hdTextSecondary">Nenhum laudo lançado.</td></tr>';
+
+            const conformityTable = document.getElementById('conformityTableBody');
+            let confHtml = '';
+            state.conformities.forEach(rec => {
+                confHtml += `
+                    <tr class="border-b border-hdBorder/60 hover:bg-hdSurfaceContainer/40">
+                        <td class="py-2.5 px-3">${rec.date}</td>
+                        <td class="py-2.5 px-3 font-bold text-hdPrimary">${rec.fuelType}</td>
+                        <td class="py-2.5 px-3 text-right">${rec.densityMeasured} / ${rec.temperature}ºC</td>
+                        <td class="py-2.5 px-3 text-right font-semibold">${rec.ethanolPercent}%</td>
+                        <td class="py-2.5 px-3 text-hdTextSecondary">${rec.technicianName}</td>
+                        <td class="py-2.5 px-3">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${rec.isConforme ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                ${rec.isConforme ? 'Regular' : 'Irregular'}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            });
+            conformityTable.innerHTML = confHtml || '<tr><td colspan="6" class="py-4 text-center text-hdTextSecondary">Sem análises de laboratório lançadas.</td></tr>';
+
+            // 7. Timeline of Audits rendering
+            const auditsTimeline = document.getElementById('auditsListTimeline');
+            const dashAudits = document.getElementById('dashboardAuditTimeline');
+            
+            let timelineHtml = '';
+            state.audits.forEach(aud => {
+                timelineHtml += `
+                    <div class="flex items-start space-x-3 text-xs border-l-2 border-hdPrimary/30 pl-4 py-1 relative">
+                        <div class="absolute -left-1.5 top-1.5 w-2.5 h-2.5 rounded-full bg-hdPrimary"></div>
+                        <div class="flex-1">
+                            <div class="flex justify-between items-center">
+                                <span class="font-bold text-hdTextPrimary uppercase">${aud.actionType} • ${aud.target}</span>
+                                <span class="text-[10px] text-hdTextSecondary">${aud.date} às ${aud.time}</span>
+                            </div>
+                            <p class="text-hdTextSecondary mt-0.5">${aud.details}</p>
+                            <span class="text-[9px] font-semibold text-hdPrimary bg-hdPrimaryContainer/30 px-1.5 py-0.5 rounded mt-1 inline-block">Operador: ${aud.operator}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            auditsTimeline.innerHTML = timelineHtml || '<p class="text-xs text-hdTextSecondary text-center py-6">Sem registros de auditoria.</p>';
+
+            // Dashboard mini audits view
+            let miniAuditsHtml = '';
+            state.audits.slice(0, 4).forEach(aud => {
+                miniAuditsHtml += `
+                    <div class="flex items-center justify-between text-xs py-1 border-b border-hdBorder/20">
+                        <span class="font-semibold truncate max-w-[200px]">${aud.details}</span>
+                        <span class="text-[10px] text-hdTextSecondary shrink-0">${aud.time}</span>
+                    </div>
+                `;
+            });
+            dashAudits.innerHTML = miniAuditsHtml || '<p class="text-xs text-hdTextSecondary text-center py-4">Nenhuma atividade registrada.</p>';
+
+            // Populating Employee select options inside Modals dynamically
+            const empSelect = document.getElementById('shiftEmployeeSelect');
+            if (empSelect) {
+                empSelect.innerHTML = state.employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+            }
+            const nozzleTankSelect = document.getElementById('nozTankSelect');
+            if (nozzleTankSelect) {
+                nozzleTankSelect.innerHTML = state.tanks.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+            }
+
+            // 8. Calendar & Appointments rendering
+            const appointmentsGrid = document.getElementById('appointmentsGridContainer');
+            if (appointmentsGrid) {
+                const stationAppointments = (state.appointments || []).filter(app => app.stationCnpj === cnpj);
+                let appHtml = '';
+                const sortedApps = stationAppointments.sort((a,b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+                sortedApps.forEach(app => {
+                    const day = app.date.split('-')[2] || '--';
+                    appHtml += `
+                        <div class="bg-hdSurfaceContainer border border-hdBorder/60 rounded-2xl p-5 flex flex-col justify-between shadow-sm hover:shadow transition">
+                            <div class="flex items-start space-x-4">
+                                <div class="bg-yellow-100 text-yellow-800 rounded-xl p-2.5 text-center shrink-0 min-w-[50px]">
+                                    <p class="text-xl font-bold leading-none">${day}</p>
+                                    <p class="text-[10px] uppercase font-semibold mt-1">${app.time}</p>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h4 class="font-bold text-xs text-hdTextPrimary truncate">${app.title}</h4>
+                                    <p class="text-[11px] text-hdTextSecondary mt-1 leading-relaxed line-clamp-3">${app.description || 'Sem descrição.'}</p>
+                                    <div class="flex items-center space-x-1 mt-2.5 text-[10px] text-hdTextSecondary font-medium">
+                                        <span class="material-symbols-outlined text-xs">calendar_today</span>
+                                        <span>${app.date}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="border-t border-hdBorder/40 pt-3 mt-4 flex justify-end">
+                                <button onclick="deleteAppointment(${app.id})" class="text-xs text-hdRed hover:underline font-bold flex items-center space-x-0.5">
+                                    <span class="material-symbols-outlined text-xs">delete</span>
+                                    <span>Remover</span>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                appointmentsGrid.innerHTML = appHtml || `<div class="col-span-3 text-center py-12 text-xs text-hdTextSecondary">Nenhum compromisso agendado.</div>`;
+            }
+
+            // 9. Systems & Security screen handling
+            const systemsLockContainer = document.getElementById('systemsLockContainer');
+            const systemsContentContainer = document.getElementById('systemsContentContainer');
+            if (systemsLockContainer && systemsContentContainer) {
+                const isUnlocked = window.isSystemsUnlocked || false;
+                if (!isUnlocked) {
+                    systemsLockContainer.classList.remove('hidden');
+                    systemsContentContainer.classList.add('hidden');
+                } else {
+                    systemsLockContainer.classList.add('hidden');
+                    systemsContentContainer.classList.remove('hidden');
+
+                    // Bind PJ Bank details
+                    if (!u.bankName) u.bankName = "Banco do Brasil";
+                    if (!u.bankAgency) u.bankAgency = "1234-5";
+                    if (!u.bankAccount) u.bankAccount = "98765-4";
+                    if (!u.bankPixKey) u.bankPixKey = cnpj;
+
+                    document.getElementById('systemsBankName').innerText = u.bankName;
+                    document.getElementById('systemsBankAgency').innerText = u.bankAgency;
+                    document.getElementById('systemsBankAccount').innerText = u.bankAccount;
+                    document.getElementById('systemsBankPix').innerText = u.bankPixKey;
+
+                    // Load Operational credentials
+                    const credentialsTable = document.getElementById('systemsCredentialsTableBody');
+                    if (credentialsTable) {
+                        const stationCredentials = (state.systemCredentials || []).filter(cred => !cred.stationCnpj || cred.stationCnpj === cnpj);
+                        let credsHtml = '';
+                        stationCredentials.forEach(cred => {
+                            const isVisible = window.visiblePasswords && window.visiblePasswords[cred.id];
+                            const passDisplay = isVisible ? cred.password : '••••••••';
+                            const iconEye = isVisible ? 'visibility_off' : 'visibility';
+                            credsHtml += `
+                                <tr class="border-b border-hdBorder/60 text-xs hover:bg-hdSurfaceContainer/40">
+                                    <td class="py-3 px-3 font-semibold text-hdTextPrimary">
+                                        <p class="font-bold">${cred.systemName}</p>
+                                        <p class="text-[10px] text-hdTextSecondary">${cred.description || ''}</p>
+                                    </td>
+                                    <td class="py-3 px-3"><span class="bg-gray-100 px-2 py-0.5 rounded font-semibold text-hdTextSecondary">${cred.category}</span></td>
+                                    <td class="py-3 px-3 font-mono">${cred.login}</td>
+                                    <td class="py-3 px-3 font-mono">
+                                        <div class="flex items-center space-x-2">
+                                            <span>${passDisplay}</span>
+                                            <button onclick="toggleCredPassword(${cred.id})" class="text-hdTextSecondary hover:text-hdPrimary">
+                                                <span class="material-symbols-outlined text-sm">${iconEye}</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                    <td class="py-3 px-3 text-right">
+                                        <button onclick="deleteCredential(${cred.id})" class="text-hdRed hover:underline font-bold text-[11px]">Excluir</button>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                        credentialsTable.innerHTML = credsHtml || '<tr><td colspan="5" class="py-6 text-center text-hdTextSecondary">Nenhuma credencial cadastrada.</td></tr>';
+                    }
+
+                    // Load secondary view-only accounts
+                    const viewersTable = document.getElementById('systemsViewersTableBody');
+                    if (viewersTable) {
+                        const stationViewers = (state.users || []).filter(usr => usr.role === "Visualizador" && usr.stationCnpj === cnpj);
+                        let viewersHtml = '';
+                        stationViewers.forEach(usr => {
+                            viewersHtml += `
+                                <tr class="border-b border-hdBorder/60 text-xs hover:bg-hdSurfaceContainer/40">
+                                    <td class="py-3 px-3 font-semibold text-hdTextPrimary">${usr.name}</td>
+                                    <td class="py-3 px-3 font-mono text-hdTextSecondary">${usr.email}</td>
+                                    <td class="py-3 px-3 font-mono">••••••••</td>
+                                    <td class="py-3 px-3"><span class="bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-bold text-[10px]">Visualizador</span></td>
+                                    <td class="py-3 px-3 text-right">
+                                        <button onclick="deleteViewerAccount('${usr.email}')" class="text-hdRed hover:underline font-bold text-[11px]">Excluir</button>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                        viewersTable.innerHTML = viewersHtml || '<tr><td colspan="5" class="py-6 text-center text-hdTextSecondary">Nenhum visualizador cadastrado.</td></tr>';
+                    }
+                }
+            }
+            if (window.renderShiftCalendar) {
+                window.renderShiftCalendar();
+            }
+        }
+
+        // --- SUBMISSION ACTIONS ---
+
+        // Submit Add Tank
+        window.submitAddTank = function(e) {
+            e.preventDefault();
+            const name = document.getElementById('tankNameInput').value;
+            const capacity = parseFloat(document.getElementById('tankCapacityInput').value);
+            const threshold = parseFloat(document.getElementById('tankThresholdInput').value);
+            const currentLevel = parseFloat(document.getElementById('tankCurrentLevelInput').value);
+            const price = parseFloat(document.getElementById('tankPriceInput').value);
+            const cnpj = state.activeUser?.stationCnpj || "12.345.678/0001-99";
+
+            const newTank = {
+                id: Date.now(),
+                name,
+                capacity,
+                currentLevel,
+                threshold,
+                pricePerLiter: price,
+                stationCnpj: cnpj
+            };
+
+            state.tanks.push(newTank);
+            saveLocalDb();
+            
+            if (isFirebaseActive) {
+                saveToFirestore("fuel_tanks", newTank.id, newTank);
+            }
+
+            logActivity("CREATE", "Tanques", `Tanque ${name} de ${capacity}L registrado no sistema`);
+            closeModal('addTankModal');
+            renderWorkspace();
+        };
+
+        // Submit Add Employee
+        window.submitAddEmployee = function(e) {
+            e.preventDefault();
+            const name = document.getElementById('empNameInput').value;
+            const role = document.getElementById('empRoleInput').value;
+            const phone = document.getElementById('empPhoneInput').value;
+            const cnpj = state.activeUser?.stationCnpj || "12.345.678/0001-99";
+
+            const newEmp = {
+                id: Date.now(),
+                name,
+                role,
+                phone,
+                activeShift: "Tarde",
+                stationCnpj: cnpj
+            };
+
+            state.employees.push(newEmp);
+            saveLocalDb();
+
+            if (isFirebaseActive) {
+                saveToFirestore("employees", newEmp.id, newEmp);
+            }
+
+            logActivity("CREATE", "Equipe", `Novo funcionário ${name} (${role}) cadastrado`);
+            closeModal('addEmployeeModal');
+            renderWorkspace();
+        };
+
+        // Submit Add Shift Allocation
+        window.submitAddShift = function(e) {
+            e.preventDefault();
+            const empId = parseInt(document.getElementById('shiftEmployeeSelect').value);
+            const dayOfWeek = document.getElementById('shiftDaySelect').value;
+            const shiftText = document.getElementById('shiftPeriodSelect').value;
+            const cnpj = state.activeUser?.stationCnpj || "12.345.678/0001-99";
+
+            const emp = state.employees.find(x => x.id === empId);
+            if (!emp) return;
+
+            const newShift = {
+                id: Date.now(),
+                employeeId: empId,
+                employeeName: emp.name,
+                dayOfWeek,
+                shift: shiftText,
+                stationCnpj: cnpj
+            };
+
+            state.shifts.push(newShift);
+            saveLocalDb();
+
+            if (isFirebaseActive) {
+                saveToFirestore("shift_schedules", newShift.id, newShift);
+            }
+
+            logActivity("CREATE", "Agenda", `Frentista ${emp.name} alocado para turno ${shiftText} na ${dayOfWeek}`);
+            closeModal('addShiftModal');
+            renderWorkspace();
+        };
+
+        // Submit Add Daily Report
+        window.submitAddReport = function(e) {
+            e.preventDefault();
+            const date = document.getElementById('repDateInput').value;
+            const fuelName = document.getElementById('repFuelSelect').value;
+            const openingStock = parseFloat(document.getElementById('repOpenInput').value);
+            const receivedVolume = parseFloat(document.getElementById('repRecInput').value);
+            const litersSold = parseFloat(document.getElementById('repSoldInput').value);
+            const totalSales = parseFloat(document.getElementById('repRevenueInput').value);
+            const count = parseInt(document.getElementById('repCountInput').value);
+            const obs = document.getElementById('repObsInput').value;
+            const cnpj = state.activeUser?.stationCnpj || "12.345.678/0001-99";
+
+            const closingStock = openingStock + receivedVolume - litersSold;
+
+            const newReport = {
+                id: Date.now(),
+                date,
+                fuelName,
+                openingStock,
+                receivedVolume,
+                litersSold,
+                closingStock,
+                totalSales,
+                transactionsCount: count,
+                observation: obs,
+                stationCnpj: cnpj
+            };
+
+            state.reports.unshift(newReport);
+            saveLocalDb();
+
+            if (isFirebaseActive) {
+                saveToFirestore("daily_reports", newReport.id, newReport);
+            }
+
+            logActivity("CREATE", "Relatórios", `Fechamento de caixa lançado para ${fuelName} em ${date} • Total: R$ ${totalSales.toLocaleString()}`);
+            closeModal('addReportModal');
+            renderWorkspace();
+        };
+
+        // Submit Add Nozzle
+        window.submitAddNozzle = function(e) {
+            e.preventDefault();
+            const nozzleNumber = document.getElementById('nozNumInput').value;
+            const pumpName = document.getElementById('nozPumpInput').value;
+            const tankId = parseInt(document.getElementById('nozTankSelect').value);
+            const fuelType = document.getElementById('nozTypeSelect').value;
+            const cnpj = state.activeUser?.stationCnpj || "12.345.678/0001-99";
+
+            const tank = state.tanks.find(t => t.id === tankId);
+            const tankName = tank ? tank.name : "Tanque Geral";
+
+            const newNozzle = {
+                id: Date.now(),
+                nozzleNumber,
+                pumpName,
+                tankId,
+                tankName,
+                fuelType,
+                status: "Ativo",
+                stationCnpj: cnpj
+            };
+
+            state.nozzles.push(newNozzle);
+            saveLocalDb();
+
+            if (isFirebaseActive) {
+                saveToFirestore("nozzles", newNozzle.id, newNozzle);
+            }
+
+            logActivity("CREATE", "Bicos", `Novo ${nozzleNumber} associado ao ${tankName} registrado`);
+            closeModal('addNozzleModal');
+            renderWorkspace();
+        };
+
+        // --- ANP UTILS ON JAVASCRIPT ---
+        const ANPUtils = {
+            MIN_TEMPERATURE: 5.0,
+            MAX_TEMPERATURE: 45.0,
+            MIN_WATER_PHASE_VOL: 50.0,
+            MAX_WATER_PHASE_VOL: 100.0,
+            MIN_CALIB_DEVIATION_ML: -200.0,
+            MAX_CALIB_DEVIATION_ML: 200.0,
+
+            getDensityLimits: function(fuelType) {
+                const f = fuelType.toLowerCase();
+                if (f.includes("gasolina")) return { min: 0.650, max: 0.850 };
+                if (f.includes("etanol")) return { min: 0.750, max: 0.850 };
+                if (f.includes("diesel")) return { min: 0.780, max: 0.920 };
+                return { min: 0.600, max: 1.000 };
+            },
+
+            calculateCorrectedDensity: function(density, temperature, isEthanol) {
+                const factor = isEthanol ? 0.00084 : 0.0007;
+                return density + factor * (temperature - 20.0);
+            },
+
+            calculateEthanolINPM: function(correctedDensity) {
+                return 95.4 - 828.57 * (correctedDensity - 0.8075);
+            },
+
+            calculateEthanolGL: function(correctedDensity) {
+                return 96.0 - 257.14 * (correctedDensity - 0.8075);
+            },
+
+            calculateGasolineEthanolPercent: function(waterPhaseFinalVolume) {
+                if (waterPhaseFinalVolume < 50.0) return 0.0;
+                return (waterPhaseFinalVolume - 50.0) * 2.0 + 1.0;
+            },
+
+            calculateVolumeErrorPercent: function(deviationMl) {
+                return (deviationMl / 20000.0) * 100.0;
+            },
+
+            isFuelCompliant: function(fuelType, correctedDensity, ethanolPercent) {
+                const f = fuelType.toLowerCase();
+                if (f.includes("gasolina")) {
+                    return correctedDensity >= 0.715 && correctedDensity <= 0.775 && ethanolPercent >= 26.0 && ethanolPercent <= 28.0;
+                }
+                if (f.includes("etanol")) {
+                    return correctedDensity >= 0.8075 && correctedDensity <= 0.8110 && ethanolPercent >= 92.5 && ethanolPercent <= 95.4;
+                }
+                if (f.includes("diesel")) {
+                    return correctedDensity >= 0.820 && correctedDensity <= 0.850;
+                }
+                return true;
+            },
+
+            isVolumeErrorCompliant: function(deviationMl) {
+                return Math.abs(deviationMl) <= 100.0;
+            }
+        };
+
+        window.setCalibDeviation = function(val) {
+            document.getElementById('calibDeviationMl').value = val;
+            window.updateCalibrationCalculator();
+        };
+
+        window.updateCalibrationCalculator = function() {
+            const devMl = parseFloat(document.getElementById('calibDeviationMl').value) || 0;
+            const volNominal = 20.0;
+            const volMedido = volNominal + (devMl / 1000.0);
+            const errPercent = ANPUtils.calculateVolumeErrorPercent(devMl);
+            const isConforme = ANPUtils.isVolumeErrorCompliant(devMl);
+
+            document.getElementById('calibPreviewVol').innerText = volMedido.toFixed(3) + ' L';
+            document.getElementById('calibPreviewErr').innerText = (errPercent >= 0 ? '+' : '') + errPercent.toFixed(3) + ' %';
+            
+            const statusBadge = document.getElementById('calibPreviewStatus');
+            if (isConforme) {
+                statusBadge.innerText = 'CONFORME';
+                statusBadge.className = 'font-black px-2 py-0.5 rounded text-[10px] bg-green-100 text-green-800';
+            } else {
+                statusBadge.innerText = 'IRREGULAR (REPROVADO)';
+                statusBadge.className = 'font-black px-2 py-0.5 rounded text-[10px] bg-red-100 text-red-800';
+            }
+        };
+
+        window.toggleWaterPhaseInput = function() {
+            const fuel = document.getElementById('confFuelSelect').value;
+            const container = document.getElementById('confWaterPhaseContainer');
+            if (fuel.toLowerCase().includes('gasolina')) {
+                container.style.display = 'block';
+            } else {
+                container.style.display = 'none';
+            }
+        };
+
+        window.updateConformityCalculator = function() {
+            const fuelType = document.getElementById('confFuelSelect').value;
+            const density = parseFloat(document.getElementById('confDensityInput').value) || 0;
+            const temp = parseFloat(document.getElementById('confTempInput').value) || 0;
+            const waterPhase = parseFloat(document.getElementById('confWaterPhaseInput').value) || 50;
+
+            const isEthanol = fuelType.toLowerCase().includes('etanol');
+            const correctedDensity = ANPUtils.calculateCorrectedDensity(density, temp, isEthanol);
+            
+            let ethanolPercent = 0;
+            let displayEthanol = '';
+
+            if (fuelType.toLowerCase().includes('gasolina')) {
+                ethanolPercent = ANPUtils.calculateGasolineEthanolPercent(waterPhase);
+                displayEthanol = ethanolPercent.toFixed(1) + ' % (v/v)';
+                document.getElementById('confPreviewEthanolRow').style.display = 'block';
+            } else if (isEthanol) {
+                ethanolPercent = ANPUtils.calculateEthanolINPM(correctedDensity);
+                const ethanolGL = ANPUtils.calculateEthanolGL(correctedDensity);
+                displayEthanol = ethanolPercent.toFixed(2) + ' % INPM / ' + ethanolGL.toFixed(2) + ' % GL';
+                document.getElementById('confPreviewEthanolRow').style.display = 'block';
+            } else {
+                document.getElementById('confPreviewEthanolRow').style.display = 'none';
+            }
+
+            const compliant = ANPUtils.isFuelCompliant(fuelType, correctedDensity, ethanolPercent);
+
+            document.getElementById('confPreviewCorrectedDensity').innerText = correctedDensity.toFixed(4) + ' g/cm³';
+            if (document.getElementById('confPreviewEthanol')) {
+                document.getElementById('confPreviewEthanol').innerText = displayEthanol;
+            }
+
+            const statusBadge = document.getElementById('confPreviewStatus');
+            if (compliant) {
+                statusBadge.innerText = 'CONFORME (APROVADO)';
+                statusBadge.className = 'font-black px-2 py-0.5 rounded text-[10px] bg-green-100 text-green-800';
+            } else {
+                statusBadge.innerText = 'FORA DAS NORMAS ANP';
+                statusBadge.className = 'font-black px-2 py-0.5 rounded text-[10px] bg-red-100 text-red-800';
+            }
+        };
+
+        // Submit Add Calibration
+        window.submitAddCalibration = function(e) {
+            e.preventDefault();
+            const date = document.getElementById('calDateInput').value;
+            const referenceName = document.getElementById('calRefInput').value;
+            const deviationMl = parseFloat(document.getElementById('calibDeviationMl').value) || 0;
+            const nominalVolume = 20.0;
+            const measuredVolume = nominalVolume + (deviationMl / 1000.0);
+            const errorPercent = parseFloat(ANPUtils.calculateVolumeErrorPercent(deviationMl).toFixed(3));
+            const inspector = document.getElementById('calInspectorInput').value;
+            const laudo = document.getElementById('calLaudoInput').value;
+            const cnpj = state.activeUser?.stationCnpj || "12.345.678/0001-99";
+
+            const isConforme = ANPUtils.isVolumeErrorCompliant(deviationMl);
+
+            const newCal = {
+                id: Date.now(),
+                date,
+                referenceName,
+                nominalVolume,
+                measuredVolume,
+                errorPercent,
+                deviationMl,
+                inspector,
+                laudo,
+                isConforme,
+                stationCnpj: cnpj
+            };
+
+            state.calibrations.unshift(newCal);
+            saveLocalDb();
+
+            if (isFirebaseActive) {
+                saveToFirestore("calibrations", newCal.id, newCal);
+            }
+
+            logActivity("CREATE", "Calibração", `Aferição lançada para ${referenceName} com desvio de ${deviationMl}ml (${errorPercent}%)`, isConforme ? "Regular" : "Irregular");
+            closeModal('addCalibrationModal');
+            renderWorkspace();
+        };
+
+        // Submit Add Fuel Conformity (Quality Test)
+        window.submitAddConformity = function(e) {
+            e.preventDefault();
+            const date = document.getElementById('confDateInput').value;
+            const fuelType = document.getElementById('confFuelSelect').value;
+            const densityMeasured = parseFloat(document.getElementById('confDensityInput').value) || 0;
+            const temperature = parseFloat(document.getElementById('confTempInput').value) || 0;
+            
+            const isEthanol = fuelType.toLowerCase().includes('etanol');
+            const correctedDensity = parseFloat(ANPUtils.calculateCorrectedDensity(densityMeasured, temperature, isEthanol).toFixed(4));
+            
+            let ethanolPercent = 0;
+            let waterPhaseVolume = null;
+
+            if (fuelType.toLowerCase().includes('gasolina')) {
+                waterPhaseVolume = parseFloat(document.getElementById('confWaterPhaseInput').value) || 50;
+                ethanolPercent = parseFloat(ANPUtils.calculateGasolineEthanolPercent(waterPhaseVolume).toFixed(1));
+            } else if (isEthanol) {
+                ethanolPercent = parseFloat(ANPUtils.calculateEthanolINPM(correctedDensity).toFixed(2));
+            }
+
+            const aspectColor = document.getElementById('confColorInput').value;
+            const technicianName = document.getElementById('confTechInput').value;
+            const cnpj = state.activeUser?.stationCnpj || "12.345.678/0001-99";
+
+            const isConforme = ANPUtils.isFuelCompliant(fuelType, correctedDensity, ethanolPercent);
+
+            const newConf = {
+                id: Date.now(),
+                date,
+                fuelType,
+                densityMeasured,
+                temperature,
+                correctedDensity,
+                waterPhaseVolume,
+                ethanolPercent,
+                aspectColor,
+                isConforme,
+                technicianName,
+                observation: isConforme ? "Aprovado sem restrições" : "Análise físico-química fora das normas da ANP",
+                stationCnpj: cnpj
+            };
+
+            state.conformities.unshift(newConf);
+            saveLocalDb();
+
+            if (isFirebaseActive) {
+                saveToFirestore("conformity_records", newConf.id, newConf);
+            }
+
+            logActivity("CREATE", "Qualidade", `Análise físico-química lançada para ${fuelType} por ${technicianName}`, isConforme ? "Regular" : "Irregular");
+            closeModal('addConformityModal');
+            renderWorkspace();
+        };
+
+
+        // --- DELETE HANDLERS ---
+        
+        window.deleteEmployee = function(id) {
+            if (confirm("Tem certeza que deseja remover este funcionário?")) {
+                const emp = state.employees.find(e => e.id === id);
+                state.employees = state.employees.filter(e => e.id !== id);
+                saveLocalDb();
+                if (isFirebaseActive) {
+                    deleteFromFirestore("employees", id);
+                }
+                logActivity("DELETE", "Equipe", `Funcionário ${emp ? emp.name : "nº " + id} removido da base de dados`);
+                renderWorkspace();
+            }
+        };
+
+        window.deleteShift = function(id) {
+            if (confirm("Remover esta alocação de turno?")) {
+                state.shifts = state.shifts.filter(s => s.id !== id);
+                saveLocalDb();
+                if (isFirebaseActive) {
+                    deleteFromFirestore("shift_schedules", id);
+                }
+                logActivity("DELETE", "Agenda", `Alocação de turno excluída`);
+                renderWorkspace();
+            }
+        };
+
+        window.deleteReport = function(id) {
+            if (confirm("Apagar o registro deste relatório diário?")) {
+                state.reports = state.reports.filter(r => r.id !== id);
+                saveLocalDb();
+                if (isFirebaseActive) {
+                    deleteFromFirestore("daily_reports", id);
+                }
+                logActivity("DELETE", "Relatórios", `Relatório diário excluído do histórico`);
+                renderWorkspace();
+            }
+        };
+
+        window.submitAddAppointment = function(e) {
+            e.preventDefault();
+            const title = document.getElementById('appTitleInput').value;
+            const date = document.getElementById('appDateInput').value;
+            const time = document.getElementById('appTimeInput').value;
+            const description = document.getElementById('appDescInput').value;
+            const cnpj = state.activeUser?.stationCnpj || "12.345.678/0001-99";
+
+            const newApp = {
+                id: Date.now(),
+                title,
+                date,
+                time,
+                description,
+                stationCnpj: cnpj
+            };
+
+            if (!state.appointments) state.appointments = [];
+            state.appointments.push(newApp);
+            saveLocalDb();
+
+            if (isFirebaseActive) {
+                saveToFirestore("appointments", newApp.id, newApp);
+            }
+
+            logActivity("CREATE", "Calendário", `Novo compromisso agendado: "${title}" em ${date}`);
+            closeModal('addAppointmentModal');
+            renderWorkspace();
+        };
+
+        window.deleteAppointment = function(id) {
+            if (confirm("Deseja marcar este compromisso como concluído e removê-lo?")) {
+                const app = state.appointments.find(a => a.id === id);
+                state.appointments = state.appointments.filter(a => a.id !== id);
+                saveLocalDb();
+                if (isFirebaseActive) {
+                    deleteFromFirestore("appointments", id);
+                }
+                logActivity("DELETE", "Calendário", `Compromisso "${app ? app.title : id}" removido/concluído`);
+                renderWorkspace();
+            }
+        };
+
+        window.unlockSystemsArea = function(e) {
+            e.preventDefault();
+            const pass = document.getElementById('systemsManagerPasswordInput').value;
+            const u = state.activeUser;
+            if (pass === "1234" || pass === "gerente123" || (u && pass === u.password) || pass === "admin123") {
+                window.isSystemsUnlocked = true;
+                document.getElementById('systemsManagerPasswordInput').value = '';
+                renderWorkspace();
+            } else {
+                alert("Senha do Gerente incorreta!");
+            }
+        };
+
+        window.lockSystemsArea = function() {
+            window.isSystemsUnlocked = false;
+            renderWorkspace();
+        };
+
+        window.openEditBankModal = function() {
+            const u = state.activeUser;
+            if (!u) return;
+            document.getElementById('editStationNameInput').value = u.stationName || '';
+            document.getElementById('editStationEnderecoInput').value = u.stationEndereco || '';
+            document.getElementById('editBankNameInput').value = u.bankName || "Banco do Brasil";
+            document.getElementById('editBankAgencyInput').value = u.bankAgency || "1234-5";
+            document.getElementById('editBankAccountInput').value = u.bankAccount || "98765-4";
+            document.getElementById('editBankPixInput').value = u.bankPixKey || u.stationCnpj || "12.345.678/0001-99";
+            
+            document.getElementById('editBankModal').classList.remove('hidden');
+        };
+
+        window.submitEditBank = function(e) {
+            e.preventDefault();
+            const u = state.activeUser;
+            if (!u) return;
+
+            u.stationName = document.getElementById('editStationNameInput').value;
+            u.stationEndereco = document.getElementById('editStationEnderecoInput').value;
+            u.bankName = document.getElementById('editBankNameInput').value;
+            u.bankAgency = document.getElementById('editBankAgencyInput').value;
+            u.bankAccount = document.getElementById('editBankAccountInput').value;
+            u.bankPixKey = document.getElementById('editBankPixInput').value;
+
+            const index = state.users.findIndex(usr => usr.email.toLowerCase() === u.email.toLowerCase());
+            if (index !== -1) {
+                state.users[index] = { ...state.users[index], ...u };
+            }
+            saveLocalDb();
+
+            if (isFirebaseActive) {
+                async function syncUserDoc() {
+                    try {
+                        const { doc, setDoc, getFirestore } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+                        const dbRef = getFirestore(firebaseApp);
+                        await setDoc(doc(dbRef, "users", u.email.toLowerCase()), u);
+                    } catch(err) {
+                        console.error("Error updating user bank details in firebase:", err);
+                    }
+                }
+                syncUserDoc();
+            }
+
+            logActivity("UPDATE", "Finanças", `Dados PJ e conta bancária atualizados pela gerência`);
+            closeModal('editBankModal');
+            renderWorkspace();
+        };
+
+        window.openAddCredentialModal = function() {
+            document.getElementById('addCredentialModal').classList.remove('hidden');
+        };
+
+        window.submitAddCredential = function(e) {
+            e.preventDefault();
+            const systemName = document.getElementById('credNameInput').value;
+            const category = document.getElementById('credCategoryInput').value;
+            const login = document.getElementById('credLoginInput').value;
+            const password = document.getElementById('credPasswordInput').value;
+            const description = document.getElementById('credDescInput').value;
+            const cnpj = state.activeUser?.stationCnpj || "12.345.678/0001-99";
+
+            const newCred = {
+                id: Date.now(),
+                systemName,
+                category,
+                login,
+                password,
+                description,
+                stationCnpj: cnpj
+            };
+
+            if (!state.systemCredentials) state.systemCredentials = [];
+            state.systemCredentials.push(newCred);
+            saveLocalDb();
+
+            logActivity("CREATE", "Segurança", `Nova credencial de acesso criada para "${systemName}"`);
+            closeModal('addCredentialModal');
+            renderWorkspace();
+        };
+
+        window.toggleCredPassword = function(id) {
+            window.visiblePasswords = window.visiblePasswords || {};
+            window.visiblePasswords[id] = !window.visiblePasswords[id];
+            renderWorkspace();
+        };
+
+        window.deleteCredential = function(id) {
+            if (confirm("Tem certeza que deseja excluir esta credencial de sistema?")) {
+                const cred = state.systemCredentials.find(c => c.id === id);
+                state.systemCredentials = state.systemCredentials.filter(c => c.id !== id);
+                saveLocalDb();
+                logActivity("DELETE", "Segurança", `Credencial de "${cred ? cred.systemName : id}" excluída`);
+                renderWorkspace();
+            }
+        };
+
+        window.openAddViewerModal = function() {
+            document.getElementById('viewerNameInput').value = '';
+            document.getElementById('viewerEmailInput').value = '';
+            document.getElementById('viewerPasswordInput').value = '';
+            document.getElementById('addViewerModal').classList.remove('hidden');
+        };
+
+        window.submitAddViewer = function(e) {
+            e.preventDefault();
+            const name = document.getElementById('viewerNameInput').value;
+            const email = document.getElementById('viewerEmailInput').value.trim().toLowerCase();
+            const password = document.getElementById('viewerPasswordInput').value;
+            const cnpj = state.activeUser?.stationCnpj || "12.345.678/0001-99";
+
+            const newViewer = {
+                email,
+                name,
+                role: "Visualizador",
+                password,
+                stationName: state.activeUser?.stationName || "Posto Central",
+                stationCnpj: cnpj,
+                stationEndereco: state.activeUser?.stationEndereco || "Avenida Principal"
+            };
+
+            if (state.users.some(usr => usr.email.toLowerCase() === email)) {
+                alert("Esta conta de usuário já existe no sistema!");
+                return;
+            }
+
+            state.users.push(newViewer);
+            saveLocalDb();
+
+            if (isFirebaseActive) {
+                async function syncNewUser() {
+                    try {
+                        const { doc, setDoc, getFirestore } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+                        const dbRef = getFirestore(firebaseApp);
+                        await setDoc(doc(dbRef, "users", email), newViewer);
+                    } catch(err) {
+                        console.error("Error creating firebase viewer doc:", err);
+                    }
+                }
+                syncNewUser();
+            }
+
+            logActivity("CREATE", "Segurança", `Novo visualizador secundário ${name} (${email}) adicionado`);
+            closeModal('addViewerModal');
+            renderWorkspace();
+        };
+
+        window.deleteViewerAccount = function(email) {
+            if (confirm(`Tem certeza que deseja revogar o acesso do visualizador "${email}"?`)) {
+                state.users = state.users.filter(u => u.email.toLowerCase() !== email.toLowerCase());
+                saveLocalDb();
+
+                if (isFirebaseActive) {
+                    async function deleteUserDoc() {
+                        try {
+                            const { doc, deleteDoc, getFirestore } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+                            const dbRef = getFirestore(firebaseApp);
+                            await deleteDoc(doc(dbRef, "users", email.toLowerCase()));
+                        } catch(err) {
+                            console.error("Error deleting firebase user doc:", err);
+                        }
+                    }
+                    deleteUserDoc();
+                }
+
+                logActivity("DELETE", "Segurança", `Acesso do visualizador ${email} revogado`);
+                renderWorkspace();
+            }
+        };
+
+    </script>
+
+    <!-- Modal trigger helpers in Vanilla JS -->
+    <script>
+        function toggleConfigModal() {
+            const modal = document.getElementById('configModal');
+            modal.classList.toggle('hidden');
+        }
+
+        function openAddAppointmentModal() {
+            document.getElementById('appDateInput').value = new Date().toISOString().split('T')[0];
+            document.getElementById('addAppointmentModal').classList.remove('hidden');
+        }
+
+        function openAddTankModal() {
+            document.getElementById('addTankModal').classList.remove('hidden');
+        }
+
+        function openAddEmployeeModal() {
+            document.getElementById('addEmployeeModal').classList.remove('hidden');
+        }
+
+        function openAddShiftModal() {
+            document.getElementById('addShiftModal').classList.remove('hidden');
+        }
+
+        function openAddReportModal() {
+            // Set default date as today
+            document.getElementById('repDateInput').value = new Date().toISOString().split('T')[0];
+            document.getElementById('addReportModal').classList.remove('hidden');
+        }
+
+        function openAddNozzleModal() {
+            document.getElementById('addNozzleModal').classList.remove('hidden');
+        }
+
+        window.selectedCalendarDay = "Dia 01";
+
+        window.setEmployeeViewTab = function(tab) {
+            if (tab === 'list') {
+                document.getElementById('employeeViewSection-list').classList.remove('hidden');
+                document.getElementById('employeeViewSection-calendar').classList.add('hidden');
+                document.getElementById('btnEmpTabList').className = "pb-3 border-b-2 border-hdPrimary text-hdPrimary transition focus:outline-none";
+                document.getElementById('btnEmpTabCalendar').className = "pb-3 border-b-2 border-transparent text-hdTextSecondary hover:text-hdTextPrimary transition focus:outline-none";
+            } else {
+                document.getElementById('employeeViewSection-list').classList.add('hidden');
+                document.getElementById('employeeViewSection-calendar').classList.remove('hidden');
+                document.getElementById('btnEmpTabList').className = "pb-3 border-b-2 border-transparent text-hdTextSecondary hover:text-hdTextPrimary transition focus:outline-none";
+                document.getElementById('btnEmpTabCalendar').className = "pb-3 border-b-2 border-hdPrimary text-hdPrimary transition focus:outline-none";
+                window.renderShiftCalendar();
+            }
+        };
+
+        window.selectCalendarDay = function(dayStr) {
+            window.selectedCalendarDay = dayStr;
+            window.renderShiftCalendar();
+        };
+
+        window.openAddShiftForSelectedDay = function() {
+            document.getElementById('shiftDaySelect').value = window.selectedCalendarDay;
+            openAddShiftModal();
+        };
+
+        window.renderShiftCalendar = function() {
+            const grid = document.getElementById('shiftCalendarGrid');
+            if (!grid) return;
+
+            grid.innerHTML = '';
+
+            const startOffset = 3; // Wednesday start for July 2026
+            for (let i = 0; i < startOffset; i++) {
+                grid.innerHTML += `<div class="bg-transparent h-20 rounded-2xl"></div>`;
+            }
+
+            for (let dayNum = 1; dayNum <= 31; dayNum++) {
+                const dayStr = "Dia " + String(dayNum).padStart(2, '0');
+                const daySchedules = state.shifts.filter(sh => sh.dayOfWeek === dayStr);
+                const isSelected = window.selectedCalendarDay === dayStr;
+
+                let innerBadgeHtml = '';
+                daySchedules.slice(0, 2).forEach(sh => {
+                    let bg = 'bg-blue-50 text-blue-800 border-blue-200';
+                    let label = 'M';
+                    if (sh.shift.toLowerCase().includes('tarde')) {
+                        bg = 'bg-amber-50 text-amber-800 border-amber-200';
+                        label = 'T';
+                    } else if (sh.shift.toLowerCase().includes('noite')) {
+                        bg = 'bg-red-50 text-red-800 border-red-200';
+                        label = 'N';
+                    } else if (sh.shift.toLowerCase().includes('folga')) {
+                        bg = 'bg-green-50 text-green-800 border-green-200';
+                        label = 'F';
+                    }
+
+                    innerBadgeHtml += `
+                        <div class="px-1 py-0.5 text-[8px] font-bold border rounded truncate w-full ${bg}">
+                            ${sh.employeeName.split(' ')[0]} (${label})
+                        </div>
+                    `;
+                });
+
+                if (daySchedules.length > 2) {
+                    innerBadgeHtml += `<div class="text-[8px] text-hdTextSecondary text-center font-bold">+${daySchedules.length - 2}</div>`;
+                }
+
+                const borderClass = isSelected ? 'border-2 border-hdPrimary bg-hdPrimaryContainer/10' : 'border border-hdBorder hover:border-hdPrimary/50 bg-white';
+                
+                grid.innerHTML += `
+                    <div onclick="selectCalendarDay('${dayStr}')" class="h-20 p-2 rounded-2xl flex flex-col justify-between cursor-pointer transition ${borderClass}">
+                        <div class="text-right text-[10px] font-extrabold ${isSelected ? 'text-hdPrimary' : 'text-hdTextSecondary'}">${dayNum}</div>
+                        <div class="space-y-0.5 overflow-hidden flex-1 flex flex-col justify-end mt-1">
+                            ${innerBadgeHtml}
+                        </div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('calendarSelectedDayTitle').innerText = `Plantonistas do ${window.selectedCalendarDay}`;
+            const detailsList = document.getElementById('calendarSelectedDayList');
+            const daySchedules = state.shifts.filter(sh => sh.dayOfWeek === window.selectedCalendarDay);
+
+            if (daySchedules.length === 0) {
+                detailsList.innerHTML = `<div class="col-span-full text-center py-6 text-xs text-hdTextSecondary">Nenhum funcionário escalado para este dia.</div>`;
+            } else {
+                let detailsHtml = '';
+                daySchedules.forEach(sh => {
+                    let badgeClass = 'bg-blue-100 text-blue-800';
+                    if (sh.shift.toLowerCase().includes('tarde')) badgeClass = 'bg-amber-100 text-amber-800';
+                    else if (sh.shift.toLowerCase().includes('noite')) badgeClass = 'bg-red-100 text-red-800';
+                    else if (sh.shift.toLowerCase().includes('folga')) badgeClass = 'bg-green-100 text-green-800';
+
+                    detailsHtml += `
+                        <div class="bg-hdSurfaceContainer border border-hdBorder/60 rounded-2xl p-4 flex justify-between items-center shadow-sm">
+                            <div>
+                                <h5 class="font-bold text-xs text-hdTextPrimary">${sh.employeeName}</h5>
+                                <span class="inline-block text-[9px] uppercase font-bold px-2 py-0.5 rounded-full mt-1.5 ${badgeClass}">${sh.shift}</span>
+                            </div>
+                            <button onclick="deleteShift(${sh.id})" class="text-hdRed hover:underline text-[10px] font-black uppercase tracking-wider">Apagar</button>
+                        </div>
+                    `;
+                });
+                detailsList.innerHTML = detailsHtml;
+            }
+        };
+
+        function openAddCalibrationModal() {
+            document.getElementById('calDateInput').value = new Date().toISOString().split('T')[0];
+            document.getElementById('addCalibrationModal').classList.remove('hidden');
+            document.getElementById('calibDeviationMl').value = 0;
+            window.updateCalibrationCalculator();
+        }
+
+        function openAddConformityModal() {
+            document.getElementById('confDateInput').value = new Date().toISOString().split('T')[0];
+            document.getElementById('addConformityModal').classList.remove('hidden');
+            window.toggleWaterPhaseInput();
+            window.updateConformityCalculator();
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

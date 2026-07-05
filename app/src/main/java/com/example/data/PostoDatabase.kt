@@ -36,7 +36,7 @@ abstract class PostoDatabase : RoomDatabase() {
                     PostoDatabase::class.java,
                     "posto_admin_database"
                 )
-                .fallbackToDestructiveMigration()
+                .fallbackToDestructiveMigration(true)
                 .build()
                 INSTANCE = instance
                 instance
