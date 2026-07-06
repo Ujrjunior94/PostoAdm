@@ -16,9 +16,10 @@ import androidx.room.RoomDatabase
         Calibration::class,
         FuelConformityRecord::class,
         AuditLogEntry::class,
-        UserAccount::class
+        UserAccount::class,
+        FuelDelivery::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class PostoDatabase : RoomDatabase() {

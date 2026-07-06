@@ -848,6 +848,7 @@ fun DashboardScreen(viewModel: PostoViewModel) {
     val employees by viewModel.employees.collectAsStateWithLifecycle()
     val alerts by viewModel.lowFuelAlerts.collectAsStateWithLifecycle()
     val reports by viewModel.dailyReports.collectAsStateWithLifecycle()
+    val schedules by viewModel.shiftSchedules.collectAsStateWithLifecycle()
 
     val totalStockLiters = tanks.sumOf { it.currentLevel }
     val totalCapacity = tanks.sumOf { it.capacity }
@@ -1053,45 +1054,621 @@ fun DashboardScreen(viewModel: PostoViewModel) {
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "Escala Ativa do Turno 🕒",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                        if (employees.isEmpty()) {
-                            Text("Nenhum funcionário cadastrado.")
-                        } else {
-                            employees.forEach { emp ->
+                        val todayDayNumber = java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_MONTH)
+                        val todayDayStr = "Dia %02d".format(todayDayNumber)
+                        val todaySchedules = schedules.filter { it.dayOfWeek == todayDayStr }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Escala Ativa de Hoje ($todayDayStr) 🕒",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(bottom = 4.dp)
+                            )
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = HdPrimaryLight.copy(alpha = 0.5f)),
+                                shape = RoundedCornerShape(6.dp)
+                            ) {
+                                Text(
+                                    text = "Tabela do Calendário",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = HdPrimaryDark,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        if (todaySchedules.isNotEmpty()) {
+                            // Beautiful matrix table of today's shifts
+                            val shifts = listOf("Manhã", "Tarde", "Noite", "Folga")
+
+                            shifts.forEach { shiftName ->
+                                val (bgColor, textColor) = when (shiftName) {
+                                    "Manhã" -> Pair(PetrolLight, PetrolDark)
+                                    "Tarde" -> Pair(AmberLight, AmberDark)
+                                    "Noite" -> Pair(HdRedLight, HdRedDark)
+                                    else -> Pair(HdGreenLight, HdGreen)
+                                }
+                                val scheduledForShift = todaySchedules.filter { it.shift.contains(shiftName, ignoreCase = true) }
+                                
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(vertical = 4.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
+                                        .padding(vertical = 4.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(HdGrayLight.copy(alpha = 0.3f))
+                                        .padding(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text(text = emp.name, style = MaterialTheme.typography.bodyMedium)
                                     Card(
-                                        shape = RoundedCornerShape(8.dp),
-                                        colors = CardDefaults.cardColors(
-                                            containerColor = when (emp.activeShift) {
-                                                "Manhã" -> PetrolLight
-                                                "Tarde" -> AmberLight
-                                                else -> Color(0xFFE2E8F0)
-                                            }
-                                        )
+                                        shape = RoundedCornerShape(6.dp),
+                                        colors = CardDefaults.cardColors(containerColor = bgColor)
                                     ) {
                                         Text(
-                                            text = emp.activeShift,
+                                            text = if (shiftName == "Folga") "🟢 Folga" else "🕒 $shiftName",
                                             style = MaterialTheme.typography.labelSmall,
                                             fontWeight = FontWeight.Bold,
-                                            color = PetrolDark,
+                                            color = textColor,
                                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        )
+                                    }
+                                    
+                                    Column(
+                                        horizontalAlignment = Alignment.End,
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        if (scheduledForShift.isEmpty()) {
+                                            Text(
+                                                text = "Livre",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = HdTextSecondary.copy(alpha = 0.5f),
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        } else {
+                                            scheduledForShift.forEach { sh ->
+                                                Text(
+                                                    text = sh.employeeName,
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = HdTextPrimary
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            // Fallback if no calendar schedule exists yet
+                            Text(
+                                text = "Nenhuma escala definida no calendário para hoje. Exibindo turnos padrão cadastrados:",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = HdTextSecondary,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+                            if (employees.isEmpty()) {
+                                Text("Nenhum frentista cadastrado.", style = MaterialTheme.typography.bodyMedium, color = HdTextSecondary)
+                            } else {
+                                employees.forEach { emp ->
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(text = emp.name, style = MaterialTheme.typography.bodyMedium)
+                                        Card(
+                                            shape = RoundedCornerShape(8.dp),
+                                            colors = CardDefaults.cardColors(
+                                                containerColor = when (emp.activeShift) {
+                                                    "Manhã" -> PetrolLight
+                                                    "Tarde" -> AmberLight
+                                                    else -> Color(0xFFE2E8F0)
+                                                }
+                                            )
+                                        ) {
+                                            Text(
+                                                text = emp.activeShift,
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = PetrolDark,
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(8.dp))
+            DashboardPlannerCard(viewModel = viewModel)
+        }
+    }
+}
+
+@Composable
+fun DashboardPlannerCard(viewModel: PostoViewModel) {
+    val employees by viewModel.employees.collectAsStateWithLifecycle()
+    val schedules by viewModel.shiftSchedules.collectAsStateWithLifecycle()
+
+    var selectedMonth by remember { mutableStateOf("Julho de 2026") }
+    var selectedDayInCalendar by remember { mutableStateOf("Dia 01") }
+    val monthsList = listOf("Julho de 2026", "Agosto de 2026", "Setembro de 2026", "Outubro de 2026")
+    val daysOfMonth = (1..31).map { "Dia %02d".format(it) }
+    val shiftNames = listOf(
+        "Manhã (06h - 14h)",
+        "Tarde (14h - 22h)",
+        "Noite (22h - 06h)",
+        "Horista (10h-18h)",
+        "Horista 2 (09h-18h)",
+        "Folga (Descanso)"
+    )
+
+    var showAddScheduleDialog by remember { mutableStateOf(false) }
+    var selectedEmployeeId by remember { mutableIntStateOf(0) }
+    var schedShift by remember { mutableStateOf("Manhã (06h - 14h)") }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Planejamento Mensal de Turnos (Planner) 📅",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = "Visualize e gerencie a escala dos funcionários em tempo real.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+
+                var expandedMonthDropdown by remember { mutableStateOf(false) }
+                Box {
+                    OutlinedButton(
+                        onClick = { expandedMonthDropdown = true },
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(text = "📅 $selectedMonth ▾", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+                    DropdownMenu(
+                        expanded = expandedMonthDropdown,
+                        onDismissRequest = { expandedMonthDropdown = false }
+                    ) {
+                        monthsList.forEach { m ->
+                            DropdownMenuItem(
+                                text = { Text(m, fontSize = 12.sp) },
+                                onClick = {
+                                    selectedMonth = m
+                                    expandedMonthDropdown = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Calendar Grid inside the card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = HdSurface),
+                border = BorderStroke(1.dp, HdBorder)
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    val weekDays = listOf("D", "S", "T", "Q", "Q", "S", "S")
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(HdGrayLight, RoundedCornerShape(8.dp))
+                            .padding(vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        weekDays.forEach { wd ->
+                            Text(
+                                text = wd,
+                                modifier = Modifier.weight(1f),
+                                textAlign = TextAlign.Center,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp,
+                                color = HdPrimaryDark
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    val (startOffset, totalDays) = getMonthDetails(selectedMonth)
+                    val prevMonthTotalDays = when (selectedMonth) {
+                        "Julho de 2026" -> 30
+                        "Agosto de 2026" -> 31
+                        "Setembro de 2026" -> 31
+                        "Outubro de 2026" -> 30
+                        else -> 30
+                    }
+                    val totalSlots = startOffset + totalDays
+                    val numRows = kotlin.math.ceil(totalSlots.toDouble() / 7.0).toInt()
+
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        for (row in 0 until numRows) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                for (col in 0..6) {
+                                    val cellIndex = row * 7 + col
+                                    val dayNumber = cellIndex - startOffset + 1
+
+                                    if (dayNumber < 1) {
+                                        val prevDayNumber = prevMonthTotalDays + dayNumber
+                                        Box(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .height(72.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(HdGrayLight.copy(alpha = 0.3f))
+                                                .border(0.5.dp, HdBorder.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                                                .padding(3.dp)
+                                        ) {
+                                            Text(
+                                                text = "$prevDayNumber",
+                                                fontSize = 10.sp,
+                                                color = HdTextSecondary.copy(alpha = 0.4f),
+                                                modifier = Modifier.align(Alignment.TopEnd)
+                                            )
+                                        }
+                                    } else if (dayNumber in 1..totalDays) {
+                                        val dayStr = "Dia %02d".format(dayNumber)
+                                        val daySchedules = schedules.filter { it.dayOfWeek == dayStr }
+                                        val isSelected = selectedDayInCalendar == dayStr
+                                        val hasSchedules = daySchedules.isNotEmpty()
+
+                                        Box(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .height(72.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(
+                                                    if (isSelected) HdPrimaryLight
+                                                    else if (hasSchedules) HdSurface
+                                                    else HdGrayLight.copy(alpha = 0.5f)
+                                                )
+                                                .border(
+                                                    width = if (isSelected) 2.dp else 1.dp,
+                                                    color = if (isSelected) HdPrimary
+                                                        else if (hasSchedules) HdPrimary.copy(alpha = 0.3f)
+                                                        else HdBorder,
+                                                    shape = RoundedCornerShape(8.dp)
+                                                )
+                                                .clickable {
+                                                    selectedDayInCalendar = dayStr
+                                                }
+                                                .padding(3.dp)
+                                        ) {
+                                            Column(
+                                                modifier = Modifier.fillMaxSize(),
+                                                verticalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                Text(
+                                                    text = "$dayNumber",
+                                                    fontWeight = if (isSelected || hasSchedules) FontWeight.Bold else FontWeight.Normal,
+                                                    fontSize = 10.sp,
+                                                    color = if (isSelected) HdPrimaryDark else if (hasSchedules) HdTextPrimary else HdTextSecondary,
+                                                    modifier = Modifier.align(Alignment.End)
+                                                )
+
+                                                if (hasSchedules) {
+                                                    // Display a tiny badge for each schedule
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.Start),
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        daySchedules.take(3).forEach { sched ->
+                                                            val badgeDetails = getShiftBadgeDetails(sched.shift)
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .size(10.dp)
+                                                                    .clip(CircleShape)
+                                                                    .background(badgeDetails.second)
+                                                            )
+                                                        }
+                                                        if (daySchedules.size > 3) {
+                                                            Text(
+                                                                text = "+${daySchedules.size - 3}",
+                                                                fontSize = 8.sp,
+                                                                fontWeight = FontWeight.Bold,
+                                                                color = HdTextSecondary
+                                                            )
+                                                        }
+                                                    }
+                                                } else {
+                                                    Spacer(modifier = Modifier.height(10.dp))
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        // Empty cell for days after end of month
+                                        val postDayNumber = dayNumber - totalDays
+                                        Box(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .height(72.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(HdGrayLight.copy(alpha = 0.3f))
+                                                .border(0.5.dp, HdBorder.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                                                .padding(3.dp)
+                                        ) {
+                                            Text(
+                                                text = "$postDayNumber",
+                                                fontSize = 10.sp,
+                                                color = HdTextSecondary.copy(alpha = 0.4f),
+                                                modifier = Modifier.align(Alignment.TopEnd)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Selected Day Shift Details
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Escala de $selectedDayInCalendar ($selectedMonth) 📋",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = HdPrimaryDark
+                )
+
+                Button(
+                    onClick = {
+                        if (employees.isNotEmpty()) {
+                            selectedEmployeeId = employees.first().id
+                            schedShift = "Manhã (06h - 14h)"
+                            showAddScheduleDialog = true
+                        } else {
+                            viewModel.addToast("Cadastre funcionários antes de criar escalas!")
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                    shape = RoundedCornerShape(8.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                    modifier = Modifier.height(32.dp)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Escalar", modifier = Modifier.size(14.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Adicionar", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            val selectedDaySchedules = schedules.filter { it.dayOfWeek == selectedDayInCalendar }
+            if (selectedDaySchedules.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Nenhum frentista escalado para este dia.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = HdTextSecondary
+                    )
+                }
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    selectedDaySchedules.forEach { sched ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(HdGrayLight)
+                                .border(1.dp, HdBorder, RoundedCornerShape(8.dp))
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(28.dp)
+                                        .clip(CircleShape)
+                                        .background(PetrolLight),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = sched.employeeName.take(1).uppercase(),
+                                        fontWeight = FontWeight.Bold,
+                                        color = PetrolDark,
+                                        fontSize = 11.sp
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Text(
+                                        text = sched.employeeName,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = HdTextPrimary
+                                    )
+                                    val badgeDetails = getShiftBadgeDetails(sched.shift)
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(10.dp)
+                                                .clip(CircleShape)
+                                                .background(badgeDetails.second)
+                                        )
+                                        Text(
+                                            text = sched.shift,
+                                            fontSize = 10.sp,
+                                            color = badgeDetails.second,
+                                            fontWeight = FontWeight.Bold
                                         )
                                     }
                                 }
                             }
+
+                            IconButton(
+                                onClick = { viewModel.deleteShiftSchedule(sched) },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Excluir",
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Modal Add Shift Dialog specifically for Dashboard
+    if (showAddScheduleDialog) {
+        Dialog(onDismissRequest = { showAddScheduleDialog = false }) {
+            Card(
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text(
+                        text = "Escalar Funcionário (Dashboard) 🕒",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    var expandedEmpDropdown by remember { mutableStateOf(false) }
+                    val currentSelectedEmpName = employees.find { it.id == selectedEmployeeId }?.name ?: "Selecionar..."
+
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        OutlinedButton(
+                            onClick = { expandedEmpDropdown = true },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(text = "Colaborador: $currentSelectedEmpName")
+                        }
+                        DropdownMenu(
+                            expanded = expandedEmpDropdown,
+                            onDismissRequest = { expandedEmpDropdown = false }
+                        ) {
+                            employees.forEach { emp ->
+                                DropdownMenuItem(
+                                    text = { Text(emp.name) },
+                                    onClick = {
+                                        selectedEmployeeId = emp.id
+                                        expandedEmpDropdown = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    // Pre-filled Day
+                    OutlinedTextField(
+                        value = selectedDayInCalendar,
+                        onValueChange = {},
+                        label = { Text("Dia") },
+                        enabled = false,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    var expandedShiftDropdown by remember { mutableStateOf(false) }
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        OutlinedButton(
+                            onClick = { expandedShiftDropdown = true },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(text = "Turno: $schedShift")
+                        }
+                        DropdownMenu(
+                            expanded = expandedShiftDropdown,
+                            onDismissRequest = { expandedShiftDropdown = false }
+                        ) {
+                            shiftNames.forEach { sh ->
+                                DropdownMenuItem(
+                                    text = { Text(sh) },
+                                    onClick = {
+                                        schedShift = sh
+                                        expandedShiftDropdown = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = { showAddScheduleDialog = false },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Cancelar")
+                        }
+                        Button(
+                            onClick = {
+                                val emp = employees.find { it.id == selectedEmployeeId }
+                                if (emp != null) {
+                                    viewModel.addShiftSchedule(emp.id, emp.name, selectedDayInCalendar, schedShift)
+                                }
+                                showAddScheduleDialog = false
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Confirmar")
                         }
                     }
                 }
@@ -1174,6 +1751,7 @@ fun StockScreen(viewModel: PostoViewModel) {
     val nozzles by viewModel.nozzles.collectAsStateWithLifecycle()
     val calibrations by viewModel.calibrations.collectAsStateWithLifecycle()
     val conformityRecords by viewModel.fuelConformityRecords.collectAsStateWithLifecycle()
+    val fuelDeliveries by viewModel.fuelDeliveries.collectAsStateWithLifecycle()
     val auditLogEntries by viewModel.auditLogEntries.collectAsStateWithLifecycle()
 
     var activeSubTab by remember { mutableIntStateOf(0) } // 0 = Tanques, 1 = Bicos de Bomba, 2 = Aferições, 3 = Conformidade, 4 = Auditoria & Compliance
@@ -1181,6 +1759,7 @@ fun StockScreen(viewModel: PostoViewModel) {
 
     // Dialog & Form states for Tank
     var showAddTankDialog by remember { mutableStateOf(false) }
+    var editingTank by remember { mutableStateOf<FuelTank?>(null) }
     var tankName by remember { mutableStateOf("") }
     var tankCapacity by remember { mutableStateOf("20000") }
     var tankLevel by remember { mutableStateOf("15000") }
@@ -1190,6 +1769,7 @@ fun StockScreen(viewModel: PostoViewModel) {
 
     // Dialog & Form states for Nozzle
     var showAddNozzleDialog by remember { mutableStateOf(false) }
+    var editingNozzle by remember { mutableStateOf<Nozzle?>(null) }
     var nozzleNumberInput by remember { mutableStateOf("") }
     var nozzlePumpInput by remember { mutableStateOf("") }
     var nozzleTankSelectionId by remember { mutableIntStateOf(0) }
@@ -1221,6 +1801,17 @@ fun StockScreen(viewModel: PostoViewModel) {
     var confWaterPhaseFinalVolume by remember { mutableStateOf("63.5") }
     var confTechnician by remember { mutableStateOf("") }
     var confObservation by remember { mutableStateOf("") }
+
+    // Dialog & Form states for Fuel Delivery Receival
+    var showAddDeliveryDialog by remember { mutableStateOf(false) }
+    var deliveryDate by remember { mutableStateOf("2026-07-04") }
+    var deliveryInvoice by remember { mutableStateOf("") }
+    var deliveryFuelType by remember { mutableStateOf("Gasolina Comum") }
+    var deliveryVolume by remember { mutableStateOf("") }
+    var deliveryDriverName by remember { mutableStateOf("") }
+    var deliveryDriverCnh by remember { mutableStateOf("") }
+    var deliveryTruckPlate by remember { mutableStateOf("") }
+    var deliveryConformityId by remember { mutableStateOf<Int?>(null) }
 
     // Dialog & Form states for Manual Audit Log Entry
     var showAddAuditDialog by remember { mutableStateOf(false) }
@@ -1307,6 +1898,7 @@ fun StockScreen(viewModel: PostoViewModel) {
                     )
                     Button(
                         onClick = {
+                            editingTank = null
                             tankName = ""
                             tankCapacity = "20000"
                             tankLevel = "15000"
@@ -1394,17 +1986,57 @@ fun StockScreen(viewModel: PostoViewModel) {
                                         )
                                     }
 
-                                    Button(
-                                        onClick = {
-                                            selectedTankForRefuel = tank
-                                            inputLiters = "5000"
-                                        },
-                                        colors = ButtonDefaults.buttonColors(containerColor = HdPrimary),
-                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
-                                        Icon(Icons.Default.Add, contentDescription = "Abastecer", modifier = Modifier.size(16.dp))
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text("Abastecer", fontSize = 12.sp)
+                                        Button(
+                                            onClick = {
+                                                selectedTankForRefuel = tank
+                                                inputLiters = "5000"
+                                            },
+                                            colors = ButtonDefaults.buttonColors(containerColor = HdPrimary),
+                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                        ) {
+                                            Icon(Icons.Default.Add, contentDescription = "Abastecer", modifier = Modifier.size(16.dp))
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("Abastecer", fontSize = 12.sp)
+                                        }
+
+                                        IconButton(
+                                            onClick = {
+                                                editingTank = tank
+                                                tankName = tank.name
+                                                tankCapacity = tank.capacity.toString()
+                                                tankLevel = tank.currentLevel.toString()
+                                                tankThreshold = tank.threshold.toString()
+                                                tankPrice = tank.pricePerLiter.toString()
+                                                selectedTankColor = tank.color
+                                                showAddTankDialog = true
+                                            },
+                                            modifier = Modifier.size(32.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Edit,
+                                                contentDescription = "Editar Tanque",
+                                                tint = HdPrimary,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+
+                                        IconButton(
+                                            onClick = {
+                                                viewModel.deleteFuelTank(tank)
+                                            },
+                                            modifier = Modifier.size(32.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Delete,
+                                                contentDescription = "Excluir Tanque",
+                                                tint = HdRed,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
                                     }
                                 }
 
@@ -1536,6 +2168,7 @@ fun StockScreen(viewModel: PostoViewModel) {
                     )
                     Button(
                         onClick = {
+                            editingNozzle = null
                             nozzleNumberInput = ""
                             nozzlePumpInput = "Bomba 1 - Ilha Norte"
                             nozzleTankSelectionId = if (tanks.isNotEmpty()) tanks.first().id else 0
@@ -1752,16 +2385,38 @@ fun StockScreen(viewModel: PostoViewModel) {
                                         }
                                     }
 
-                                    IconButton(
-                                        onClick = { viewModel.deleteNozzle(nozzle) },
-                                        modifier = Modifier.size(32.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.Default.Delete,
-                                            contentDescription = "Remover",
-                                            tint = HdRed,
-                                            modifier = Modifier.size(18.dp)
-                                        )
+                                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        IconButton(
+                                            onClick = {
+                                                editingNozzle = nozzle
+                                                nozzleNumberInput = nozzle.nozzleNumber
+                                                nozzlePumpInput = nozzle.pumpName
+                                                nozzleTankSelectionId = nozzle.tankId
+                                                nozzleStatusInput = nozzle.status
+                                                selectedNozzleColor = nozzle.color
+                                                showAddNozzleDialog = true
+                                            },
+                                            modifier = Modifier.size(32.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Edit,
+                                                contentDescription = "Editar Bico",
+                                                tint = HdPrimary,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+
+                                        IconButton(
+                                            onClick = { viewModel.deleteNozzle(nozzle) },
+                                            modifier = Modifier.size(32.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Delete,
+                                                contentDescription = "Remover",
+                                                tint = HdRed,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
                                     }
                                 }
 
@@ -2291,6 +2946,200 @@ fun StockScreen(viewModel: PostoViewModel) {
                     }
                 }
             }
+
+            // --- FUEL DELIVERIES & DRIVER REGISTRATION SECTION ---
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
+                HorizontalDivider(color = HdBorder, thickness = 1.dp)
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "Entregas & Notas de Combustível (NF-e) 🚚",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = HdTextPrimary
+                        )
+                        Text(
+                            text = "Rastreabilidade de lotes entregues e vínculo de qualidade ANP.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = HdTextSecondary
+                        )
+                    }
+                    Button(
+                        onClick = {
+                            deliveryDate = "2026-07-04"
+                            deliveryInvoice = ""
+                            deliveryFuelType = "Gasolina Comum"
+                            deliveryVolume = ""
+                            deliveryDriverName = ""
+                            deliveryDriverCnh = ""
+                            deliveryTruckPlate = ""
+                            deliveryConformityId = null
+                            showAddDeliveryDialog = true
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("Nova Nota", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+
+            if (fuelDeliveries.isEmpty()) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        border = BorderStroke(1.dp, HdBorder),
+                        colors = CardDefaults.cardColors(containerColor = HdSurface)
+                    ) {
+                        Box(modifier = Modifier.padding(24.dp), contentAlignment = Alignment.Center) {
+                            Text("Nenhuma nota fiscal ou entrega registrada.", style = MaterialTheme.typography.bodyMedium, color = HdTextSecondary)
+                        }
+                    }
+                }
+            } else {
+                items(fuelDeliveries) { del ->
+                    val linkedConf = conformityRecords.find { it.id == del.conformityRecordId }
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, HdBorder),
+                        colors = CardDefaults.cardColors(containerColor = HdSurface)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("📦", fontSize = 16.sp, modifier = Modifier.padding(end = 8.dp))
+                                    Column {
+                                        Text(text = del.invoiceNumber, fontWeight = FontWeight.Bold, color = HdTextPrimary)
+                                        Text(text = "Recebimento: ${del.date}", style = MaterialTheme.typography.bodySmall, color = HdTextSecondary)
+                                    }
+                                }
+                                Card(
+                                    shape = RoundedCornerShape(6.dp),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                                ) {
+                                    Text(
+                                        text = "${String.format(Locale.getDefault(), "%,.0f", del.volume)} L",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
+
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = HdBorder, thickness = 0.5.dp)
+
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Column {
+                                    Text("Combustível", fontSize = 11.sp, color = HdTextSecondary)
+                                    Text(del.fuelType, fontWeight = FontWeight.Bold, color = HdPrimary)
+                                }
+                                Column {
+                                    Text("Placa do Caminhão", fontSize = 11.sp, color = HdTextSecondary)
+                                    Text(del.truckPlate.ifBlank { "--" }, fontWeight = FontWeight.Bold)
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Column {
+                                Text("Motorista Responsável", fontSize = 11.sp, color = HdTextSecondary, fontWeight = FontWeight.Bold)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("👤", fontSize = 11.sp, modifier = Modifier.padding(end = 4.dp))
+                                    Text(
+                                        text = "${del.driverName} (CNH: ${del.driverCnh.ifBlank { "--" }})",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.Medium,
+                                        color = HdTextPrimary
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Column {
+                                Text("Laudo Físico-Químico ANP", fontSize = 11.sp, color = HdTextSecondary, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                if (linkedConf != null) {
+                                    Card(
+                                        shape = RoundedCornerShape(8.dp),
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = if (linkedConf.isConforme) HdGreenLight else HdRedLight
+                                        ),
+                                        border = BorderStroke(0.5.dp, if (linkedConf.isConforme) HdGreen else HdRed)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth().padding(8.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Column {
+                                                Text(
+                                                    text = "Laudo de ${linkedConf.date} - ${linkedConf.technicianName}",
+                                                    fontSize = 11.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = if (linkedConf.isConforme) HdGreen else HdRed
+                                                )
+                                                Text(
+                                                    text = "Teor de Álcool: ${linkedConf.ethanolPercent}% | Densidade: ${linkedConf.densityMeasured} g/cm³",
+                                                    fontSize = 10.sp,
+                                                    color = if (linkedConf.isConforme) HdGreen else HdRed
+                                                )
+                                            }
+                                            Text(
+                                                text = if (linkedConf.isConforme) "✓ CONFORME" else "✗ IRREGULAR",
+                                                fontWeight = FontWeight.Black,
+                                                fontSize = 10.sp,
+                                                color = if (linkedConf.isConforme) HdGreen else HdRed
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    Card(
+                                        shape = RoundedCornerShape(8.dp),
+                                        colors = CardDefaults.cardColors(containerColor = HdAmberLight),
+                                        border = BorderStroke(0.5.dp, HdAmber)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth().padding(8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text("⚠️ ", fontSize = 12.sp)
+                                            Text(
+                                                text = "Atenção: Nenhum laudo de conformidade laboratorial vinculado a esta nota.",
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                color = HdAmber
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                                TextButton(
+                                    onClick = { viewModel.deleteFuelDelivery(del) },
+                                    contentPadding = PaddingValues(0.dp)
+                                ) {
+                                    Text("Apagar Entrega", color = HdRed, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // TAB 4: AUDITORIA & COMPLIANCE
@@ -2669,7 +3518,7 @@ fun StockScreen(viewModel: PostoViewModel) {
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Text(
-                        text = "Novo Tanque de Combustível ⛽",
+                        text = if (editingTank != null) "Editar Tanque de Combustível ⛽" else "Novo Tanque de Combustível ⛽",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -2762,14 +3611,28 @@ fun StockScreen(viewModel: PostoViewModel) {
                                 val thr = tankThreshold.toDoubleOrNull() ?: 4000.0
                                 val prc = tankPrice.toDoubleOrNull() ?: 5.89
                                 if (tankName.isNotBlank()) {
-                                    viewModel.addFuelTank(
-                                        name = tankName,
-                                        capacity = cap,
-                                        currentLevel = lev,
-                                        threshold = thr,
-                                        pricePerLiter = prc,
-                                        color = selectedTankColor
-                                    )
+                                    val currentEditing = editingTank
+                                    if (currentEditing != null) {
+                                        viewModel.updateFuelTank(
+                                            currentEditing.copy(
+                                                name = tankName,
+                                                capacity = cap,
+                                                currentLevel = lev,
+                                                threshold = thr,
+                                                pricePerLiter = prc,
+                                                color = selectedTankColor
+                                            )
+                                        )
+                                    } else {
+                                        viewModel.addFuelTank(
+                                            name = tankName,
+                                            capacity = cap,
+                                            currentLevel = lev,
+                                            threshold = thr,
+                                            pricePerLiter = prc,
+                                            color = selectedTankColor
+                                        )
+                                    }
                                 }
                                 showAddTankDialog = false
                             },
@@ -2797,7 +3660,7 @@ fun StockScreen(viewModel: PostoViewModel) {
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Text(
-                        text = "Cadastrar Bico de Bomba ⛽",
+                        text = if (editingNozzle != null) "Editar Bico de Bomba ⛽" else "Cadastrar Bico de Bomba ⛽",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -2895,21 +3758,36 @@ fun StockScreen(viewModel: PostoViewModel) {
                             onClick = {
                                 val selectedTank = tanks.find { it.id == nozzleTankSelectionId }
                                 if (nozzleNumberInput.isNotBlank() && selectedTank != null) {
-                                    viewModel.addNozzle(
-                                        nozzleNumber = nozzleNumberInput,
-                                        pumpName = nozzlePumpInput,
-                                        tankId = selectedTank.id,
-                                        tankName = selectedTank.name,
-                                        fuelType = selectedTank.name,
-                                        status = nozzleStatusInput,
-                                        color = selectedNozzleColor
-                                    )
+                                    val currentEditing = editingNozzle
+                                    if (currentEditing != null) {
+                                        viewModel.updateNozzle(
+                                            currentEditing.copy(
+                                                nozzleNumber = nozzleNumberInput,
+                                                pumpName = nozzlePumpInput,
+                                                tankId = selectedTank.id,
+                                                tankName = selectedTank.name,
+                                                fuelType = selectedTank.name,
+                                                status = nozzleStatusInput,
+                                                color = selectedNozzleColor
+                                            )
+                                        )
+                                    } else {
+                                        viewModel.addNozzle(
+                                            nozzleNumber = nozzleNumberInput,
+                                            pumpName = nozzlePumpInput,
+                                            tankId = selectedTank.id,
+                                            tankName = selectedTank.name,
+                                            fuelType = selectedTank.name,
+                                            status = nozzleStatusInput,
+                                            color = selectedNozzleColor
+                                        )
+                                    }
                                 }
                                 showAddNozzleDialog = false
                             },
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text("Cadastrar")
+                            Text(if (editingNozzle != null) "Salvar" else "Cadastrar")
                         }
                     }
                 }
@@ -3539,6 +4417,224 @@ fun StockScreen(viewModel: PostoViewModel) {
         }
     }
 
+    // Modal DIALOG for Registering Fuel Delivery and Driver
+    if (showAddDeliveryDialog) {
+        Dialog(onDismissRequest = { showAddDeliveryDialog = false }) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, HdBorder),
+                colors = CardDefaults.cardColors(containerColor = HdSurface)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(20.dp)
+                        .verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "Lançar Entrega & Nota Fiscal 🚚",
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = HdTextPrimary
+                    )
+                    Text(
+                        text = "Cadastre a nota de combustível recebida, registre os dados do motorista e vincule à conformidade físico-química.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = HdTextSecondary,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    OutlinedTextField(
+                        value = deliveryDate,
+                        onValueChange = { deliveryDate = it },
+                        label = { Text("Data de Recebimento (AAAA-MM-DD)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = deliveryInvoice,
+                        onValueChange = { deliveryInvoice = it },
+                        label = { Text("Número da Nota Fiscal (NF-e)") },
+                        placeholder = { Text("Ex: NF-e 87342") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    // Fuel Type Selection
+                    var expandedFuelDropdown by remember { mutableStateOf(false) }
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text("Tipo de Combustível Entregue", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = HdTextSecondary)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            OutlinedButton(
+                                onClick = { expandedFuelDropdown = true },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(deliveryFuelType, fontWeight = FontWeight.Bold)
+                            }
+                            DropdownMenu(
+                                expanded = expandedFuelDropdown,
+                                onDismissRequest = { expandedFuelDropdown = false }
+                            ) {
+                                listOf("Gasolina Comum", "Etanol Comum", "Diesel S10").forEach { fuel ->
+                                    DropdownMenuItem(
+                                        text = { Text(fuel) },
+                                        onClick = {
+                                            deliveryFuelType = fuel
+                                            expandedFuelDropdown = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = deliveryVolume,
+                        onValueChange = { deliveryVolume = it },
+                        label = { Text("Volume Recebido (Litros)") },
+                        placeholder = { Text("Ex: 10000") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Dados do Motorista & Transporte",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        color = HdPrimary,
+                        modifier = Modifier.align(Alignment.Start)
+                    )
+
+                    OutlinedTextField(
+                        value = deliveryDriverName,
+                        onValueChange = { deliveryDriverName = it },
+                        label = { Text("Nome do Motorista") },
+                        placeholder = { Text("Ex: Carlos Silveira") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = deliveryDriverCnh,
+                        onValueChange = { deliveryDriverCnh = it },
+                        label = { Text("CNH do Motorista") },
+                        placeholder = { Text("Ex: 123456789-0") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = deliveryTruckPlate,
+                        onValueChange = { deliveryTruckPlate = it },
+                        label = { Text("Placa do Caminhão") },
+                        placeholder = { Text("Ex: ABC-1234") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    // Linked Conformity Quality Analysis selection
+                    var expandedConfDropdown by remember { mutableStateOf(false) }
+                    val currentLinkedConf = conformityRecords.find { it.id == deliveryConformityId }
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text("Vincular Análise de Qualidade (Opcional)", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = HdTextSecondary)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            OutlinedButton(
+                                onClick = { expandedConfDropdown = true },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(
+                                    text = if (currentLinkedConf != null) 
+                                        "Laudo ${currentLinkedConf.date} - ${currentLinkedConf.fuelType} (${if (currentLinkedConf.isConforme) "Conf" else "Irreg"})"
+                                        else "Nenhum laudo selecionado", 
+                                    fontWeight = FontWeight.Medium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = expandedConfDropdown,
+                                onDismissRequest = { expandedConfDropdown = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Nenhum (Sem laudo)") },
+                                    onClick = {
+                                        deliveryConformityId = null
+                                        expandedConfDropdown = false
+                                    }
+                                )
+                                conformityRecords.forEach { rec ->
+                                    DropdownMenuItem(
+                                        text = { 
+                                            Text("Laudo de ${rec.date} - ${rec.fuelType} (${rec.technicianName}) - ${if (rec.isConforme) "Conforme" else "Irregular"}") 
+                                        },
+                                        onClick = {
+                                            deliveryConformityId = rec.id
+                                            expandedConfDropdown = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = { showAddDeliveryDialog = false },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Cancelar")
+                        }
+                        Button(
+                            onClick = {
+                                val volVal = deliveryVolume.toDoubleOrNull()
+                                if (deliveryInvoice.isBlank()) {
+                                    viewModel.addToast("Por favor, preencha o número da Nota Fiscal!")
+                                } else if (volVal == null || volVal <= 0) {
+                                    viewModel.addToast("Insira um volume numérico válido maior que 0!")
+                                } else if (deliveryDriverName.isBlank()) {
+                                    viewModel.addToast("Por favor, insira o nome do motorista!")
+                                } else {
+                                    viewModel.addFuelDelivery(
+                                        date = deliveryDate,
+                                        invoiceNumber = deliveryInvoice,
+                                        fuelType = deliveryFuelType,
+                                        volume = volVal,
+                                        driverName = deliveryDriverName,
+                                        driverCnh = deliveryDriverCnh,
+                                        truckPlate = deliveryTruckPlate,
+                                        conformityRecordId = deliveryConformityId
+                                    )
+                                    showAddDeliveryDialog = false
+                                }
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Gravar")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // Modal DIALOG for Registering Manual Audit Log Entry
     if (showAddAuditDialog) {
         Dialog(onDismissRequest = { showAddAuditDialog = false }) {
@@ -3665,9 +4761,13 @@ fun StockScreen(viewModel: PostoViewModel) {
 fun EmployeesScreen(viewModel: PostoViewModel) {
     val employees by viewModel.employees.collectAsStateWithLifecycle()
     val schedules by viewModel.shiftSchedules.collectAsStateWithLifecycle()
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     var activeTab by remember { mutableIntStateOf(0) } // 0 = Equipe, 1 = Escala de Turnos
     var scaleViewType by remember { mutableIntStateOf(0) } // 0 = Calendário, 1 = Tabela
+
+    var showExportPreviewDialog by remember { mutableStateOf(false) }
+    var exportPreviewText by remember { mutableStateOf("") }
 
     var showAddEmployeeDialog by remember { mutableStateOf(false) }
     var empName by remember { mutableStateOf("") }
@@ -3681,8 +4781,9 @@ fun EmployeesScreen(viewModel: PostoViewModel) {
     var selectedEmployeeId by remember { mutableIntStateOf(0) }
     var selectedDayInCalendar by remember { mutableStateOf("Dia 01") }
 
+    var dragAllocationShift by remember { mutableStateOf("Manhã (06h - 14h)") }
     val daysOfMonth = (1..31).map { "Dia %02d".format(it) }
-    val shiftNames = listOf("Manhã (06h - 14h)", "Tarde (14h - 22h)", "Noite (22h - 06h)", "Folga (Descanso)")
+    val shiftNames = listOf("Manhã (06h - 14h)", "Tarde (14h - 22h)", "Noite (22h - 06h)", "Horista (10h-18h)", "Horista 2 (09h-18h)", "Folga (Descanso)")
     var hideEmptyDays by remember { mutableStateOf(true) }
     var selectedMonth by remember { mutableStateOf("Julho de 2026") }
     val monthsList = listOf("Julho de 2026", "Agosto de 2026", "Setembro de 2026", "Outubro de 2026")
@@ -3857,23 +4958,58 @@ fun EmployeesScreen(viewModel: PostoViewModel) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         var expandedMonthDropdown by remember { mutableStateOf(false) }
-                        Box {
-                            OutlinedButton(onClick = { expandedMonthDropdown = true }) {
-                                Text("📅 $selectedMonth ▾", fontWeight = FontWeight.Bold)
-                            }
-                            DropdownMenu(
-                                expanded = expandedMonthDropdown,
-                                onDismissRequest = { expandedMonthDropdown = false }
-                            ) {
-                                monthsList.forEach { m ->
-                                    DropdownMenuItem(
-                                        text = { Text(m) },
-                                        onClick = {
-                                            selectedMonth = m
-                                            expandedMonthDropdown = false
-                                        }
-                                    )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box {
+                                OutlinedButton(onClick = { expandedMonthDropdown = true }) {
+                                    Text("📅 $selectedMonth ▾", fontWeight = FontWeight.Bold)
                                 }
+                                DropdownMenu(
+                                    expanded = expandedMonthDropdown,
+                                    onDismissRequest = { expandedMonthDropdown = false }
+                                ) {
+                                    monthsList.forEach { m ->
+                                        DropdownMenuItem(
+                                            text = { Text(m) },
+                                            onClick = {
+                                                selectedMonth = m
+                                                expandedMonthDropdown = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+
+                            OutlinedButton(
+                                onClick = {
+                                    if (schedules.isEmpty()) {
+                                        viewModel.addToast("Nenhuma escala cadastrada para exportar.")
+                                    } else {
+                                        exportPreviewText = generateSchedulesCSV(selectedMonth, schedules)
+                                        showExportPreviewDialog = true
+                                    }
+                                }
+                            ) {
+                                Icon(Icons.Default.Share, contentDescription = "Exportar", modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Exportar", fontSize = 12.sp)
+                            }
+
+                            OutlinedButton(
+                                onClick = {
+                                    if (employees.isEmpty()) {
+                                        viewModel.addToast("Erro: Cadastre frentistas antes de auto-preencher!")
+                                    } else {
+                                        val totalDays = getMonthDetails(selectedMonth).second
+                                        viewModel.autoFillShiftSchedules(selectedMonth, totalDays)
+                                    }
+                                }
+                            ) {
+                                Icon(Icons.Default.Refresh, contentDescription = "Auto-Preencher", modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Auto-Preencher", fontSize = 12.sp)
                             }
                         }
 
@@ -4020,7 +5156,7 @@ fun EmployeesScreen(viewModel: PostoViewModel) {
                                                             if (hoveredDay != null) {
                                                                 selectedEmployeeId = emp.id
                                                                 schedDay = hoveredDay!!
-                                                                schedShift = "Manhã (06h - 14h)"
+                                                                schedShift = dragAllocationShift
                                                                 scheduleToMove = null
                                                                 showAddScheduleDialog = true
                                                             }
@@ -4065,6 +5201,85 @@ fun EmployeesScreen(viewModel: PostoViewModel) {
                                         }
                                     }
                                 }
+
+                                Spacer(modifier = Modifier.height(12.dp))
+                                HorizontalDivider(color = HdPrimary.copy(alpha = 0.2f))
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = "Turno de Alocação:",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = HdPrimaryDark
+                                    )
+                                    var expandedDragShiftDropdown by remember { mutableStateOf(false) }
+                                    Box {
+                                        OutlinedButton(
+                                            onClick = { expandedDragShiftDropdown = true },
+                                            modifier = Modifier.testTag("dragShiftType"),
+                                            shape = RoundedCornerShape(8.dp),
+                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                        ) {
+                                            val badgeDetails = getShiftBadgeDetails(dragAllocationShift)
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(14.dp)
+                                                    .clip(CircleShape)
+                                                    .background(badgeDetails.second),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = badgeDetails.third,
+                                                    fontSize = 8.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color.White
+                                                )
+                                            }
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text(text = dragAllocationShift, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = badgeDetails.second)
+                                        }
+                                        DropdownMenu(
+                                            expanded = expandedDragShiftDropdown,
+                                            onDismissRequest = { expandedDragShiftDropdown = false }
+                                        ) {
+                                            shiftNames.forEach { sh ->
+                                                val details = getShiftBadgeDetails(sh)
+                                                DropdownMenuItem(
+                                                    text = {
+                                                        Row(
+                                                            verticalAlignment = Alignment.CenterVertically,
+                                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                                        ) {
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .size(16.dp)
+                                                                    .clip(CircleShape)
+                                                                    .background(details.second),
+                                                                contentAlignment = Alignment.Center
+                                                            ) {
+                                                                Text(
+                                                                    text = details.third,
+                                                                    fontSize = 8.sp,
+                                                                    fontWeight = FontWeight.Bold,
+                                                                    color = Color.White
+                                                                )
+                                                            }
+                                                            Text(sh, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                                                        }
+                                                    },
+                                                    onClick = {
+                                                        dragAllocationShift = sh
+                                                        expandedDragShiftDropdown = false
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -4079,8 +5294,8 @@ fun EmployeesScreen(viewModel: PostoViewModel) {
                         border = BorderStroke(1.dp, HdBorder)
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
-                            // Calendar header with week days
-                            val weekDays = listOf("Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb")
+                            // Calendar header with single letter days matching the planner reference image
+                            val weekDays = listOf("D", "S", "T", "Q", "Q", "S", "S")
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -4094,7 +5309,7 @@ fun EmployeesScreen(viewModel: PostoViewModel) {
                                         modifier = Modifier.weight(1f),
                                         textAlign = TextAlign.Center,
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 11.sp,
+                                        fontSize = 12.sp,
                                         color = HdPrimaryDark
                                     )
                                 }
@@ -4102,8 +5317,15 @@ fun EmployeesScreen(viewModel: PostoViewModel) {
 
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            // Calculate month grid geometry
+                            // Calculate month grid geometry with previous month trailing days
                             val (startOffset, totalDays) = getMonthDetails(selectedMonth)
+                            val prevMonthTotalDays = when (selectedMonth) {
+                                "Julho de 2026" -> 30 // Junho
+                                "Agosto de 2026" -> 31 // Julho
+                                "Setembro de 2026" -> 31 // Agosto
+                                "Outubro de 2026" -> 30 // Setembro
+                                else -> 30
+                            }
                             val totalSlots = startOffset + totalDays
                             val numRows = kotlin.math.ceil(totalSlots.toDouble() / 7.0).toInt()
 
@@ -4117,17 +5339,37 @@ fun EmployeesScreen(viewModel: PostoViewModel) {
                                             val cellIndex = row * 7 + col
                                             val dayNumber = cellIndex - startOffset + 1
 
-                                            if (dayNumber in 1..totalDays) {
+                                            if (dayNumber < 1) {
+                                                // Trailing days of previous month (greyed-out planner style)
+                                                val prevDayNumber = prevMonthTotalDays + dayNumber
+                                                Box(
+                                                    modifier = Modifier
+                                                        .weight(1f)
+                                                        .height(92.dp)
+                                                        .clip(RoundedCornerShape(8.dp))
+                                                        .background(HdGrayLight.copy(alpha = 0.3f))
+                                                        .border(0.5.dp, HdBorder.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                                                        .padding(3.dp)
+                                                ) {
+                                                    Text(
+                                                        text = "$prevDayNumber",
+                                                        fontSize = 10.sp,
+                                                        color = HdTextSecondary.copy(alpha = 0.4f),
+                                                        modifier = Modifier.align(Alignment.TopEnd)
+                                                    )
+                                                }
+                                            } else if (dayNumber in 1..totalDays) {
+                                                // Interactive days of current month
                                                 val dayStr = "Dia %02d".format(dayNumber)
                                                 val daySchedules = schedules.filter { it.dayOfWeek == dayStr }
                                                 val isSelected = selectedDayInCalendar == dayStr
                                                 val hasSchedules = daySchedules.isNotEmpty()
-
                                                 val isHovered = hoveredDay == dayStr
+
                                                 Box(
                                                     modifier = Modifier
                                                         .weight(1f)
-                                                        .height(78.dp)
+                                                        .height(92.dp)
                                                         .onGloballyPositioned { coordinates ->
                                                             dropTargets[dayStr] = coordinates.boundsInRoot()
                                                         }
@@ -4167,30 +5409,46 @@ fun EmployeesScreen(viewModel: PostoViewModel) {
                                                         if (hasSchedules) {
                                                             Column(
                                                                 modifier = Modifier.fillMaxWidth(),
-                                                                verticalArrangement = Arrangement.spacedBy(1.dp)
+                                                                verticalArrangement = Arrangement.spacedBy(2.dp)
                                                             ) {
-                                                                val maxVisible = 2
+                                                                val maxVisible = 3
                                                                 daySchedules.take(maxVisible).forEach { sched ->
-                                                                    val isFolga = sched.shift.contains("Folga", ignoreCase = true)
-                                                                    val (bgColor, txtColor, label) = when {
-                                                                        sched.shift.contains("Manhã", ignoreCase = true) -> Triple(PetrolLight, PetrolDark, "M")
-                                                                        sched.shift.contains("Tarde", ignoreCase = true) -> Triple(HdAmberLight, HdAmberDark, "T")
-                                                                        sched.shift.contains("Noite", ignoreCase = true) -> Triple(HdRedLight, HdRedDark, "N")
-                                                                        else -> Triple(HdGreenLight, HdGreen, "F")
-                                                                    }
+                                                                    val (bgColor, primaryColor, label) = getShiftBadgeDetails(sched.shift)
+                                                                    val initials = sched.employeeName.split(" ")
+                                                                        .filter { it.isNotBlank() }
+                                                                        .take(2)
+                                                                        .map { it.take(1).uppercase() }
+                                                                        .joinToString("")
 
-                                                                    Box(
+                                                                    Row(
+                                                                        verticalAlignment = Alignment.CenterVertically,
                                                                         modifier = Modifier
                                                                             .fillMaxWidth()
-                                                                            .clip(RoundedCornerShape(3.dp))
+                                                                            .clip(RoundedCornerShape(4.dp))
                                                                             .background(bgColor)
-                                                                            .padding(horizontal = 2.dp, vertical = 1.dp)
+                                                                            .border(0.5.dp, primaryColor.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                                                                            .padding(horizontal = 3.dp, vertical = 2.dp),
+                                                                        horizontalArrangement = Arrangement.spacedBy(2.dp)
                                                                     ) {
+                                                                        Box(
+                                                                            modifier = Modifier
+                                                                                .size(11.dp)
+                                                                                .clip(CircleShape)
+                                                                                .background(primaryColor),
+                                                                            contentAlignment = Alignment.Center
+                                                                        ) {
+                                                                            Text(
+                                                                                text = initials,
+                                                                                fontSize = 6.sp,
+                                                                                fontWeight = FontWeight.Bold,
+                                                                                color = Color.White
+                                                                            )
+                                                                        }
                                                                         Text(
-                                                                            text = "${sched.employeeName.take(3)} ($label)",
-                                                                            fontSize = 7.sp,
+                                                                            text = "$initials: $label",
+                                                                            fontSize = 6.sp,
                                                                             fontWeight = FontWeight.Bold,
-                                                                            color = txtColor,
+                                                                            color = primaryColor,
                                                                             maxLines = 1,
                                                                             overflow = TextOverflow.Ellipsis
                                                                         )
@@ -4199,7 +5457,7 @@ fun EmployeesScreen(viewModel: PostoViewModel) {
                                                                 if (daySchedules.size > maxVisible) {
                                                                     Text(
                                                                         text = "+${daySchedules.size - maxVisible}",
-                                                                        fontSize = 7.sp,
+                                                                        fontSize = 6.sp,
                                                                         fontWeight = FontWeight.Bold,
                                                                         color = HdTextSecondary,
                                                                         modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -4212,16 +5470,78 @@ fun EmployeesScreen(viewModel: PostoViewModel) {
                                                     }
                                                 }
                                             } else {
-                                                // Empty slot placeholder
+                                                // Filler days of next month (greyed-out planner style)
+                                                val nextDayNumber = dayNumber - totalDays
                                                 Box(
                                                     modifier = Modifier
                                                         .weight(1f)
-                                                        .height(78.dp)
+                                                        .height(92.dp)
                                                         .clip(RoundedCornerShape(8.dp))
-                                                        .background(Color.Transparent)
-                                                )
+                                                        .background(HdGrayLight.copy(alpha = 0.3f))
+                                                        .border(0.5.dp, HdBorder.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                                                        .padding(3.dp)
+                                                ) {
+                                                    Text(
+                                                        text = "$nextDayNumber",
+                                                        fontSize = 10.sp,
+                                                        color = HdTextSecondary.copy(alpha = 0.4f),
+                                                        modifier = Modifier.align(Alignment.TopEnd)
+                                                    )
+                                                }
                                             }
                                         }
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+                            HorizontalDivider(color = HdBorder.copy(alpha = 0.5f))
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Interactive Shift Legend matching the reference image layout and design
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState())
+                                    .padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                val legendItems = listOf(
+                                    Triple("M", "Manhã 06h-14h", Color(0xFF1976D2)),
+                                    Triple("T", "Tarde 14h-22h", Color(0xFF388E3C)),
+                                    Triple("P", "Plantão/Noite 22h-06h", Color(0xFFC62828)),
+                                    Triple("H", "Horista 10h-18h", Color(0xFF7B1FA2)),
+                                    Triple("H2", "Horista 2 09h-18h", Color(0xFF512DA8)),
+                                    Triple("F", "Folga", Color(0xFF78909C)),
+                                    Triple("R", "Repouso", Color(0xFF8D6E63))
+                                )
+
+                                legendItems.forEach { (label, desc, color) ->
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(16.dp)
+                                                .clip(CircleShape)
+                                                .background(color),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = label,
+                                                fontSize = 8.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White
+                                            )
+                                        }
+                                        Text(
+                                            text = "($desc)",
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = HdTextSecondary
+                                        )
                                     }
                                 }
                             }
@@ -4429,119 +5749,198 @@ fun EmployeesScreen(viewModel: PostoViewModel) {
                     }
                 }
             } else {
-                // Group by employee for monthly summary
-                if (employees.isEmpty()) {
-                    item {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                        ) {
-                            Box(modifier = Modifier.padding(32.dp), contentAlignment = Alignment.Center) {
-                                Text("Nenhum colaborador cadastrado.")
-                            }
-                        }
-                    }
-                } else {
-                    employees.forEach { employee ->
-                        val empSchedules = schedules.filter { it.employeeName == employee.name }
-                        item {
-                            Card(
+                // Interactive spreadsheet-style monthly roster table
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = HdSurface),
+                        border = BorderStroke(1.dp, HdBorder)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(containerColor = HdSurface),
-                                border = BorderStroke(1.dp, HdBorder),
-                                shape = RoundedCornerShape(12.dp)
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column(modifier = Modifier.padding(16.dp)) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(36.dp)
-                                                    .clip(CircleShape)
-                                                    .background(PetrolLight),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Text(
-                                                    text = employee.name.take(1).uppercase(),
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = PetrolDark
-                                                )
-                                            }
-                                            Spacer(modifier = Modifier.width(10.dp))
-                                            Column {
-                                                Text(text = employee.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-                                                Text(text = employee.role, style = MaterialTheme.typography.labelSmall, color = HdTextSecondary)
-                                            }
-                                        }
+                                Column {
+                                    Text(
+                                        text = "Tabela Geral de Escalas 📊",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = HdPrimaryDark
+                                    )
+                                    Text(
+                                        text = "Toque em um frentista para remover ou no botão (+) de uma célula para escalar.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = HdTextSecondary
+                                    )
+                                }
+                                
+                                // Reset filters or add quick scale option
+                                Card(
+                                    colors = CardDefaults.cardColors(containerColor = HdPrimaryLight),
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text(
+                                        text = "${schedules.size} Escalas Criadas",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 11.sp,
+                                        color = HdPrimary,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
 
-                                        Card(
-                                            colors = CardDefaults.cardColors(containerColor = HdPrimaryLight),
-                                            shape = RoundedCornerShape(6.dp)
-                                        ) {
-                                            Text(
-                                                text = "${empSchedules.size} Plantões no Mês",
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 11.sp,
-                                                color = HdPrimary,
-                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                            )
-                                        }
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            val (_, totalDays) = getMonthDetails(selectedMonth)
+                            val sortedDays = (1..totalDays).map { "Dia %02d".format(it) }
+                            val filteredDays = if (hideEmptyDays) {
+                                sortedDays.filter { d -> schedules.any { it.dayOfWeek == d } }
+                            } else {
+                                sortedDays
+                            }
+
+                            if (employees.isEmpty()) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(32.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("Nenhum colaborador cadastrado. Adicione frentistas na primeira aba.")
+                                }
+                            } else if (filteredDays.isEmpty() && hideEmptyDays) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(32.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text("Nenhuma escala agendada para este mês ainda.", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text("Desmarque 'Ocultar dias vazios' acima para visualizar todos os dias e criar a escala do mês.", style = MaterialTheme.typography.bodySmall, color = HdTextSecondary, textAlign = TextAlign.Center)
                                     }
+                                }
+                            } else {
+                                // Horizontal scrollable sheet/table of shifts
+                                Box(modifier = Modifier.fillMaxWidth()) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .horizontalScroll(rememberScrollState())
+                                    ) {
+                                        // TABLE HEADER
+                                        Row(
+                                            modifier = Modifier
+                                                .background(HdPrimaryLight.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                                                .padding(vertical = 10.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text("Dia", modifier = Modifier.width(65.dp), fontWeight = FontWeight.ExtraBold, fontSize = 11.sp, color = HdPrimaryDark, textAlign = TextAlign.Center)
+                                            Text("☀️ Manhã", modifier = Modifier.width(135.dp), fontWeight = FontWeight.ExtraBold, fontSize = 11.sp, color = PetrolDark, textAlign = TextAlign.Center)
+                                            Text("⛅ Tarde", modifier = Modifier.width(135.dp), fontWeight = FontWeight.ExtraBold, fontSize = 11.sp, color = HdAmberDark, textAlign = TextAlign.Center)
+                                            Text("🌙 Noite", modifier = Modifier.width(135.dp), fontWeight = FontWeight.ExtraBold, fontSize = 11.sp, color = HdRedDark, textAlign = TextAlign.Center)
+                                            Text("🟢 Folga", modifier = Modifier.width(110.dp), fontWeight = FontWeight.ExtraBold, fontSize = 11.sp, color = HdGreen, textAlign = TextAlign.Center)
+                                        }
 
-                                    Spacer(modifier = Modifier.height(12.dp))
-                                    HorizontalDivider(color = HdBorder)
-                                    Spacer(modifier = Modifier.height(8.dp))
+                                        Spacer(modifier = Modifier.height(6.dp))
 
-                                    if (empSchedules.isEmpty()) {
-                                        Text(
-                                            text = "Nenhum plantão agendado para este colaborador.",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = HdTextSecondary.copy(alpha = 0.7f),
-                                            modifier = Modifier.padding(vertical = 4.dp)
-                                        )
-                                    } else {
-                                        // Scrollable horizontal list of scheduled days
-                                        val sortedSchedules = empSchedules.sortedBy { it.dayOfWeek }
-                                        Box(modifier = Modifier.fillMaxWidth()) {
+                                        // TABLE ROWS
+                                        filteredDays.forEachIndexed { idx, dayStr ->
+                                            val daySchedules = schedules.filter { it.dayOfWeek == dayStr }
+                                            val rowBg = if (idx % 2 == 1) HdGrayLight.copy(alpha = 0.4f) else Color.Transparent
+
                                             Row(
-                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
                                                 modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .horizontalScroll(rememberScrollState())
-                                                    .padding(vertical = 4.dp)
+                                                    .clip(RoundedCornerShape(6.dp))
+                                                    .background(rowBg)
+                                                    .padding(vertical = 8.dp),
+                                                verticalAlignment = Alignment.CenterVertically
                                             ) {
-                                                sortedSchedules.forEach { sched ->
-                                                    val isFolga = sched.shift.contains("Folga", ignoreCase = true)
+                                                // Column 1: Dia
+                                                Box(
+                                                    modifier = Modifier.width(65.dp),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
                                                     Card(
-                                                        shape = RoundedCornerShape(8.dp),
-                                                        colors = CardDefaults.cardColors(
-                                                            containerColor = if (isFolga) HdGreenLight else PetrolLight
-                                                        ),
-                                                        border = BorderStroke(1.dp, if (isFolga) HdGreen.copy(alpha = 0.2f) else PetrolDark.copy(alpha = 0.1f))
+                                                        colors = CardDefaults.cardColors(containerColor = HdPrimaryLight.copy(alpha = 0.3f)),
+                                                        shape = RoundedCornerShape(6.dp)
                                                     ) {
-                                                        Row(
-                                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                                                            verticalAlignment = Alignment.CenterVertically,
-                                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                                        ) {
-                                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                                                Text(text = sched.dayOfWeek, fontWeight = FontWeight.Bold, fontSize = 11.sp, color = if (isFolga) HdGreen else PetrolDark)
-                                                                Text(text = sched.shift.substringBefore(" ("), fontSize = 9.sp, color = HdTextPrimary)
-                                                            }
-                                                            IconButton(
-                                                                onClick = { viewModel.deleteShiftSchedule(sched) },
-                                                                modifier = Modifier.size(16.dp)
-                                                            ) {
-                                                                Icon(Icons.Default.Close, contentDescription = "Remover", tint = HdRed, modifier = Modifier.size(10.dp))
-                                                            }
-                                                        }
+                                                        Text(
+                                                            text = dayStr.removePrefix("Dia "),
+                                                            fontWeight = FontWeight.Bold,
+                                                            fontSize = 12.sp,
+                                                            color = HdPrimaryDark,
+                                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                        )
                                                     }
                                                 }
+
+                                                // Column 2: Manhã (06h - 14h)
+                                                Box(modifier = Modifier.width(135.dp).padding(horizontal = 4.dp)) {
+                                                    val shiftScheds = daySchedules.filter { it.shift.contains("Manhã", ignoreCase = true) }
+                                                    ShiftCellContent(
+                                                        schedules = shiftScheds,
+                                                        onAddClick = {
+                                                            schedDay = dayStr
+                                                            schedShift = "Manhã (06h - 14h)"
+                                                            selectedEmployeeId = employees.first().id
+                                                            showAddScheduleDialog = true
+                                                        },
+                                                        onDeleteClick = { sched -> viewModel.deleteShiftSchedule(sched) }
+                                                    )
+                                                }
+
+                                                // Column 3: Tarde (14h - 22h)
+                                                Box(modifier = Modifier.width(135.dp).padding(horizontal = 4.dp)) {
+                                                    val shiftScheds = daySchedules.filter { it.shift.contains("Tarde", ignoreCase = true) }
+                                                    ShiftCellContent(
+                                                        schedules = shiftScheds,
+                                                        onAddClick = {
+                                                            schedDay = dayStr
+                                                            schedShift = "Tarde (14h - 22h)"
+                                                            selectedEmployeeId = employees.first().id
+                                                            showAddScheduleDialog = true
+                                                        },
+                                                        onDeleteClick = { sched -> viewModel.deleteShiftSchedule(sched) }
+                                                    )
+                                                }
+
+                                                // Column 4: Noite (22h - 06h)
+                                                Box(modifier = Modifier.width(135.dp).padding(horizontal = 4.dp)) {
+                                                    val shiftScheds = daySchedules.filter { it.shift.contains("Noite", ignoreCase = true) }
+                                                    ShiftCellContent(
+                                                        schedules = shiftScheds,
+                                                        onAddClick = {
+                                                            schedDay = dayStr
+                                                            schedShift = "Noite (22h - 06h)"
+                                                            selectedEmployeeId = employees.first().id
+                                                            showAddScheduleDialog = true
+                                                        },
+                                                        onDeleteClick = { sched -> viewModel.deleteShiftSchedule(sched) }
+                                                    )
+                                                }
+
+                                                // Column 5: Folga
+                                                Box(modifier = Modifier.width(110.dp).padding(horizontal = 4.dp)) {
+                                                    val shiftScheds = daySchedules.filter { it.shift.contains("Folga", ignoreCase = true) }
+                                                    ShiftCellContent(
+                                                        schedules = shiftScheds,
+                                                        onAddClick = {
+                                                            schedDay = dayStr
+                                                            schedShift = "Folga (Descanso)"
+                                                            selectedEmployeeId = employees.first().id
+                                                            showAddScheduleDialog = true
+                                                        },
+                                                        onDeleteClick = { sched -> viewModel.deleteShiftSchedule(sched) }
+                                                    )
+                                                }
                                             }
+
+                                            HorizontalDivider(color = HdBorder.copy(alpha = 0.5f))
                                         }
                                     }
                                 }
@@ -4820,6 +6219,113 @@ fun EmployeesScreen(viewModel: PostoViewModel) {
                 }
             }
         }
+
+        // Export Preview Dialog for Shift Schedules
+        if (showExportPreviewDialog) {
+            androidx.compose.ui.window.Dialog(onDismissRequest = { showExportPreviewDialog = false }) {
+                Card(
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Text(
+                            text = "Exportação de Escalas CSV 📄",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+
+                        Text(
+                            text = "Escala de $selectedMonth pronta para exportar. Copie o conteúdo ou compartilhe como arquivo CSV diretamente no WhatsApp da equipe.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = HdTextSecondary,
+                            textAlign = TextAlign.Center
+                        )
+
+                        // Scrollable CSV preview
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(180.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(HdGrayLight)
+                                .border(1.dp, HdBorder, RoundedCornerShape(8.dp))
+                                .padding(12.dp)
+                                .verticalScroll(rememberScrollState())
+                                .horizontalScroll(rememberScrollState())
+                        ) {
+                            Text(
+                                text = exportPreviewText,
+                                style = MaterialTheme.typography.bodySmall.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace),
+                                color = HdTextPrimary
+                            )
+                        }
+
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = {
+                                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                                        val clip = android.content.ClipData.newPlainText("Escala de Plantões", exportPreviewText)
+                                        clipboard.setPrimaryClip(clip)
+                                        viewModel.addToast("Copiado para a área de transferência!")
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = HdPrimary),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Icon(Icons.Default.ContentCopy, contentDescription = "Copiar", modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Copiar CSV", fontSize = 11.sp)
+                                }
+
+                                Button(
+                                    onClick = {
+                                        shareScheduleCSV(context, selectedMonth, exportPreviewText)
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Icon(Icons.Default.Share, contentDescription = "Compartilhar", modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Compartilhar", fontSize = 11.sp)
+                                }
+                            }
+
+                            Button(
+                                onClick = {
+                                    shareScheduleCSVWhatsApp(context, selectedMonth, exportPreviewText, viewModel)
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("💬 Enviar via WhatsApp", fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                        OutlinedButton(
+                            onClick = { showExportPreviewDialog = false },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Fechar")
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -5078,6 +6584,8 @@ fun CalendarScreen(viewModel: PostoViewModel) {
 @Composable
 fun ReportsScreen(viewModel: PostoViewModel) {
     val reports by viewModel.dailyReports.collectAsStateWithLifecycle()
+    val stationCnpj by viewModel.stationCnpj.collectAsStateWithLifecycle()
+    val stationRazaoSocial by viewModel.stationRazaoSocial.collectAsStateWithLifecycle()
 
     var showAddReportDialog by remember { mutableStateOf(false) }
     var reportDate by remember { mutableStateOf("2026-07-04") }
@@ -5353,7 +6861,7 @@ fun ReportsScreen(viewModel: PostoViewModel) {
                     // ACTION BUTTONS GROUP
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Button(
                             onClick = {
@@ -5366,11 +6874,12 @@ fun ReportsScreen(viewModel: PostoViewModel) {
                                 }
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+                            contentPadding = PaddingValues(horizontal = 8.dp),
                             modifier = Modifier.weight(1f).testTag("export_csv_button")
                         ) {
-                            Icon(Icons.Default.Share, contentDescription = "Exportar CSV", modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Exportar CSV", fontSize = 11.sp)
+                            Icon(Icons.Default.Share, contentDescription = "Exportar CSV", modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("CSV", fontSize = 10.sp)
                         }
 
                         Button(
@@ -5384,11 +6893,34 @@ fun ReportsScreen(viewModel: PostoViewModel) {
                                 }
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = PetrolDark),
+                            contentPadding = PaddingValues(horizontal = 8.dp),
                             modifier = Modifier.weight(1f).testTag("copy_table_button")
                         ) {
-                            Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Copiar Tabela", modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Copiar Tabela", fontSize = 11.sp)
+                            Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Copiar Tabela", modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Copiar", fontSize = 10.sp)
+                        }
+
+                        Button(
+                            onClick = {
+                                if (filteredReportsForExport.isEmpty()) {
+                                    viewModel.addToast("Sem dados para exportar!")
+                                } else {
+                                    exportReportsToPdf(
+                                        context = context,
+                                        reports = filteredReportsForExport,
+                                        stationName = stationRazaoSocial.ifBlank { "Posto Estrela Cadente" },
+                                        stationCnpj = stationCnpj.ifBlank { "12.345.678/0001-99" }
+                                    )
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
+                            contentPadding = PaddingValues(horizontal = 8.dp),
+                            modifier = Modifier.weight(1f).testTag("export_pdf_button")
+                        ) {
+                            Icon(Icons.Default.Print, contentDescription = "Exportar PDF", modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("PDF", fontSize = 10.sp)
                         }
                     }
                 }
@@ -5815,6 +7347,255 @@ private fun generateTextTable(data: List<DailyReport>): String {
     sb.append("| TOTAL      |                    | $totalLiters | $totalRevenue | $totalTx |\n")
     sb.append("+------------+--------------------+------------------+------------------+------------+\n")
     return sb.toString()
+}
+
+private fun exportReportsToPdf(
+    context: Context,
+    reports: List<DailyReport>,
+    stationName: String,
+    stationCnpj: String
+) {
+    try {
+        val pdfDocument = android.graphics.pdf.PdfDocument()
+        
+        // A4 Landscape is 842 wide x 595 tall
+        val pageInfo = android.graphics.pdf.PdfDocument.PageInfo.Builder(842, 595, 1).create()
+        val page = pdfDocument.startPage(pageInfo)
+        
+        val canvas = page.canvas
+        val paint = android.graphics.Paint()
+        
+        // DRAW BRANDED HEADER BLOCK
+        paint.color = android.graphics.Color.rgb(37, 99, 235) // Blue-600 (HdPrimary)
+        paint.style = android.graphics.Paint.Style.FILL
+        canvas.drawRect(0f, 0f, 842f, 80f, paint)
+        
+        // Header Text - Razão Social
+        paint.color = android.graphics.Color.WHITE
+        paint.textSize = 20f
+        paint.isFakeBoldText = true
+        canvas.drawText(stationName.uppercase(Locale.getDefault()), 40f, 42f, paint)
+        
+        // Header Text - Subtitles
+        paint.textSize = 10f
+        paint.isFakeBoldText = false
+        paint.color = android.graphics.Color.rgb(219, 234, 254) // Blue-100
+        canvas.drawText("CNPJ: $stationCnpj | LIVRO DE MOVIMENTAÇÃO DE COMBUSTÍVEIS (LMC)", 40f, 60f, paint)
+        
+        // Right header info
+        paint.color = android.graphics.Color.WHITE
+        paint.textSize = 14f
+        paint.isFakeBoldText = true
+        paint.textAlign = android.graphics.Paint.Align.RIGHT
+        canvas.drawText("RELATÓRIO DIÁRIO DE OPERAÇÃO", 802f, 42f, paint)
+        
+        paint.textSize = 10f
+        paint.isFakeBoldText = false
+        paint.color = android.graphics.Color.rgb(219, 234, 254) // Blue-100
+        val currentDate = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(java.util.Date())
+        canvas.drawText("Gerado em: $currentDate", 802f, 60f, paint)
+        
+        // Reset Alignment
+        paint.textAlign = android.graphics.Paint.Align.LEFT
+        
+        // SECTION TITLE
+        paint.color = android.graphics.Color.rgb(31, 41, 55) // Gray-800
+        paint.textSize = 12f
+        paint.isFakeBoldText = true
+        canvas.drawText("Histórico Completo de Vendas e Fechamento de Caixa", 40f, 115f, paint)
+        
+        // TABLE CONFIGURATION
+        val colX = floatArrayOf(40f, 130f, 260f, 340f, 420f, 500f, 580f, 720f)
+        val headers = arrayOf("Data", "Combustível", "Est. Inicial", "Recebido", "Vol. Vendido", "Est. Final", "Faturamento", "Vendas")
+        
+        // Draw Table Header Background
+        paint.color = android.graphics.Color.rgb(243, 244, 246) // Gray-100
+        paint.style = android.graphics.Paint.Style.FILL
+        canvas.drawRect(40f, 130f, 802f, 155f, paint)
+        
+        // Draw Table Header border lines
+        paint.color = android.graphics.Color.rgb(209, 213, 219) // Gray-300
+        paint.style = android.graphics.Paint.Style.STROKE
+        paint.strokeWidth = 1f
+        canvas.drawRect(40f, 130f, 802f, 155f, paint)
+        
+        // Draw Table Header Texts
+        paint.style = android.graphics.Paint.Style.FILL
+        paint.color = android.graphics.Color.rgb(55, 65, 81) // Gray-700
+        paint.textSize = 9f
+        paint.isFakeBoldText = true
+        
+        for (i in headers.indices) {
+            val align = if (i in 2..6) android.graphics.Paint.Align.RIGHT else android.graphics.Paint.Align.LEFT
+            paint.textAlign = align
+            val xPos = if (align == android.graphics.Paint.Align.RIGHT) {
+                if (i == 6) colX[i] + 110f else colX[i] + 65f
+            } else colX[i]
+            canvas.drawText(headers[i], xPos, 146f, paint)
+        }
+        
+        // TABLE BODY
+        paint.textAlign = android.graphics.Paint.Align.LEFT
+        var y = 175f
+        var totalSold = 0.0
+        var totalSales = 0.0
+        var totalTx = 0
+        
+        val sortedReports = reports.sortedByDescending { it.date }
+        
+        sortedReports.forEachIndexed { idx, rep ->
+            if (y > 510f) {
+                paint.color = android.graphics.Color.rgb(156, 163, 175)
+                paint.textSize = 9f
+                paint.isFakeBoldText = false
+                canvas.drawText("... Excedeu o limite da página. Baixe o CSV para ver todo o histórico.", 40f, y, paint)
+                return@forEachIndexed
+            }
+            
+            // Alternating Row Background
+            if (idx % 2 == 1) {
+                paint.color = android.graphics.Color.rgb(249, 250, 251) // Gray-50
+                paint.style = android.graphics.Paint.Style.FILL
+                canvas.drawRect(40f, y - 15f, 802f, y + 8f, paint)
+            }
+            
+            // Row Border Bottom
+            paint.color = android.graphics.Color.rgb(229, 231, 235) // Gray-200
+            paint.style = android.graphics.Paint.Style.STROKE
+            canvas.drawLine(40f, y + 8f, 802f, y + 8f, paint)
+            
+            // Draw content
+            paint.style = android.graphics.Paint.Style.FILL
+            paint.color = android.graphics.Color.rgb(17, 24, 39) // Gray-900
+            paint.textSize = 9f
+            paint.isFakeBoldText = false
+            
+            // Data
+            paint.textAlign = android.graphics.Paint.Align.LEFT
+            canvas.drawText(rep.date, colX[0], y, paint)
+            
+            // Fuel Name
+            paint.isFakeBoldText = true
+            paint.color = android.graphics.Color.rgb(37, 99, 235) // blue
+            canvas.drawText(rep.fuelName, colX[1], y, paint)
+            paint.isFakeBoldText = false
+            paint.color = android.graphics.Color.rgb(17, 24, 39)
+            
+            // Opening Stock
+            paint.textAlign = android.graphics.Paint.Align.RIGHT
+            canvas.drawText(String.format(Locale.getDefault(), "%,.0f L", rep.openingStock), colX[2] + 65f, y, paint)
+            
+            // Received
+            canvas.drawText(String.format(Locale.getDefault(), "%,.0f L", rep.receivedVolume), colX[3] + 65f, y, paint)
+            
+            // Liters Sold
+            paint.isFakeBoldText = true
+            canvas.drawText(String.format(Locale.getDefault(), "%,.0f L", rep.litersSold), colX[4] + 65f, y, paint)
+            paint.isFakeBoldText = false
+            
+            // Closing Stock
+            canvas.drawText(String.format(Locale.getDefault(), "%,.0f L", rep.closingStock), colX[5] + 65f, y, paint)
+            
+            // Faturamento
+            paint.isFakeBoldText = true
+            paint.color = android.graphics.Color.rgb(22, 163, 74) // Green-600
+            canvas.drawText(String.format(Locale.getDefault(), "R$ %,.2f", rep.totalSales), colX[6] + 110f, y, paint)
+            paint.isFakeBoldText = false
+            paint.color = android.graphics.Color.rgb(17, 24, 39)
+            
+            // Tx Count
+            paint.textAlign = android.graphics.Paint.Align.LEFT
+            canvas.drawText(rep.transactionsCount.toString(), colX[7], y, paint)
+            
+            totalSold += rep.litersSold
+            totalSales += rep.totalSales
+            totalTx += rep.transactionsCount
+            
+            y += 22f
+        }
+        
+        // TOTAL ROW
+        paint.color = android.graphics.Color.rgb(219, 234, 254) // Blue-100
+        paint.style = android.graphics.Paint.Style.FILL
+        canvas.drawRect(40f, y - 10f, 802f, y + 15f, paint)
+        
+        paint.color = android.graphics.Color.rgb(29, 78, 216) // Blue-700
+        paint.style = android.graphics.Paint.Style.STROKE
+        canvas.drawRect(40f, y - 10f, 802f, y + 15f, paint)
+        
+        paint.style = android.graphics.Paint.Style.FILL
+        paint.color = android.graphics.Color.rgb(30, 58, 138) // Blue-900
+        paint.textSize = 10f
+        paint.isFakeBoldText = true
+        
+        paint.textAlign = android.graphics.Paint.Align.LEFT
+        canvas.drawText("SOMA TOTAL", colX[0], y + 6f, paint)
+        
+        paint.textAlign = android.graphics.Paint.Align.RIGHT
+        canvas.drawText(String.format(Locale.getDefault(), "%,.0f L", totalSold), colX[4] + 65f, y + 6f, paint)
+        canvas.drawText(String.format(Locale.getDefault(), "R$ %,.2f", totalSales), colX[6] + 110f, y + 6f, paint)
+        
+        paint.textAlign = android.graphics.Paint.Align.LEFT
+        canvas.drawText(totalTx.toString(), colX[7], y + 6f, paint)
+        
+        // SIGNATURE / AUDIT SECTION
+        val sigY = y + 45f
+        if (sigY < 550f) {
+            paint.color = android.graphics.Color.rgb(156, 163, 175) // Gray-400
+            paint.strokeWidth = 1f
+            paint.style = android.graphics.Paint.Style.STROKE
+            
+            canvas.drawLine(40f, sigY, 240f, sigY, paint)
+            canvas.drawLine(562f, sigY, 762f, sigY, paint)
+            
+            paint.style = android.graphics.Paint.Style.FILL
+            paint.textSize = 8f
+            paint.isFakeBoldText = false
+            paint.color = android.graphics.Color.rgb(107, 114, 128) // Gray-500
+            
+            canvas.drawText("Assinatura do Gerente Geral", 40f, sigY + 12f, paint)
+            canvas.drawText("Visto do Autor de Conformidade", 562f, sigY + 12f, paint)
+        }
+        
+        // FOOTER
+        paint.color = android.graphics.Color.rgb(156, 163, 175) // Gray-400
+        paint.textSize = 8f
+        paint.isFakeBoldText = false
+        paint.textAlign = android.graphics.Paint.Align.LEFT
+        canvas.drawText("Gerado pelo aplicativo Meu Posto - Controle LMC. Todos os direitos reservados.", 40f, 575f, paint)
+        
+        paint.textAlign = android.graphics.Paint.Align.RIGHT
+        canvas.drawText("Página 1 de 1", 802f, 575f, paint)
+        
+        pdfDocument.finishPage(page)
+        
+        // SAVE FILE IN CACHE & SHARE
+        val pdfFile = java.io.File(context.cacheDir, "relatorio_diario_posto.pdf")
+        val fileOutputStream = java.io.FileOutputStream(pdfFile)
+        pdfDocument.writeTo(fileOutputStream)
+        pdfDocument.close()
+        fileOutputStream.close()
+        
+        // Share Intent using FileProvider
+        val uri: android.net.Uri = androidx.core.content.FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            pdfFile
+        )
+        
+        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, "application/pdf")
+            flags = android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        
+        val chooser = android.content.Intent.createChooser(intent, "Abrir Relatório PDF")
+        chooser.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(chooser)
+        
+    } catch (e: Exception) {
+        e.printStackTrace()
+        android.widget.Toast.makeText(context, "Erro ao gerar PDF: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+    }
 }
 
 private fun generateAuditsCSV(data: List<AuditLogEntry>): String {
@@ -6768,36 +8549,157 @@ fun SystemsScreen(viewModel: PostoViewModel) {
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text(
-                                text = "Nuvem Firebase ☁️",
+                                text = "Nuvem Supabase ☁️",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = HdTextPrimary,
                                 modifier = Modifier.padding(bottom = 4.dp)
                             )
                             Text(
-                                text = "Gerencie a sincronização de dados e backup do sistema de gestão com o Google Cloud Firestore em tempo real.",
+                                text = "Sincronize e restaure todo o banco de dados com a nuvem de forma segura em 1 clique.",
                                 fontSize = 11.sp,
                                 color = HdTextSecondary,
                                 modifier = Modifier.padding(bottom = 12.dp)
                             )
 
-                            val firebaseAvailable = FirebaseHelper.isAvailable
+                            val initialConfig = remember { viewModel.getSavedSupabaseConfig() }
+                            var sbUrl by remember { mutableStateOf(initialConfig.first) }
+                            var sbKey by remember { mutableStateOf(initialConfig.second) }
+                            var supabaseAvailableTrigger by remember { mutableStateOf(viewModel.isSupabaseAvailable()) }
+
                             Surface(
                                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                                 shape = RoundedCornerShape(8.dp),
-                                color = if (firebaseAvailable) Color(0xFFD4EDDA) else Color(0xFFFFF3CD),
-                                border = BorderStroke(1.dp, if (firebaseAvailable) Color(0xFFC3E6CB) else Color(0xFFFFEBAA))
+                                color = if (supabaseAvailableTrigger) Color(0xFFD4EDDA) else Color(0xFFFFF3CD),
+                                border = BorderStroke(1.dp, if (supabaseAvailableTrigger) Color(0xFFC3E6CB) else Color(0xFFFFEBAA))
                             ) {
                                 Row(
                                     modifier = Modifier.padding(12.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = if (firebaseAvailable) "⚡ Firebase Auth & Firestore: ATIVO e CONFIGURADO" else "⚠️ Firebase Off-line (Usando banco Room local)",
+                                        text = if (supabaseAvailableTrigger) "⚡ Supabase Cloud Sync: ATIVO e CONFIGURADO" else "⚠️ Supabase Off-line (Usando banco Room local)",
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = if (firebaseAvailable) Color(0xFF155724) else Color(0xFF856404)
+                                        color = if (supabaseAvailableTrigger) Color(0xFF155724) else Color(0xFF856404)
                                     )
+                                }
+                            }
+
+                            var showConfigForm by remember { mutableStateOf(false) }
+
+                            OutlinedButton(
+                                onClick = { showConfigForm = !showConfigForm },
+                                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                                shape = RoundedCornerShape(8.dp),
+                                border = BorderStroke(1.dp, HdPrimary)
+                            ) {
+                                Icon(
+                                    if (showConfigForm) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = HdPrimary
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = if (showConfigForm) "Ocultar Parâmetros de Conexão" else "Configurar Credenciais Supabase",
+                                    fontSize = 11.sp,
+                                    color = HdPrimary,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+
+                            if (showConfigForm) {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    OutlinedTextField(
+                                        value = sbUrl,
+                                        onValueChange = { sbUrl = it },
+                                        label = { Text("Supabase URL", fontSize = 11.sp) },
+                                        placeholder = { Text("https://xxxx.supabase.co", fontSize = 11.sp) },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        singleLine = true,
+                                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 11.sp)
+                                    )
+
+                                    OutlinedTextField(
+                                        value = sbKey,
+                                        onValueChange = { sbKey = it },
+                                        label = { Text("Anon / Public Key", fontSize = 11.sp) },
+                                        placeholder = { Text("eyJhbGciOi...", fontSize = 11.sp) },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        singleLine = true,
+                                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 11.sp)
+                                    )
+
+                                    // SQL Quick setup tip
+                                    Surface(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = HdPrimaryLight.copy(alpha = 0.2f)
+                                    ) {
+                                        Column(modifier = Modifier.padding(10.dp)) {
+                                            Text(
+                                                text = "💡 Guia Rápido de Configuração:",
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = HdTextPrimary,
+                                                modifier = Modifier.padding(bottom = 4.dp)
+                                            )
+                                            Text(
+                                                text = "1. Crie uma conta gratuita em supabase.com e inicie um projeto.\n2. No SQL Editor, execute o seguinte comando:\n\ncreate table posto_backups (\n  id text primary key,\n  data jsonb,\n  updated_at timestamp with time zone default now()\n);\n\n3. Desative RLS para posto_backups ou crie política de acesso total.",
+                                                fontSize = 9.sp,
+                                                lineHeight = 12.sp,
+                                                color = HdTextSecondary
+                                            )
+                                        }
+                                    }
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Button(
+                                            onClick = {
+                                                if (sbUrl.isEmpty() || sbKey.isEmpty()) {
+                                                    viewModel.addToast("Preencha todos os campos do Supabase!")
+                                                } else {
+                                                    val success = viewModel.saveSupabaseConfig(sbUrl, sbKey)
+                                                    supabaseAvailableTrigger = viewModel.isSupabaseAvailable()
+                                                    if (success) {
+                                                        showConfigForm = false
+                                                    }
+                                                }
+                                            },
+                                            modifier = Modifier.weight(1f),
+                                            colors = ButtonDefaults.buttonColors(containerColor = HdPrimary),
+                                            shape = RoundedCornerShape(8.dp)
+                                        ) {
+                                            Icon(Icons.Default.Check, contentDescription = "Salvar", modifier = Modifier.size(16.dp))
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("Salvar", fontSize = 11.sp)
+                                        }
+
+                                        if (sbUrl.isNotEmpty() || sbKey.isNotEmpty()) {
+                                            Button(
+                                                onClick = {
+                                                    viewModel.clearSupabaseConfig()
+                                                    sbUrl = ""
+                                                    sbKey = ""
+                                                    supabaseAvailableTrigger = viewModel.isSupabaseAvailable()
+                                                },
+                                                modifier = Modifier.weight(1f),
+                                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC3545)),
+                                                shape = RoundedCornerShape(8.dp)
+                                            ) {
+                                                Icon(Icons.Default.Delete, contentDescription = "Limpar", modifier = Modifier.size(16.dp))
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text("Limpar", fontSize = 11.sp)
+                                            }
+                                        }
+                                    }
                                 }
                             }
 
@@ -6806,11 +8708,11 @@ fun SystemsScreen(viewModel: PostoViewModel) {
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Button(
-                                    onClick = { viewModel.uploadToFirestore(stationCnpj) },
+                                    onClick = { viewModel.uploadToSupabase(stationCnpj) },
                                     modifier = Modifier.weight(1f),
-                                    colors = ButtonDefaults.buttonColors(containerColor = if (firebaseAvailable) HdPrimary else Color.Gray),
+                                    colors = ButtonDefaults.buttonColors(containerColor = if (supabaseAvailableTrigger) HdPrimary else Color.Gray),
                                     shape = RoundedCornerShape(8.dp),
-                                    enabled = !viewModel.isReadOnly.value
+                                    enabled = supabaseAvailableTrigger && !viewModel.isReadOnly.value
                                 ) {
                                     Icon(Icons.Default.CloudUpload, contentDescription = "Backup", modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
@@ -6818,15 +8720,92 @@ fun SystemsScreen(viewModel: PostoViewModel) {
                                 }
 
                                 Button(
-                                    onClick = { viewModel.downloadFromFirestore(stationCnpj) },
+                                    onClick = { viewModel.downloadFromSupabase(stationCnpj) },
                                     modifier = Modifier.weight(1f),
-                                    colors = ButtonDefaults.buttonColors(containerColor = if (firebaseAvailable) Color(0xFF0D6EFD) else Color.Gray),
-                                    shape = RoundedCornerShape(8.dp)
+                                    colors = ButtonDefaults.buttonColors(containerColor = if (supabaseAvailableTrigger) Color(0xFF0D6EFD) else Color.Gray),
+                                    shape = RoundedCornerShape(8.dp),
+                                    enabled = supabaseAvailableTrigger
                                 ) {
                                     Icon(Icons.Default.CloudDownload, contentDescription = "Restaurar", modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text("Baixar Dados", fontSize = 11.sp)
                                 }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    val context = androidx.compose.ui.platform.LocalContext.current
+                    val fuelTanksState by viewModel.fuelTanks.collectAsStateWithLifecycle()
+                    val employeesState by viewModel.employees.collectAsStateWithLifecycle()
+                    val shiftSchedulesState by viewModel.shiftSchedules.collectAsStateWithLifecycle()
+                    val appointmentsState by viewModel.appointments.collectAsStateWithLifecycle()
+                    val dailyReportsState by viewModel.dailyReports.collectAsStateWithLifecycle()
+                    val nozzlesState by viewModel.nozzles.collectAsStateWithLifecycle()
+                    val calibrationsState by viewModel.calibrations.collectAsStateWithLifecycle()
+                    val conformityState by viewModel.fuelConformityRecords.collectAsStateWithLifecycle()
+                    val auditLogEntriesState by viewModel.auditLogEntries.collectAsStateWithLifecycle()
+                    val systemCredentialsState by viewModel.systemCredentials.collectAsStateWithLifecycle()
+                    val userAccountsState by viewModel.userAccounts.collectAsStateWithLifecycle()
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = HdSurface),
+                        border = BorderStroke(1.dp, HdBorder)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "Backup do Banco de Dados Local (Offline) 💾",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = HdTextPrimary,
+                                modifier = Modifier.padding(bottom = 4.dp)
+                            )
+                            Text(
+                                text = "Exporte todos os dados atuais do posto (tanques, frentistas, agendas, bicos, aferições e logs) para um arquivo JSON no seu dispositivo.",
+                                fontSize = 11.sp,
+                                color = HdTextSecondary,
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
+
+                            Button(
+                                onClick = {
+                                    try {
+                                        val backupJson = generateBackupJson(
+                                            fuelTanks = fuelTanksState,
+                                            employees = employeesState,
+                                            shifts = shiftSchedulesState,
+                                            appointments = appointmentsState,
+                                            reports = dailyReportsState,
+                                            nozzles = nozzlesState,
+                                            calibrations = calibrationsState,
+                                            conformity = conformityState,
+                                            audits = auditLogEntriesState,
+                                            credentials = systemCredentialsState,
+                                            users = userAccountsState
+                                        )
+                                        val dateStr = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
+                                        val filename = "backup_posto_admin_$dateStr.json"
+                                        
+                                        val intent = Intent(Intent.ACTION_SEND).apply {
+                                            type = "application/json"
+                                            putExtra(Intent.EXTRA_SUBJECT, filename)
+                                            putExtra(Intent.EXTRA_TEXT, backupJson)
+                                        }
+                                        context.startActivity(Intent.createChooser(intent, "Compartilhar ou Salvar Backup JSON"))
+                                    } catch (e: Exception) {
+                                        android.widget.Toast.makeText(context, "Erro ao gerar backup: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(containerColor = HdPrimary),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Icon(Icons.Default.CloudDownload, contentDescription = "Baixar Backup", modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Baixar Backup (.json)", fontSize = 11.sp)
                             }
                         }
                     }
@@ -7552,4 +9531,224 @@ fun AnimatedTankView(
         }
     }
 }
+
+@Composable
+private fun ShiftCellContent(
+    schedules: List<com.example.data.ShiftSchedule>,
+    onAddClick: () -> Unit,
+    onDeleteClick: (com.example.data.ShiftSchedule) -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        if (schedules.isEmpty()) {
+            IconButton(
+                onClick = onAddClick,
+                modifier = Modifier.size(24.dp)
+            ) {
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = "Escalar",
+                    tint = HdTextSecondary.copy(alpha = 0.5f),
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+        } else {
+            schedules.forEach { sched ->
+                val isFolga = sched.shift.contains("Folga", ignoreCase = true)
+                val bgColor = if (isFolga) HdGreenLight else PetrolLight
+                val textColor = if (isFolga) HdGreen else PetrolDark
+                
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(bgColor)
+                        .clickable { onDeleteClick(sched) }
+                        .padding(horizontal = 6.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = sched.employeeName.split(" ").firstOrNull() ?: sched.employeeName,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = textColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Remover",
+                        tint = HdRed.copy(alpha = 0.8f),
+                        modifier = Modifier.size(10.dp)
+                    )
+                }
+            }
+            IconButton(
+                onClick = onAddClick,
+                modifier = Modifier.size(18.dp)
+            ) {
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = "Adicionar mais",
+                    tint = HdTextSecondary.copy(alpha = 0.4f),
+                    modifier = Modifier.size(12.dp)
+                )
+            }
+        }
+    }
+}
+
+private fun generateSchedulesCSV(month: String, schedules: List<com.example.data.ShiftSchedule>): String {
+    val sb = java.lang.StringBuilder()
+    sb.append("Escala de Trabalho - $month\n")
+    sb.append("Dia,Manha,Tarde,Noite,Folga\n")
+    
+    val totalDays = getMonthDetails(month).second
+    val sortedDays = (1..totalDays).map { "Dia %02d".format(it) }
+    
+    sortedDays.forEach { dayStr ->
+        val daySchedules = schedules.filter { it.dayOfWeek == dayStr }
+        
+        val manhaList = daySchedules.filter { it.shift.contains("Manhã", ignoreCase = true) }.map { it.employeeName }
+        val tardeList = daySchedules.filter { it.shift.contains("Tarde", ignoreCase = true) }.map { it.employeeName }
+        val noiteList = daySchedules.filter { it.shift.contains("Noite", ignoreCase = true) }.map { it.employeeName }
+        val folgaList = daySchedules.filter { it.shift.contains("Folga", ignoreCase = true) }.map { it.employeeName }
+        
+        val manha = manhaList.joinToString(" / ")
+        val tarde = tardeList.joinToString(" / ")
+        val noite = noiteList.joinToString(" / ")
+        val folga = folgaList.joinToString(" / ")
+        
+        sb.append("${dayStr.removePrefix("Dia ")},\"$manha\",\"$tarde\",\"$noite\",\"$folga\"\n")
+    }
+    return sb.toString()
+}
+
+private fun shareScheduleCSV(context: android.content.Context, month: String, csvText: String) {
+    try {
+        val sanitizedMonth = month.replace(" ", "_").lowercase()
+        val file = java.io.File(context.cacheDir, "escala_$sanitizedMonth.csv")
+        val writer = java.io.FileWriter(file)
+        writer.write(csvText)
+        writer.close()
+
+        val uri: android.net.Uri = androidx.core.content.FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
+
+        val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+            type = "text/csv"
+            putExtra(android.content.Intent.EXTRA_STREAM, uri)
+            putExtra(android.content.Intent.EXTRA_SUBJECT, "Escala de Plantão - $month")
+            putExtra(android.content.Intent.EXTRA_TEXT, "Segue a escala de plantão para $month.")
+            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        val chooser = android.content.Intent.createChooser(intent, "Compartilhar Escala CSV")
+        chooser.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(chooser)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        android.widget.Toast.makeText(context, "Erro ao compartilhar CSV: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+    }
+}
+
+private fun shareScheduleCSVWhatsApp(context: android.content.Context, month: String, csvText: String, viewModel: PostoViewModel) {
+    try {
+        val sanitizedMonth = month.replace(" ", "_").lowercase()
+        val file = java.io.File(context.cacheDir, "escala_$sanitizedMonth.csv")
+        val writer = java.io.FileWriter(file)
+        writer.write(csvText)
+        writer.close()
+
+        val uri: android.net.Uri = androidx.core.content.FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
+
+        try {
+            val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                type = "text/csv"
+                putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                putExtra(android.content.Intent.EXTRA_SUBJECT, "Escala de Plantão - $month")
+                putExtra(android.content.Intent.EXTRA_TEXT, "Segue anexa a escala de plantão de $month.")
+                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                setPackage("com.whatsapp")
+            }
+            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                type = "text/csv"
+                putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                putExtra(android.content.Intent.EXTRA_SUBJECT, "Escala de Plantão - $month")
+                putExtra(android.content.Intent.EXTRA_TEXT, "Segue anexa a escala de plantão de $month.")
+                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            val chooser = android.content.Intent.createChooser(intent, "Compartilhar via...")
+            chooser.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(chooser)
+            viewModel.addToast("WhatsApp não instalado. Usando compartilhamento padrão.")
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        viewModel.addToast("Erro ao gerar/compartilhar CSV: ${e.message}")
+    }
+}
+
+@Composable
+private fun getShiftBadgeDetails(shiftName: String): Triple<Color, Color, String> {
+    return when {
+        shiftName.contains("Manhã", ignoreCase = true) -> Triple(
+            Color(0xFFE3F2FD), // Light Blue Bg
+            Color(0xFF1976D2), // Blue Primary/Text
+            "M"
+        )
+        shiftName.contains("Tarde", ignoreCase = true) -> Triple(
+            Color(0xFFE8F5E9), // Light Green Bg
+            Color(0xFF388E3C), // Green Primary/Text
+            "T"
+        )
+        shiftName.contains("Noite", ignoreCase = true) || shiftName.contains("Plantão", ignoreCase = true) -> Triple(
+            Color(0xFFFFEBEE), // Light Red Bg
+            Color(0xFFC62828), // Red Primary/Text
+            "P"
+        )
+        shiftName.contains("Horista 2", ignoreCase = true) -> Triple(
+            Color(0xFFEDE7F6), // Light Purple Bg
+            Color(0xFF512DA8), // Deep Purple Primary/Text
+            "H2"
+        )
+        shiftName.contains("Horista", ignoreCase = true) -> Triple(
+            Color(0xFFF3E5F5), // Light Violet Bg
+            Color(0xFF7B1FA2), // Violet Primary/Text
+            "H"
+        )
+        shiftName.contains("Folga", ignoreCase = true) -> Triple(
+            Color(0xFFECEFF1), // Light Grey Bg
+            Color(0xFF78909C), // Grey Primary/Text
+            "F"
+        )
+        shiftName.contains("Repouso", ignoreCase = true) -> Triple(
+            Color(0xFFEFEBE9), // Light Brown Bg
+            Color(0xFF8D6E63), // Brown Primary/Text
+            "R"
+        )
+        else -> Triple(
+            Color(0xFFECEFF1),
+            Color(0xFF78909C),
+            "F"
+        )
+    }
+}
+
 

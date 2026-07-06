@@ -143,3 +143,17 @@ data class UserAccount(
     val bankPixKey: String = "12.345.678/0001-99"
 )
 
+@Entity(tableName = "fuel_deliveries")
+data class FuelDelivery(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val date: String, // YYYY-MM-DD
+    val invoiceNumber: String,
+    val fuelType: String,
+    val volume: Double,
+    val driverName: String,
+    val driverCnh: String,
+    val truckPlate: String,
+    val conformityRecordId: Int?, // Linked quality test ID
+    val stationCnpj: String = "12.345.678/0001-99"
+)
+

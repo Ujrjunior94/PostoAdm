@@ -52,8 +52,16 @@ class PostoRepository(private val postoDao: PostoDao) {
         postoDao.insertShiftSchedule(schedule)
     }
 
+    suspend fun insertShiftSchedules(schedules: List<ShiftSchedule>) {
+        postoDao.insertShiftSchedules(schedules)
+    }
+
     suspend fun deleteShiftSchedule(schedule: ShiftSchedule) {
         postoDao.deleteShiftSchedule(schedule)
+    }
+
+    suspend fun deleteShiftSchedulesByStation(cnpj: String) {
+        postoDao.deleteShiftSchedulesByStation(cnpj)
     }
 
     // Appointment actions
@@ -127,5 +135,16 @@ class PostoRepository(private val postoDao: PostoDao) {
 
     suspend fun getUserAccountByEmail(email: String): UserAccount? {
         return postoDao.getUserAccountByEmail(email)
+    }
+
+    // Fuel Delivery actions
+    val allFuelDeliveries: Flow<List<FuelDelivery>> = postoDao.getAllFuelDeliveries()
+
+    suspend fun insertFuelDelivery(delivery: FuelDelivery) {
+        postoDao.insertFuelDelivery(delivery)
+    }
+
+    suspend fun deleteFuelDelivery(delivery: FuelDelivery) {
+        postoDao.deleteFuelDelivery(delivery)
     }
 }

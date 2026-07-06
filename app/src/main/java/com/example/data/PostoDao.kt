@@ -44,8 +44,14 @@ interface PostoDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertShiftSchedule(schedule: ShiftSchedule)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertShiftSchedules(schedules: List<ShiftSchedule>)
+
     @Delete
     suspend fun deleteShiftSchedule(schedule: ShiftSchedule)
+
+    @Query("DELETE FROM shift_schedules WHERE stationCnpj = :cnpj")
+    suspend fun deleteShiftSchedulesByStation(cnpj: String)
 
     @Query("DELETE FROM shift_schedules WHERE employeeId = :employeeId")
     suspend fun deleteShiftSchedulesByEmployee(employeeId: Int)
@@ -125,4 +131,14 @@ interface PostoDao {
 
     @Query("SELECT * FROM user_accounts WHERE email = :email LIMIT 1")
     suspend fun getUserAccountByEmail(email: String): UserAccount?
+
+    // Fuel Deliveries
+    @Query("SELECT * FROM fuel_deliveries ORDER BY date DESC, id DESC")
+    fun getAllFuelDeliveries(): Flow<List<FuelDelivery>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertFuelDelivery(delivery: FuelDelivery)
+
+    @Delete
+    suspend fun deleteFuelDelivery(delivery: FuelDelivery)
 }

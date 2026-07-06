@@ -6,6 +6,9 @@
     <title>Meu Posto - Painel Administrativo Web ⛽</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- jsPDF and jsPDF AutoTable -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
     <!-- Tailwind Configuration for Slate Theme -->
     <script>
         tailwind.config = {
@@ -203,7 +206,11 @@
 
     <!-- TOP GLOBAL BAR -->
     <header class="bg-white border-b border-hdBorder h-16 px-6 flex items-center justify-between z-20 shrink-0">
-        <div class="flex items-center space-x-3">
+        <div class="flex items-center space-x-2">
+            <!-- Mobile Menu Toggle Button (visible on md:hidden) -->
+            <button id="mobileMenuBtn" onclick="toggleMobileSidebar()" class="md:hidden text-hdTextPrimary hover:bg-hdSurfaceContainer p-2 rounded-xl transition flex items-center justify-center mr-1">
+                <span class="material-symbols-outlined text-xl">menu</span>
+            </button>
             <div class="w-10 h-10 rounded-xl bg-hdPrimary flex items-center justify-center text-white shadow-md shadow-hdPrimary/20">
                 <span class="material-symbols-outlined text-2xl font-bold">local_gas_station</span>
             </div>
@@ -212,15 +219,15 @@
                 <p class="text-[10px] text-hdTextSecondary uppercase font-semibold tracking-wider">Painel Administrativo Web</p>
             </div>
         </div>
-
+ 
         <!-- Connection and Account Indicators -->
         <div class="flex items-center space-x-4">
-            <!-- Firebase Connection Status Badge -->
-            <button id="connectionBadgeBtn" onclick="toggleConfigModal()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition hover:opacity-90">
+            <!-- Connection Status Badge -->
+            <div id="connectionBadgeBtn" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border border-yellow-500/30 bg-yellow-50 text-yellow-800 transition">
                 <span id="connectionBadgeDot" class="w-2.5 h-2.5 rounded-full bg-yellow-500 animate-pulse"></span>
-                <span id="connectionBadgeText">Verificando Firebase...</span>
-            </button>
-
+                <span id="connectionBadgeText">Verificando...</span>
+            </div>
+ 
             <!-- User profile header (hidden when logged out) -->
             <div id="userHeaderProfile" class="hidden flex items-center space-x-3 border-l border-hdBorder pl-4">
                 <div class="text-right">
@@ -233,12 +240,15 @@
             </div>
         </div>
     </header>
-
+ 
     <!-- MAIN CONTAINER -->
-    <div class="flex-1 flex overflow-hidden">
+    <div class="flex-1 flex overflow-hidden relative">
+        
+        <!-- Mobile Sidebar Backdrop Overlay -->
+        <div id="sidebarBackdrop" onclick="toggleMobileSidebar()" class="hidden fixed inset-0 bg-black/40 z-30 md:hidden transition-opacity duration-300"></div>
         
         <!-- SIDEBAR (Navigation) - Hidden on Logged Out -->
-        <aside id="sidebarNav" class="hidden w-64 bg-white border-r border-hdBorder flex flex-col justify-between shrink-0">
+        <aside id="sidebarNav" class="hidden md:flex flex-col justify-between w-64 bg-white border-r border-hdBorder shrink-0 h-full fixed md:static inset-y-0 left-0 z-40 transform -translate-x-full md:translate-x-0 transition-all duration-300 ease-in-out">
             <div class="p-4 space-y-1">
                 <div class="px-3 py-2 text-[11px] font-bold text-hdTextSecondary uppercase tracking-widest opacity-60">Sectores do Sistema</div>
                 
@@ -381,14 +391,6 @@
                             <span>Entrar no Sistema</span>
                         </button>
                     </form>
-
-                    <!-- Setup Warning Footer -->
-                    <div class="mt-6 text-center text-[11px] text-hdTextSecondary border-t border-hdBorder/60 pt-4">
-                        <button onclick="toggleConfigModal()" class="text-hdPrimary font-semibold hover:underline flex items-center justify-center mx-auto space-x-1">
-                            <span class="material-symbols-outlined text-xs">settings</span>
-                            <span>Configurar credenciais Firebase do seu projeto</span>
-                        </button>
-                    </div>
                 </div>
             </section>
 
@@ -552,12 +554,12 @@
 
                     <!-- Tab Row for Employees View -->
                     <div class="border-b border-hdBorder flex space-x-6 text-xs font-bold mb-2">
-                        <button onclick="setEmployeeViewTab('list')" id="btnEmpTabList" class="pb-3 border-b-2 border-hdPrimary text-hdPrimary transition focus:outline-none">Equipe & Escalas Gerais</button>
-                        <button onclick="setEmployeeViewTab('calendar')" id="btnEmpTabCalendar" class="pb-3 border-b-2 border-transparent text-hdTextSecondary hover:text-hdTextPrimary transition focus:outline-none">📅 Calendário Mensal de Escalas</button>
+                        <button onclick="setEmployeeViewTab('list')" id="btnEmpTabList" class="pb-3 border-b-2 border-transparent text-hdTextSecondary hover:text-hdTextPrimary transition focus:outline-none">Equipe & Escalas Gerais</button>
+                        <button onclick="setEmployeeViewTab('calendar')" id="btnEmpTabCalendar" class="pb-3 border-b-2 border-hdPrimary text-hdPrimary transition focus:outline-none">📅 Calendário Mensal de Escalas</button>
                     </div>
 
                     <!-- View Section A: Traditional List & Roster list -->
-                    <div id="employeeViewSection-list" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div id="employeeViewSection-list" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <!-- Column 1: Employees List -->
                         <div class="lg:col-span-2 bg-white border border-hdBorder rounded-3xl p-6 shadow-sm">
                             <h3 class="text-base font-bold text-hdTextPrimary mb-4">Lista de Funcionários</h3>
@@ -592,25 +594,95 @@
                         </div>
                     </div>
 
-                    <!-- View Section B: Interactive Monthly Shift Calendar -->
-                    <div id="employeeViewSection-calendar" class="hidden space-y-6">
-                        <div class="bg-white border border-hdBorder rounded-3xl p-6 shadow-sm">
-                            <div class="flex justify-between items-center mb-4">
-                                <h3 class="text-base font-bold text-hdTextPrimary flex items-center gap-1.5">
-                                    <span class="material-symbols-outlined text-hdPrimary">calendar_month</span>
-                                    Painel Mensal de Plantões (31 Dias)
+                    <!-- View Section B: Interactive Monthly Shift Calendar (Planner) -->
+                    <div id="employeeViewSection-calendar" class="space-y-6">
+                        
+                        <!-- Top header of the planner matching the image exactly -->
+                        <div class="flex flex-col md:flex-row justify-between items-center gap-4 bg-white border border-hdBorder rounded-3xl p-5 shadow-sm">
+                            <div class="flex flex-wrap items-center gap-3">
+                                <h3 class="text-xl font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-hdPrimary font-black text-2xl">calendar_month</span>
+                                    <span>EQUIPE PLANNER</span>
                                 </h3>
-                                <div class="text-[11px] text-hdTextSecondary font-semibold">👉 Selecione qualquer dia na grade para visualizar ou alocar plantões.</div>
-                            </div>
-                            
-                            <!-- 7 Column Calendar Grid Header -->
-                            <div class="grid grid-cols-7 gap-2 bg-hdSurface border border-hdBorder rounded-2xl p-2.5 text-center text-[10px] font-bold text-hdPrimary uppercase tracking-wider mb-3">
-                                <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
+                                
+                                <!-- Custom Month Selector Dropdown with downward arrow -->
+                                <div class="flex items-center bg-hdSurface hover:bg-hdSurfaceContainer border border-hdBorder px-3 py-1.5 rounded-2xl transition cursor-pointer">
+                                    <select id="plannerMonthSelect" onchange="window.onPlannerMonthChange(this.value)" class="text-sm font-black text-slate-800 bg-transparent border-none focus:outline-none cursor-pointer appearance-none pr-5 relative">
+                                        <option value="0">Julho de 2026</option>
+                                        <option value="1">Agosto de 2026</option>
+                                        <option value="2">Setembro de 2026</option>
+                                        <option value="3">Outubro de 2026</option>
+                                    </select>
+                                    <span class="material-symbols-outlined text-slate-500 text-sm -ml-4 pointer-events-none">expand_more</span>
+                                </div>
                             </div>
 
-                            <!-- Calendar Grid Container -->
-                            <div id="shiftCalendarGrid" class="grid grid-cols-7 gap-2">
-                                <!-- Loaded dynamically -->
+                            <div class="flex items-center gap-2">
+                                <!-- Collapsible sidebar toggle to expand calendar full width -->
+                                <button onclick="window.toggleShiftSidebar()" class="text-xs font-bold text-hdPrimary hover:bg-hdPrimary/5 border border-hdPrimary/20 px-3 py-2 rounded-xl flex items-center gap-1 transition">
+                                    <span class="material-symbols-outlined text-sm font-bold" id="toggleShiftSidebarIcon">left_panel_close</span>
+                                    <span id="toggleShiftSidebarText">Ocultar Painel Lateral</span>
+                                </button>
+
+                                <!-- Navigation Previous / Next Month Arrows -->
+                                <div class="flex items-center space-x-1">
+                                    <button onclick="window.prevPlannerMonth()" class="p-2 border border-hdBorder bg-white hover:bg-hdSurfaceContainer rounded-xl text-slate-700 flex items-center justify-center transition shadow-sm" title="Mês Anterior">
+                                        <span class="material-symbols-outlined text-sm font-black">chevron_left</span>
+                                    </button>
+                                    <button onclick="window.nextPlannerMonth()" class="p-2 border border-hdBorder bg-white hover:bg-hdSurfaceContainer rounded-xl text-slate-700 flex items-center justify-center transition shadow-sm" title="Próximo Mês">
+                                        <span class="material-symbols-outlined text-sm font-black">chevron_right</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Main Grid and Sidebar Row -->
+                        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+                            
+                            <!-- Draggable/Selectable Employees Column (Sidebar) -->
+                            <div id="shiftPlannerSidebar" class="lg:col-span-1 bg-white border border-hdBorder rounded-3xl p-5 shadow-sm flex flex-col justify-between space-y-4">
+                                <div>
+                                    <h3 class="text-xs font-black uppercase tracking-wider text-hdPrimary mb-1.5 flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-sm">badge</span>
+                                        Escalar Plantão
+                                    </h3>
+                                    <p class="text-[10px] leading-relaxed text-hdTextSecondary mb-4">
+                                        💻 <strong>PC</strong>: Arraste o frentista até o dia.<br>
+                                        📱 <strong>Celular</strong>: Toque no frentista, depois toque no dia.
+                                    </p>
+                                    
+                                    <!-- Draggable list -->
+                                    <div id="draggableEmployeesList" class="space-y-2 max-h-[160px] lg:max-h-[320px] overflow-y-auto custom-scrollbar pr-1">
+                                        <!-- Loaded dynamically -->
+                                    </div>
+                                </div>
+                                
+                                <!-- Shift Selection option -->
+                                <div class="pt-4 border-t border-hdBorder">
+                                    <label class="block text-[10px] font-bold text-hdTextPrimary mb-1.5 uppercase tracking-wide">Turno de Alocação</label>
+                                    <select id="dragShiftType" class="w-full bg-hdSurface border border-hdBorder rounded-xl px-2.5 py-2 text-xs font-medium focus:outline-none focus:border-hdPrimary">
+                                        <option value="Manhã (06h - 14h)">☀️ Manhã (06h - 14h)</option>
+                                        <option value="Tarde (14h - 22h)">⛅ Tarde (14h - 22h)</option>
+                                        <option value="Noite (22h - 06h)">🌙 Noite (22h - 06h)</option>
+                                        <option value="Horista (10h-18h)">💜 Horista (10h - 18h)</option>
+                                        <option value="Horista 2 (09h-18h)">💙 Horista 2 (09h - 18h)</option>
+                                        <option value="Folga Geral">🟢 Folga Geral</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Calendar Grid Column (Can span full width when sidebar is hidden) -->
+                            <div id="shiftPlannerCalendarCol" class="lg:col-span-3 bg-white border border-hdBorder rounded-3xl p-5 shadow-sm">
+                                
+                                <!-- 7 Column Calendar Grid Header -->
+                                <div id="shiftWeekdayHeadersGrid" class="grid grid-cols-7 gap-1 bg-hdSurface border border-hdBorder rounded-2xl p-2 text-center text-[9px] font-black text-hdPrimary uppercase tracking-wider mb-2">
+                                    <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
+                                </div>
+    
+                                <!-- Calendar Grid Container -->
+                                <div id="shiftCalendarGrid" class="grid grid-cols-7 gap-1.5 sm:gap-2">
+                                    <!-- Loaded dynamically -->
+                                </div>
                             </div>
                         </div>
 
@@ -627,6 +699,53 @@
                                 <!-- Loaded dynamically -->
                             </div>
                         </div>
+
+                        <!-- Elegant Legend & Watermark Panel at the Bottom -->
+                        <div class="bg-white border border-hdBorder rounded-3xl p-5 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+                            <!-- Legend details -->
+                            <div class="flex flex-wrap items-center gap-4 text-xs font-semibold text-hdTextSecondary">
+                                <div class="flex items-center space-x-1.5">
+                                    <span class="w-5 h-5 rounded-full bg-blue-600 text-white text-[9px] font-black flex items-center justify-center shadow-sm">M</span>
+                                    <span>(Manhã 06h-14h)</span>
+                                </div>
+                                <div class="flex items-center space-x-1.5">
+                                    <span class="w-5 h-5 rounded-full bg-green-600 text-white text-[9px] font-black flex items-center justify-center shadow-sm">T</span>
+                                    <span>(Tarde 14h-22h)</span>
+                                </div>
+                                <div class="flex items-center space-x-1.5">
+                                    <span class="w-5 h-5 rounded-full bg-red-600 text-white text-[9px] font-black flex items-center justify-center shadow-sm">N</span>
+                                    <span>(Noite 22h-06h)</span>
+                                </div>
+                                <div class="flex items-center space-x-1.5">
+                                    <span class="w-5 h-5 rounded-full bg-fuchsia-600 text-white text-[9px] font-black flex items-center justify-center shadow-sm">H</span>
+                                    <span>(Horista 10h-18h)</span>
+                                </div>
+                                <div class="flex items-center space-x-1.5">
+                                    <span class="w-5 h-5 rounded-full bg-indigo-600 text-white text-[9px] font-black flex items-center justify-center shadow-sm">H2</span>
+                                    <span>(Horista 2 09h-18h)</span>
+                                </div>
+                                <div class="flex items-center space-x-1.5">
+                                    <span class="w-5 h-5 rounded-full bg-gray-600 text-white text-[9px] font-black flex items-center justify-center shadow-sm">F</span>
+                                    <span>(Folga)</span>
+                                </div>
+                                <div class="flex items-center space-x-1.5">
+                                    <span class="w-5 h-5 rounded-full bg-amber-800 text-white text-[9px] font-black flex items-center justify-center shadow-sm">R</span>
+                                    <span>(Repouso)</span>
+                                </div>
+                            </div>
+
+                            <!-- Watermark/Logo -->
+                            <div class="flex items-center space-x-2 text-right">
+                                <div class="flex flex-col">
+                                    <div class="flex items-center space-x-1 text-slate-800 justify-end">
+                                        <span class="material-symbols-outlined text-hdPrimary text-base font-black">stacked_line_chart</span>
+                                        <span class="text-xs font-black tracking-wider">WORKFLOW <span class="text-hdPrimary font-semibold">SOLUÇÕES</span></span>
+                                    </div>
+                                    <p id="plannerGeneratedDate" class="text-[9px] text-hdTextSecondary font-bold">Gerado: --/--/----</p>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -637,10 +756,16 @@
                             <h2 class="text-xl font-bold">Relatórios Diários de Operação</h2>
                             <p class="text-xs text-hdTextSecondary">Fechamento de caixa, litros de combustíveis vendidos, recebimentos e faturamento.</p>
                         </div>
-                        <button onclick="openAddReportModal()" class="bg-hdPrimary text-white font-bold px-4 py-2.5 rounded-xl hover:bg-blue-700 transition flex items-center space-x-1.5 text-xs">
-                            <span class="material-symbols-outlined text-sm font-bold">playlist_add</span>
-                            <span>Lançar Relatório Diário</span>
-                        </button>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="downloadReportsPDF()" class="bg-white border border-hdBorder text-hdTextPrimary font-bold px-4 py-2.5 rounded-xl hover:bg-hdSurfaceContainer transition flex items-center space-x-1.5 text-xs shadow-sm">
+                                <span class="material-symbols-outlined text-sm font-bold text-red-500">picture_as_pdf</span>
+                                <span>Exportar PDF</span>
+                            </button>
+                            <button onclick="openAddReportModal()" class="bg-hdPrimary text-white font-bold px-4 py-2.5 rounded-xl hover:bg-blue-700 transition flex items-center space-x-1.5 text-xs">
+                                <span class="material-symbols-outlined text-sm font-bold">playlist_add</span>
+                                <span>Lançar Relatório Diário</span>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="bg-white border border-hdBorder rounded-3xl p-6 shadow-sm">
@@ -757,6 +882,42 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Panel: Fuel Delivery Invoices and Drivers -->
+                    <div class="bg-white border border-hdBorder rounded-3xl p-6 shadow-sm">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                            <div>
+                                <h3 class="text-sm font-bold text-hdTextPrimary flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-hdPrimary">local_shipping</span>
+                                    Notas Fiscais de Entrada e Entregas Registradas
+                                </h3>
+                                <p class="text-xs text-hdTextSecondary">Cadastro de notas de combustível, motoristas responsáveis e rastreabilidade da conformidade.</p>
+                            </div>
+                            <button onclick="openAddDeliveryModal()" class="bg-hdPrimary text-white font-semibold px-3 py-1.5 rounded-xl hover:bg-blue-700 transition text-xs flex items-center space-x-1 shrink-0">
+                                <span class="material-symbols-outlined text-sm">add_circle</span>
+                                <span>Lançar Nota de Combustível</span>
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs text-left">
+                                <thead>
+                                    <tr class="text-[10px] text-hdTextSecondary uppercase font-bold border-b border-hdBorder bg-hdSurface">
+                                        <th class="py-2.5 px-3">Data Rec.</th>
+                                        <th class="py-2.5 px-3">Nota Fiscal</th>
+                                        <th class="py-2.5 px-3">Combustível</th>
+                                        <th class="py-2.5 px-3 text-right">Volume</th>
+                                        <th class="py-2.5 px-3">Motorista</th>
+                                        <th class="py-2.5 px-3">CNH / Placa</th>
+                                        <th class="py-2.5 px-3">Laudo Conformidade</th>
+                                        <th class="py-2.5 px-3 text-center">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="deliveriesTableBody">
+                                    <!-- Loaded dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- SCREEN G: AUDIT LOGS VIEW -->
@@ -784,18 +945,87 @@
                 <div id="screen-calendar" class="hidden space-y-6">
                     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                         <div>
-                            <h2 class="text-xl font-bold">Calendário de Marcações e Compromissos 📅</h2>
-                            <p class="text-xs text-hdTextSecondary">Gerencie manutenções programadas, inspeções do Inmetro/ANP, auditorias fiscais e entregas de combustíveis.</p>
+                            <h2 class="text-xl font-bold">Calendário Geral e Agendas de Compromissos 📅</h2>
+                            <p class="text-xs text-hdTextSecondary">Visão unificada mensal de manutenções programadas, vistorias fiscais, entregas de combustíveis e escalas.</p>
                         </div>
-                        <button onclick="openAddAppointmentModal()" class="bg-hdPrimary text-white font-bold px-4 py-2.5 rounded-xl hover:bg-blue-700 transition flex items-center justify-center space-x-1.5 text-xs self-start sm:self-auto">
-                            <span class="material-symbols-outlined text-sm font-bold">add</span>
-                            <span>Agendar Compromisso</span>
-                        </button>
                     </div>
 
+                    <!-- Layout: Full Calendar Grid and Sidebar Agenda -->
+                    <div class="grid grid-cols-1 xl:grid-cols-4 gap-6">
+                        
+                        <!-- Left Column: The 31-Day Calendar Grid -->
+                        <div class="xl:col-span-3 bg-white border border-hdBorder rounded-3xl p-5 shadow-sm space-y-4">
+                            <div class="flex justify-between items-center">
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-hdPrimary font-bold">calendar_month</span>
+                                    <h3 class="text-sm font-bold text-hdTextPrimary">Julho de 2026</h3>
+                                </div>
+                                <div class="text-[10px] text-hdTextSecondary font-bold bg-hdSurface border border-hdBorder px-2.5 py-1 rounded-full uppercase tracking-wider">Mês de Operação</div>
+                            </div>
+                            
+                            <!-- Calendar Weekdays Header -->
+                            <div class="grid grid-cols-7 gap-1 bg-hdSurface border border-hdBorder rounded-2xl p-2 text-center text-[9px] font-black text-hdPrimary uppercase tracking-wider mb-2">
+                                <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
+                            </div>
+
+                            <!-- Calendar Monthly Days Grid -->
+                            <div id="fullMonthDaysGrid" class="grid grid-cols-7 gap-1 sm:gap-2">
+                                <!-- Loaded dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Day details and quick agenda operations -->
+                        <div class="xl:col-span-1 flex flex-col gap-6">
+                            
+                            <!-- Selected Day Panel -->
+                            <div class="bg-white border border-hdBorder rounded-3xl p-5 shadow-sm flex-1 flex flex-col justify-between min-h-[380px]">
+                                <div class="space-y-4">
+                                    <div class="border-b border-hdBorder pb-3">
+                                        <p class="text-[10px] text-hdPrimary font-black uppercase tracking-wider">Compromissos do Dia</p>
+                                        <h4 id="selectedDayAgendaTitle" class="text-base font-black text-hdTextPrimary mt-0.5">Dia 06 de Julho</h4>
+                                    </div>
+                                    
+                                    <!-- Appointments list for selected day -->
+                                    <div>
+                                        <p class="text-[10px] font-extrabold uppercase tracking-wide text-hdTextSecondary mb-2 flex items-center gap-1">
+                                            <span class="material-symbols-outlined text-xs text-yellow-600">notifications_active</span>
+                                            Compromissos e Visitas
+                                        </p>
+                                        <div id="selectedDayAppointmentsList" class="space-y-2 max-h-[160px] overflow-y-auto custom-scrollbar pr-1">
+                                            <!-- Dynamically filled -->
+                                        </div>
+                                    </div>
+
+                                    <!-- Shifts schedule list for selected day -->
+                                    <div class="pt-2 border-t border-hdBorder/60">
+                                        <p class="text-[10px] font-extrabold uppercase tracking-wide text-hdTextSecondary mb-2 flex items-center gap-1">
+                                            <span class="material-symbols-outlined text-xs text-blue-600">badge</span>
+                                            Escala de Plantonistas
+                                        </p>
+                                        <div id="selectedDayShiftsList" class="space-y-2 max-h-[160px] overflow-y-auto custom-scrollbar pr-1">
+                                            <!-- Dynamically filled -->
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="pt-4 border-t border-hdBorder mt-4">
+                                    <button onclick="openAddAppointmentForSelectedDay()" class="w-full bg-hdPrimary hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl transition flex items-center justify-center space-x-1.5 text-xs">
+                                        <span class="material-symbols-outlined text-sm font-bold">add</span>
+                                        <span>Agendar Compromisso</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Extra section: All Upcoming Commitments & Inspections list -->
                     <div class="bg-white border border-hdBorder rounded-3xl p-6 shadow-sm">
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="appointmentsGridContainer">
-                            <!-- Loaded dynamically -->
+                        <h3 class="text-sm font-bold text-hdTextPrimary mb-4 flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-yellow-600">event_note</span>
+                            Lista Completa de Compromissos de Julho/2026
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="appointmentsGridContainer">
+                            <!-- Loaded dynamically as cards -->
                         </div>
                     </div>
                 </div>
@@ -962,6 +1192,33 @@
                             </div>
                         </div>
 
+                        <!-- Backup Supabase Card -->
+                        <div class="bg-white border border-hdBorder rounded-3xl p-6 shadow-sm mt-4">
+                            <div class="flex flex-col gap-4">
+                                <div>
+                                    <h3 class="text-sm font-bold text-hdTextPrimary flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-emerald-600">cloud_done</span>
+                                        Sincronização na Nuvem Supabase ☁️
+                                    </h3>
+                                    <p class="text-xs text-hdTextSecondary">Substituto rápido e gratuito ao Firebase. Sincronize e restaure todo o banco de dados com a nuvem em 1 clique.</p>
+                                </div>
+                                <div id="supabaseStatusBadge" class="p-3 rounded-xl bg-yellow-50 text-yellow-800 text-[11px] font-semibold border border-yellow-100 flex items-center justify-between">
+                                    <span>⚠️ Supabase Off-line (Banco local ativo)</span>
+                                    <button onclick="toggleSupabaseModal()" class="text-hdPrimary font-bold hover:underline">Configurar Credenciais</button>
+                                </div>
+                                <div class="flex flex-wrap gap-3">
+                                    <button onclick="uploadToSupabaseWeb()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2.5 rounded-xl transition text-xs flex items-center space-x-1.5">
+                                        <span class="material-symbols-outlined text-sm">cloud_upload</span>
+                                        <span>Enviar Backup para Nuvem</span>
+                                    </button>
+                                    <button onclick="downloadFromSupabaseWeb()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-xl transition text-xs flex items-center space-x-1.5">
+                                        <span class="material-symbols-outlined text-sm">cloud_download</span>
+                                        <span>Baixar Dados da Nuvem</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -975,36 +1232,53 @@
         <p>&copy; 2026 PostoAdmin. Todos os direitos reservados.</p>
         <p class="flex items-center gap-1">
             <span class="material-symbols-outlined text-xs">shield_lock</span>
-            <span>Segurança de Dados Firebase AES-256</span>
+            <span>Segurança de Dados Local Criptografada</span>
         </p>
     </footer>
 
     <!-- ====== MODALS CONTAINER ====== -->
 
-    <!-- 1. Firebase Credentials Setup Modal -->
-    <div id="configModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <!-- Supabase Credentials Setup Modal -->
+    <div id="supabaseModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
         <div class="bg-white border border-hdBorder rounded-3xl max-w-lg w-full p-6 shadow-2xl relative">
-            <button onclick="toggleConfigModal()" class="absolute right-4 top-4 w-8 h-8 rounded-full hover:bg-hdSurfaceContainer flex items-center justify-center">
+            <button onclick="toggleSupabaseModal()" class="absolute right-4 top-4 w-8 h-8 rounded-full hover:bg-hdSurfaceContainer flex items-center justify-center">
                 <span class="material-symbols-outlined text-lg">close</span>
             </button>
-            <h3 class="text-lg font-bold text-hdPrimary flex items-center gap-2 mb-2">
-                <span class="material-symbols-outlined">settings_suggest</span>
-                Integração com seu Console Firebase
+            <h3 class="text-lg font-bold text-emerald-600 flex items-center gap-2 mb-2">
+                <span class="material-symbols-outlined">database</span>
+                Conectar ao Supabase Cloud ⚡
             </h3>
             <p class="text-xs text-hdTextSecondary mb-4">
-                Cole abaixo o seu objeto <code class="bg-hdSurfaceContainer px-1 py-0.5 rounded font-mono text-hdRed">firebaseConfig</code> obtido no painel de configurações do seu projeto do Firebase.
+                Insira as credenciais do seu projeto Supabase para ativar os backups na nuvem.
             </p>
 
-            <textarea id="firebaseConfigInput" rows="10" placeholder='const firebaseConfig = {
-  apiKey: "AIzaSy...",
-  authDomain: "seu-projeto.firebaseapp.com",
-  projectId: "seu-projeto",
-  ...
-};' class="w-full font-mono text-xs p-4 bg-hdSurface border border-hdBorder rounded-xl focus:outline-none focus:border-hdPrimary custom-scrollbar mb-4"></textarea>
+            <div class="space-y-4 mb-4">
+                <div>
+                    <label class="block text-xs font-bold text-hdTextPrimary mb-1">Supabase URL</label>
+                    <input id="supabaseUrlInput" type="text" placeholder="https://xxxx.supabase.co" class="w-full text-xs p-3 bg-hdSurface border border-hdBorder rounded-xl focus:outline-none focus:border-hdPrimary">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-hdTextPrimary mb-1">Anon / Public API Key</label>
+                    <input id="supabaseKeyInput" type="password" placeholder="eyJhbGciOi..." class="w-full text-xs p-3 bg-hdSurface border border-hdBorder rounded-xl focus:outline-none focus:border-hdPrimary">
+                </div>
+            </div>
+
+            <!-- SQL Quick setup guide inside modal -->
+            <div class="p-3 bg-hdSurfaceContainer rounded-xl text-[10px] text-hdTextSecondary mb-4 leading-relaxed">
+                <p class="font-bold text-hdTextPrimary mb-1">💡 Preparação da Tabela no Supabase:</p>
+                <p>No console do Supabase, execute este comando SQL:</p>
+                <pre class="bg-white border border-hdBorder rounded p-1.5 mt-1 font-mono text-[9px] text-emerald-800 overflow-x-auto select-all">
+create table posto_backups (
+  id text primary key,
+  data jsonb,
+  updated_at timestamp with time zone default now()
+);</pre>
+            </div>
 
             <div class="flex space-x-3 justify-end">
-                <button onclick="toggleConfigModal()" class="px-4 py-2 text-xs font-semibold hover:bg-hdSurfaceContainer rounded-xl transition">Cancelar</button>
-                <button onclick="saveFirebaseConfig()" class="bg-hdPrimary text-white font-bold px-4 py-2 rounded-xl hover:bg-blue-700 transition text-xs">Salvar e Conectar</button>
+                <button onclick="toggleSupabaseModal()" class="px-4 py-2 text-xs font-semibold hover:bg-hdSurfaceContainer rounded-xl transition">Cancelar</button>
+                <button onclick="clearSupabaseConfigWeb()" class="bg-red-600 text-white font-bold px-4 py-2 rounded-xl hover:bg-red-700 transition text-xs">Apagar Config</button>
+                <button onclick="saveSupabaseConfigWeb()" class="bg-emerald-600 text-white font-bold px-4 py-2 rounded-xl hover:bg-emerald-700 transition text-xs">Salvar e Conectar</button>
             </div>
         </div>
     </div>
@@ -1012,7 +1286,7 @@
     <!-- 2. Modal: Add Tank -->
     <div id="addTankModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
         <div class="bg-white border border-hdBorder rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
-            <h3 class="text-base font-bold mb-4">Adicionar Tanque</h3>
+            <h3 id="addTankModalTitle" class="text-base font-bold mb-4">Adicionar Tanque</h3>
             <form onsubmit="submitAddTank(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-hdTextSecondary mb-1">Identificação / Nome</label>
@@ -1147,6 +1421,8 @@
                         <option value="Manhã (06h - 14h)">Manhã (06h - 14h)</option>
                         <option value="Tarde (14h - 22h)">Tarde (14h - 22h)</option>
                         <option value="Noite (22h - 06h)">Noite (22h - 06h)</option>
+                        <option value="Horista (10h-18h)">Horista (10h-18h)</option>
+                        <option value="Horista 2 (09h-18h)">Horista 2 (09h-18h)</option>
                         <option value="Folga">Folga</option>
                     </select>
                 </div>
@@ -1217,7 +1493,7 @@
     <!-- 6. Modal: Add Nozzle -->
     <div id="addNozzleModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
         <div class="bg-white border border-hdBorder rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
-            <h3 class="text-base font-bold mb-4">Adicionar Novo Bico de Abastecimento</h3>
+            <h3 id="addNozzleModalTitle" class="text-base font-bold mb-4">Adicionar Novo Bico de Abastecimento</h3>
             <form onsubmit="submitAddNozzle(event)" class="space-y-4">
                 <div class="grid grid-cols-2 gap-3">
                     <div>
@@ -1405,6 +1681,77 @@
         </div>
     </div>
 
+    <!-- MODAL: ADD FUEL DELIVERY NOTE (NOTA DE COMBUSTIVEL) -->
+    <div id="addDeliveryModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white border border-hdBorder rounded-3xl max-w-lg w-full p-6 shadow-2xl relative">
+            <button onclick="closeModal('addDeliveryModal')" class="absolute right-4 top-4 w-8 h-8 rounded-full hover:bg-hdSurfaceContainer flex items-center justify-center">
+                <span class="material-symbols-outlined text-lg">close</span>
+            </button>
+            <h3 class="text-base font-bold text-hdTextPrimary mb-2 flex items-center gap-2">
+                <span class="material-symbols-outlined text-hdPrimary">local_shipping</span>
+                Lançar Entrega e Nota de Combustível
+            </h3>
+            <p class="text-[11px] text-hdTextSecondary mb-4">Insira os dados da Nota Fiscal (NF-e), do motorista e vincule à respectiva análise laboratorial de conformidade.</p>
+            <form onsubmit="submitAddDelivery(event)" class="space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Data de Recebimento</label>
+                        <input type="date" id="deliveryDate" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Número da Nota Fiscal (NF-e)</label>
+                        <input type="text" id="deliveryInvoice" placeholder="Ex: NF-e 87342" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Combustível Entregue</label>
+                        <select id="deliveryFuelType" class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                            <option value="Gasolina Comum">Gasolina Comum</option>
+                            <option value="Etanol Comum">Etanol Comum</option>
+                            <option value="Diesel S10">Diesel S10</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-hdTextSecondary mb-1">Volume Recebido (L)</label>
+                        <input type="number" id="deliveryVolume" placeholder="Ex: 10000" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                    </div>
+                </div>
+
+                <div class="border-t border-hdBorder/60 my-2 pt-2">
+                    <p class="text-xs font-bold text-hdPrimary mb-2">Dados do Motorista (Entrega)</p>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="col-span-1">
+                            <label class="block text-[10px] font-bold text-hdTextSecondary mb-1">Nome do Motorista</label>
+                            <input type="text" id="deliveryDriverName" placeholder="Ex: Carlos Silveira" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-2 py-2 text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-hdTextSecondary mb-1">CNH do Motorista</label>
+                            <input type="text" id="deliveryDriverCnh" placeholder="Ex: 123456789-0" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-2 py-2 text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-hdTextSecondary mb-1">Placa do Caminhão</label>
+                            <input type="text" id="deliveryTruckPlate" placeholder="Ex: ABC-1234" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-2 py-2 text-xs">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border-t border-hdBorder/60 my-2 pt-2">
+                    <label class="block text-xs font-bold text-hdTextSecondary mb-1">Vincular Laudo de Conformidade</label>
+                    <select id="deliveryConformitySelect" class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                        <!-- Loaded dynamically via JavaScript -->
+                    </select>
+                    <p class="text-[10px] text-hdTextSecondary mt-1">Essencial para rastreabilidade de qualidade exigida pelos órgãos fiscais.</p>
+                </div>
+
+                <div class="flex space-x-3 justify-end pt-2">
+                    <button type="button" onclick="closeModal('addDeliveryModal')" class="px-3 py-1.5 text-xs hover:bg-hdSurfaceContainer rounded-xl">Cancelar</button>
+                    <button type="submit" class="bg-hdPrimary text-white font-bold px-4 py-1.5 rounded-xl text-xs">Salvar Nota e Entrega</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- MODAL H: ADD APPOINTMENT -->
     <div id="addAppointmentModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl relative">
@@ -1565,11 +1912,11 @@
     <!-- ================== CORE JAVASCRIPT & FIREBASE INTEGRATION ================== -->
     <!-- We dynamically load Firebase modules in modular script to ensure high quality execution -->
     <script type="module">
-        // Global variables inside ES Module context
-        let isFirebaseActive = false;
-        let firebaseApp = null;
-        let authService = null;
-        let firestoreDb = null;
+        // Global variables inside ES Module context (Firebase removed)
+        const isFirebaseActive = false;
+        const firebaseApp = null;
+        const authService = null;
+        const firestoreDb = null;
 
         let activeSubscriptions = [];
 
@@ -1627,6 +1974,10 @@
                 { id: 1, title: "Inspeção do Inmetro", date: "2026-07-10", time: "09:00", description: "Verificação anual das bombas e bicos de combustível.", stationCnpj: "12.345.678/0001-99" },
                 { id: 2, title: "Entrega de Combustível S10", date: "2026-07-08", time: "14:30", description: "Recebimento de 10.000L de Diesel S10 da distribuidora.", stationCnpj: "12.345.678/0001-99" }
             ],
+            deliveries: [
+                { id: 1, date: "2026-07-02", invoiceNumber: "NF-e 87342", fuelType: "Gasolina Comum", volume: 10000.0, driverName: "Carlos Silveira", driverCnh: "123456789-0", truckPlate: "ABC-1234", conformityId: 1, stationCnpj: "12.345.678/0001-99" },
+                { id: 2, date: "2026-07-04", invoiceNumber: "NF-e 87405", fuelType: "Diesel S10", volume: 15000.0, driverName: "Marcos Paulo", driverCnh: "987654321-0", truckPlate: "XYZ-9876", conformityId: null, stationCnpj: "12.345.678/0001-99" }
+            ],
             systemCredentials: [
                 { id: 1, systemName: "Sistema de Frente de Caixa (PDV)", category: "Operacional", login: "gerente_pdv", password: "pdv_safe_2026", description: "Acesso no terminal principal da gerência" },
                 { id: 2, systemName: "Portal SEFAZ (Emissor NF-e)", category: "Fiscal", login: "financeiro@estrela.com.br", password: "sefaz_password_secure", description: "https://nfe.fazenda.sp.gov.br" },
@@ -1643,6 +1994,7 @@
         let state = JSON.parse(localStorage.getItem('posto_admin_local_db')) || defaultState;
         
         if (!state.appointments) state.appointments = [...defaultState.appointments];
+        if (!state.deliveries) state.deliveries = [...defaultState.deliveries];
         if (!state.systemCredentials) state.systemCredentials = [...defaultState.systemCredentials];
         
         // Ensure local admin account exists in list
@@ -1655,80 +2007,35 @@
             localStorage.setItem('posto_admin_local_db', JSON.stringify(state));
         }
 
-        // Dynamic modules imports for Firebase
-        async function initFirebase(config) {
-            try {
-                // Import Firebase modules dynamically
-                const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js");
-                const { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js");
-                const { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, addDoc, query, where, onSnapshot } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
-
-                firebaseApp = initializeApp(config);
-                authService = getAuth(firebaseApp);
-                firestoreDb = getFirestore(firebaseApp);
-                isFirebaseActive = true;
-
-                // Configure Badge
-                const badge = document.getElementById('connectionBadgeBtn');
-                const dot = document.getElementById('connectionBadgeDot');
-                const text = document.getElementById('connectionBadgeText');
-                
-                badge.className = "flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border border-green-500/30 bg-hdGreenLight text-hdGreen transition hover:opacity-90";
-                dot.className = "w-2.5 h-2.5 rounded-full bg-green-600 animate-none";
-                text.innerText = "Firebase Ativo";
-
-                // Setup Firebase Authentication listener
-                onAuthStateChanged(authService, async (fbUser) => {
-                    if (fbUser) {
-                        // User connected via Firebase, pull user doc
-                        const emailKey = fbUser.email.toLowerCase();
-                        const userRef = doc(firestoreDb, "users", emailKey);
-                        const userSnap = await getDoc(userRef);
-
-                        if (userSnap.exists()) {
-                            state.activeUser = userSnap.data();
-                        } else {
-                            // Document not in firestore, fallback local metadata
-                            state.activeUser = {
-                                email: fbUser.email,
-                                name: fbUser.displayName || fbUser.email.split('@')[0],
-                                role: "Gerente",
-                                stationName: "Posto Conectado",
-                                stationCnpj: "12.345.678/0001-99",
-                                stationEndereco: "Nuvem Firebase"
-                            };
-                            await setDoc(userRef, state.activeUser);
-                        }
-                        
-                        // Sync database collections from Firebase for this station
-                        await syncCollectionsFromFirebase();
-                        showWorkspace();
-                    } else {
-                        // Disconnected
-                        state.activeUser = null;
-                        showAuthScreen();
-                    }
-                });
-
-                // Set up visual feedback in console
-                console.log("Firebase initialized successfully on PostoAdmin Web!");
-                return true;
-            } catch (err) {
-                console.warn("Could not connect to Firebase. Falling back to local offline mode.", err);
-                fallbackToLocal();
-                return false;
-            }
-        }
-
-        function fallbackToLocal() {
-            isFirebaseActive = false;
+        // Firebase is completely removed. We default fully to offline local storage.
+        async function updateOnlineStatus() {
+            const isOnline = window.navigator.onLine;
+            console.log("Connection state changed: online =", isOnline);
+            
             const badge = document.getElementById('connectionBadgeBtn');
             const dot = document.getElementById('connectionBadgeDot');
             const text = document.getElementById('connectionBadgeText');
-            
-            badge.className = "flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border border-yellow-500/30 bg-yellow-50 text-yellow-800 transition hover:opacity-90";
-            dot.className = "w-2.5 h-2.5 rounded-full bg-yellow-500";
-            text.innerText = "Modo Off-line / Local";
+
+            if (!isOnline) {
+                if (badge && dot && text) {
+                    badge.className = "flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border border-red-500/30 bg-red-50 text-red-800 transition";
+                    dot.className = "w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse";
+                    text.innerText = "Modo Off-line (Sem Internet)";
+                }
+            } else {
+                if (badge && dot && text) {
+                    badge.className = "flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border border-green-500/30 bg-hdGreenLight text-hdGreen transition";
+                    dot.className = "w-2.5 h-2.5 rounded-full bg-green-600";
+                    text.innerText = "Modo On-line (Armazenamento Local)";
+                }
+            }
+        }
+
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+
+        function fallbackToLocal() {
+            updateOnlineStatus();
             
             // Check if activeUser is already saved locally
             if (state.activeUser) {
@@ -1738,130 +2045,14 @@
             }
         }
 
-        // Auto-check on boot for saved configuration
+        // Auto-check on boot
         window.addEventListener('load', async () => {
-            // Check if user has predefined firebase configuration saved in localStorage
-            const savedConfig = localStorage.getItem('posto_firebase_config_web');
-            if (savedConfig) {
-                try {
-                    const parsed = JSON.parse(savedConfig);
-                    await initFirebase(parsed);
-                } catch (e) {
-                    console.error("Invalid Firebase config in storage, falling back to local database", e);
-                    fallbackToLocal();
-                }
-            } else {
-                // No saved config, try standard defaults or run offline
-                fallbackToLocal();
-            }
+            fallbackToLocal();
         });
 
-        // Save Custom configuration
-        window.saveFirebaseConfig = async function() {
-            const val = document.getElementById('firebaseConfigInput').value.trim();
-            if (!val) {
-                alert("Por favor insira um objeto de configuração do Firebase!");
-                return;
-            }
-
-            try {
-                // Extract JSON-like config block from user input using dynamic extraction
-                let cleanObj = val;
-                if (val.includes("firebaseConfig =")) {
-                    cleanObj = val.split("firebaseConfig =")[1].split(";")[0].trim();
-                } else if (val.includes("const firebaseConfig =")) {
-                    cleanObj = val.split("const firebaseConfig =")[1].split(";")[0].trim();
-                }
-                
-                // Evaluate or parse safely
-                const configEvaluated = new Function(`return (${cleanObj})`)();
-                
-                if (configEvaluated && configEvaluated.apiKey) {
-                    localStorage.setItem('posto_firebase_config_web', JSON.stringify(configEvaluated));
-                    toggleConfigModal();
-                    
-                    const success = await initFirebase(configEvaluated);
-                    if (success) {
-                        alert("Conectado com sucesso ao Firebase! O banco em tempo real foi sincronizado.");
-                    } else {
-                        alert("Falha ao inicializar o Firebase. Verifique suas credenciais.");
-                    }
-                } else {
-                    alert("Configuração inválida. Certifique-se de colar o objeto contendo 'apiKey', 'projectId', etc.");
-                }
-            } catch (err) {
-                alert("Erro ao decodificar a configuração: " + err.message);
-            }
-        };
-
-        // Firebase real-time collection loading / push sync
-        async function syncCollectionsFromFirebase() {
-            if (!isFirebaseActive || !state.activeUser) return;
-            const cnpj = state.activeUser.stationCnpj || "12.345.678/0001-99";
-            
-            try {
-                const { collection, onSnapshot, getFirestore } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
-                const dbRef = getFirestore(firebaseApp);
-
-                clearActiveSubscriptions();
-
-                const setupListener = (colName, stateKey) => {
-                    const colRef = collection(dbRef, "stations", cnpj, colName);
-                    const unsub = onSnapshot(colRef, (snapshot) => {
-                        const items = [];
-                        snapshot.forEach((doc) => {
-                            const parsedId = (isNaN(doc.id) || doc.id.trim() === "") ? doc.id : Number(doc.id);
-                            items.push({ id: parsedId, ...doc.data() });
-                        });
-                        state[stateKey] = items;
-                        
-                        // Save locally and re-render immediately
-                        saveLocalDb();
-                        renderWorkspace();
-                    }, (error) => {
-                        console.error(`Error in real-time listener for ${colName}:`, error);
-                    });
-                    activeSubscriptions.push(unsub);
-                };
-
-                setupListener("fuel_tanks", "tanks");
-                setupListener("employees", "employees");
-                setupListener("shift_schedules", "shifts");
-                setupListener("daily_reports", "reports");
-                setupListener("nozzles", "nozzles");
-                setupListener("calibrations", "calibrations");
-                setupListener("conformity_records", "conformities");
-                setupListener("audit_logs", "audits");
-                setupListener("appointments", "appointments");
-
-            } catch (error) {
-                console.error("Error setting up real-time onSnapshot listeners from Firestore", error);
-            }
-        }
-
-        async function saveToFirestore(colName, docId, data) {
-            if (!isFirebaseActive || !state.activeUser) return;
-            const cnpj = state.activeUser.stationCnpj || "12.345.678/0001-99";
-            try {
-                const { doc, setDoc, getFirestore } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
-                const dbRef = getFirestore(firebaseApp);
-                await setDoc(doc(dbRef, "stations", cnpj, colName, docId.toString()), data);
-            } catch (e) {
-                console.error("Error syncing document to firestore", e);
-            }
-        }
-
-        async function deleteFromFirestore(colName, docId) {
-            if (!isFirebaseActive || !state.activeUser) return;
-            const cnpj = state.activeUser.stationCnpj || "12.345.678/0001-99";
-            try {
-                const { doc, deleteDoc, getFirestore } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
-                const dbRef = getFirestore(firebaseApp);
-                await deleteDoc(doc(dbRef, "stations", cnpj, colName, docId.toString()));
-            } catch (e) {
-                console.error("Error deleting document in firestore", e);
-            }
-        }
+        // Stubs for Firebase methods to avoid breaking existing calls
+        async function saveToFirestore(colName, docId, data) {}
+        async function deleteFromFirestore(colName, docId) {}
 
         // Authentication Submission Handler
         window.handleAuthSubmit = async function(event) {
@@ -2015,6 +2206,12 @@
         window.switchTab = function(tabName) {
             state.activeTab = tabName;
             
+            // Auto close mobile sidebar on navigation
+            const sidebar = document.getElementById('sidebarNav');
+            if (sidebar && !sidebar.classList.contains('-translate-x-full') && window.innerWidth < 768) {
+                window.toggleMobileSidebar();
+            }
+            
             // Hide all sub screens
             ['dashboard', 'tanks', 'employees', 'reports', 'nozzles', 'compliance', 'audits', 'calendar', 'systems'].forEach(scr => {
                 const element = document.getElementById(`screen-${scr}`);
@@ -2027,6 +2224,9 @@
             const targetScreen = document.getElementById(`screen-${tabName}`);
             if (targetScreen) {
                 targetScreen.classList.remove('hidden');
+            }
+            if (tabName === 'employees') {
+                window.setEmployeeViewTab('calendar');
             }
 
             // Style buttons
@@ -2122,6 +2322,11 @@
         // Render everything on UI based on memory state
         function renderWorkspace() {
             if (!state.activeUser) return;
+            
+            // Update Supabase UI state
+            if (window.updateSupabaseStatusUI) {
+                window.updateSupabaseStatusUI();
+            }
 
             const u = state.activeUser;
             const cnpj = u.stationCnpj || "12.345.678/0001-99";
@@ -2142,7 +2347,8 @@
             const dashTanks = document.getElementById('dashboardTanksGrid');
             const fullTanks = document.getElementById('tanksListContainer');
             
-            let tanksHtml = '';
+            let dashTanksHtml = '';
+            let fullTanksHtml = '';
             state.tanks.forEach(tank => {
                 const percent = Math.min(100, Math.round((tank.currentLevel / tank.capacity) * 100));
                 const isLow = tank.currentLevel <= tank.threshold;
@@ -2150,8 +2356,7 @@
                 const tankColor = tank.color || (tank.name.toLowerCase().includes('etanol') ? '#4CAF50' : tank.name.toLowerCase().includes('diesel') ? '#FF9800' : '#005AC1');
                 const liquidBg = isLow ? '#EF4444' : tankColor;
                 
-                tanksHtml += `
-                    <div class="tank-card bg-hdSurfaceContainer border border-hdBorder/60 rounded-3xl p-5 flex items-center space-x-5 shadow-sm cursor-pointer">
+                const baseTankCardHeaderAndBody = `
                         <!-- Left: Realistic Cylinder Visualizer -->
                         <div class="tank-cylinder-container flex-shrink-0">
                             <!-- Liquid level inside -->
@@ -2180,18 +2385,38 @@
                                 <div>Capacidade: <span class="text-hdTextPrimary">${tank.capacity.toLocaleString('pt-BR')} L</span></div>
                                 <div>Gatilho Mín: <span class="text-hdTextPrimary">${tank.threshold.toLocaleString('pt-BR')} L</span></div>
                             </div>
-                            <div class="border-t border-hdBorder/60 pt-2.5 mt-2.5 flex justify-between items-center text-xs">
-                                <span class="text-hdTextSecondary font-bold text-[10px]">Preço do Litro:</span>
-                                <span class="font-black text-hdGreen text-sm">R$ ${tank.pricePerLiter.toFixed(3)}</span>
+                `;
+
+                dashTanksHtml += `
+                    <div class="tank-card bg-hdSurfaceContainer border border-hdBorder/60 rounded-3xl p-5 flex items-center space-x-5 shadow-sm cursor-pointer">
+                        ${baseTankCardHeaderAndBody}
+                        <div class="border-t border-hdBorder/60 pt-2.5 mt-2.5 flex justify-between items-center text-xs">
+                            <span class="text-hdTextSecondary font-bold text-[10px]">Preço do Litro:</span>
+                            <span class="font-black text-hdGreen text-sm">R$ ${tank.pricePerLiter.toFixed(3)}</span>
+                        </div>
+                        </div>
+                    </div>
+                `;
+
+                fullTanksHtml += `
+                    <div class="tank-card bg-hdSurfaceContainer border border-hdBorder/60 rounded-3xl p-5 flex items-center space-x-5 shadow-sm cursor-pointer">
+                        ${baseTankCardHeaderAndBody}
+                        <div class="border-t border-hdBorder/60 pt-2.5 mt-2.5 flex justify-between items-center text-xs">
+                            <span class="text-hdTextSecondary font-bold text-[10px]">Preço do Litro:</span>
+                            <div class="flex items-center space-x-1.5">
+                                <span class="font-black text-hdGreen text-xs mr-2">R$ ${tank.pricePerLiter.toFixed(3)}</span>
+                                <button onclick="event.stopPropagation(); editTank(${tank.id})" class="text-hdPrimary hover:text-blue-700 bg-blue-50 p-1.5 rounded-xl transition flex items-center justify-center" title="Editar"><span class="material-symbols-outlined text-xs" style="font-size: 14px">edit</span></button>
+                                <button onclick="event.stopPropagation(); deleteTank(${tank.id})" class="text-red-600 hover:text-red-800 bg-red-50 p-1.5 rounded-xl transition flex items-center justify-center" title="Excluir"><span class="material-symbols-outlined text-xs" style="font-size: 14px">delete</span></button>
                             </div>
+                        </div>
                         </div>
                     </div>
                 `;
             });
 
             if (state.tanks.length > 0) {
-                dashTanks.innerHTML = tanksHtml;
-                fullTanks.innerHTML = tanksHtml;
+                dashTanks.innerHTML = dashTanksHtml;
+                fullTanks.innerHTML = fullTanksHtml;
             } else {
                 dashTanks.innerHTML = `<div class="col-span-2 text-center py-6 text-xs text-hdTextSecondary">Nenhum tanque cadastrado.</div>`;
                 fullTanks.innerHTML = `<div class="col-span-3 text-center py-12 text-xs text-hdTextSecondary">Nenhum tanque cadastrado.</div>`;
@@ -2200,25 +2425,42 @@
             // 2. Nozzles rendering
             const dashNozzles = document.getElementById('dashboardNozzlesList');
             const nozzlesGrid = document.getElementById('nozzlesGridContainer');
-            let nozzlesHtml = '';
             
+            let dashNozzlesHtml = '';
+            let gridNozzlesHtml = '';
             state.nozzles.forEach(noz => {
                 const nozColor = noz.color || '#005AC1';
-                nozzlesHtml += `
-                    <div class="bg-hdSurfaceContainer border border-hdBorder/60 rounded-xl p-3 flex justify-between items-center" style="border-left: 4px solid ${nozColor}">
-                        <div class="flex items-center space-x-2">
-                            <span class="material-symbols-outlined" style="color: ${nozColor}">water_drop</span>
-                            <div>
-                                <p class="font-bold text-xs">${noz.nozzleNumber} (${noz.fuelType})</p>
-                                <p class="text-[10px] text-hdTextSecondary">${noz.pumpName}</p>
-                            </div>
+                
+                const baseNozBody = `
+                    <div class="flex items-center space-x-2">
+                        <span class="material-symbols-outlined" style="color: ${nozColor}">water_drop</span>
+                        <div>
+                            <p class="font-bold text-xs">${noz.nozzleNumber} (${noz.fuelType})</p>
+                            <p class="text-[10px] text-hdTextSecondary">${noz.pumpName}</p>
                         </div>
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Ativo</span>
+                    </div>
+                `;
+                
+                dashNozzlesHtml += `
+                    <div class="bg-hdSurfaceContainer border border-hdBorder/60 rounded-xl p-3 flex justify-between items-center" style="border-left: 4px solid ${nozColor}">
+                        ${baseNozBody}
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700">${noz.status || 'Ativo'}</span>
+                    </div>
+                `;
+                
+                gridNozzlesHtml += `
+                    <div class="bg-hdSurfaceContainer border border-hdBorder/60 rounded-xl p-3 flex justify-between items-center" style="border-left: 4px solid ${nozColor}">
+                        ${baseNozBody}
+                        <div class="flex items-center space-x-1.5">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700">${noz.status || 'Ativo'}</span>
+                            <button onclick="editNozzle(${noz.id})" class="text-hdPrimary hover:text-blue-700 bg-blue-50 p-1 rounded-lg transition flex items-center justify-center" title="Editar"><span class="material-symbols-outlined text-xs" style="font-size: 14px">edit</span></button>
+                            <button onclick="deleteNozzle(${noz.id})" class="text-red-600 hover:text-red-800 bg-red-50 p-1 rounded-lg transition flex items-center justify-center" title="Excluir"><span class="material-symbols-outlined text-xs" style="font-size: 14px">delete</span></button>
+                        </div>
                     </div>
                 `;
             });
-            dashNozzles.innerHTML = nozzlesHtml || '<p class="text-xs text-hdTextSecondary text-center py-4">Nenhum bico cadastrado.</p>';
-            nozzlesGrid.innerHTML = nozzlesHtml || '<p class="text-xs text-hdTextSecondary text-center py-12">Nenhum bico cadastrado.</p>';
+            dashNozzles.innerHTML = dashNozzlesHtml || '<p class="text-xs text-hdTextSecondary text-center py-4">Nenhum bico cadastrado.</p>';
+            nozzlesGrid.innerHTML = gridNozzlesHtml || '<p class="text-xs text-hdTextSecondary text-center py-12">Nenhum bico cadastrado.</p>';
 
             // 3. Shift and active scale
             const currentShiftBlock = document.getElementById('dashboardActiveShift');
@@ -2343,6 +2585,33 @@
             });
             conformityTable.innerHTML = confHtml || '<tr><td colspan="6" class="py-4 text-center text-hdTextSecondary">Sem análises de laboratório lançadas.</td></tr>';
 
+            const deliveriesTable = document.getElementById('deliveriesTableBody');
+            if (deliveriesTable) {
+                let delHtml = '';
+                const deliveriesList = state.deliveries || [];
+                deliveriesList.forEach(del => {
+                    const linkedConf = state.conformities.find(c => c.id === del.conformityId);
+                    const confText = linkedConf 
+                        ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${linkedConf.isConforme ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}" title="${linkedConf.observation || ''}">Laudo de ${linkedConf.date} (${linkedConf.isConforme ? 'Conforme' : 'Irregular'})</span>`
+                        : `<span class="text-[10px] bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full font-bold">Sem laudo vinculado</span>`;
+                    delHtml += `
+                        <tr class="border-b border-hdBorder/60 hover:bg-hdSurfaceContainer/40 text-xs">
+                            <td class="py-2.5 px-3">${del.date}</td>
+                            <td class="py-2.5 px-3 font-bold">${del.invoiceNumber}</td>
+                            <td class="py-2.5 px-3 font-semibold text-hdPrimary">${del.fuelType}</td>
+                            <td class="py-2.5 px-3 text-right font-bold">${parseFloat(del.volume).toLocaleString('pt-BR')} L</td>
+                            <td class="py-2.5 px-3 font-semibold">${del.driverName}</td>
+                            <td class="py-2.5 px-3 text-hdTextSecondary">CNH: ${del.driverCnh}<br>Placa: ${del.truckPlate}</td>
+                            <td class="py-2.5 px-3">${confText}</td>
+                            <td class="py-2.5 px-3 text-center">
+                                <button onclick="deleteDelivery(${del.id})" class="text-hdRed hover:underline font-bold">Apagar</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                deliveriesTable.innerHTML = delHtml || '<tr><td colspan="8" class="py-6 text-center text-hdTextSecondary">Nenhuma entrega de combustível registrada.</td></tr>';
+            }
+
             // 7. Timeline of Audits rendering
             const auditsTimeline = document.getElementById('auditsListTimeline');
             const dashAudits = document.getElementById('dashboardAuditTimeline');
@@ -2421,6 +2690,11 @@
                     `;
                 });
                 appointmentsGrid.innerHTML = appHtml || `<div class="col-span-3 text-center py-12 text-xs text-hdTextSecondary">Nenhum compromisso agendado.</div>`;
+            }
+
+            // Always render full monthly calendar and details
+            if (window.renderFullMonthCalendar) {
+                window.renderFullMonthCalendar();
             }
 
             // 9. Systems & Security screen handling
@@ -2521,25 +2795,44 @@
 
             const color = document.getElementById('tankColorInput').value || "#005AC1";
 
-            const newTank = {
-                id: Date.now(),
-                name,
-                capacity,
-                currentLevel,
-                threshold,
-                pricePerLiter: price,
-                color,
-                stationCnpj: cnpj
-            };
+            if (window.editingTankId) {
+                const tank = state.tanks.find(t => t.id === window.editingTankId);
+                if (tank) {
+                    tank.name = name;
+                    tank.capacity = capacity;
+                    tank.threshold = threshold;
+                    tank.currentLevel = currentLevel;
+                    tank.pricePerLiter = price;
+                    tank.color = color;
+                    
+                    if (isFirebaseActive) {
+                        saveToFirestore("fuel_tanks", tank.id, tank);
+                    }
+                    logActivity("UPDATE", "Tanques", `Tanque ${name} atualizado no sistema`);
+                }
+                window.editingTankId = null;
+            } else {
+                const newTank = {
+                    id: Date.now(),
+                    name,
+                    capacity,
+                    currentLevel,
+                    threshold,
+                    pricePerLiter: price,
+                    color,
+                    stationCnpj: cnpj
+                };
 
-            state.tanks.push(newTank);
-            saveLocalDb();
-            
-            if (isFirebaseActive) {
-                saveToFirestore("fuel_tanks", newTank.id, newTank);
+                state.tanks.push(newTank);
+                
+                if (isFirebaseActive) {
+                    saveToFirestore("fuel_tanks", newTank.id, newTank);
+                }
+
+                logActivity("CREATE", "Tanques", `Tanque ${name} de ${capacity}L registrado no sistema`);
             }
 
-            logActivity("CREATE", "Tanques", `Tanque ${name} de ${capacity}L registrado no sistema`);
+            saveLocalDb();
             closeModal('addTankModal');
             renderWorkspace();
         };
@@ -2660,26 +2953,45 @@
 
             const color = document.getElementById('nozColorInput').value || "#005AC1";
 
-            const newNozzle = {
-                id: Date.now(),
-                nozzleNumber,
-                pumpName,
-                tankId,
-                tankName,
-                fuelType,
-                status: "Ativo",
-                color,
-                stationCnpj: cnpj
-            };
+            if (window.editingNozzleId) {
+                const noz = state.nozzles.find(n => n.id === window.editingNozzleId);
+                if (noz) {
+                    noz.nozzleNumber = nozzleNumber;
+                    noz.pumpName = pumpName;
+                    noz.tankId = tankId;
+                    noz.tankName = tankName;
+                    noz.fuelType = fuelType;
+                    noz.color = color;
 
-            state.nozzles.push(newNozzle);
-            saveLocalDb();
+                    if (isFirebaseActive) {
+                        saveToFirestore("nozzles", noz.id, noz);
+                    }
+                    logActivity("UPDATE", "Bicos", `Bico ${nozzleNumber} atualizado no sistema`);
+                }
+                window.editingNozzleId = null;
+            } else {
+                const newNozzle = {
+                    id: Date.now(),
+                    nozzleNumber,
+                    pumpName,
+                    tankId,
+                    tankName,
+                    fuelType,
+                    status: "Ativo",
+                    color,
+                    stationCnpj: cnpj
+                };
 
-            if (isFirebaseActive) {
-                saveToFirestore("nozzles", newNozzle.id, newNozzle);
+                state.nozzles.push(newNozzle);
+
+                if (isFirebaseActive) {
+                    saveToFirestore("nozzles", newNozzle.id, newNozzle);
+                }
+
+                logActivity("CREATE", "Bicos", `Novo ${nozzleNumber} associado ao ${tankName} registrado`);
             }
 
-            logActivity("CREATE", "Bicos", `Novo ${nozzleNumber} associado ao ${tankName} registrado`);
+            saveLocalDb();
             closeModal('addNozzleModal');
             renderWorkspace();
         };
@@ -2922,6 +3234,129 @@
             renderWorkspace();
         };
 
+        // Fuel Delivery Note (Nota Fiscal & Motorista) handlers
+        window.openAddDeliveryModal = function() {
+            const dateInput = document.getElementById('deliveryDate');
+            if (dateInput) {
+                dateInput.value = new Date().toISOString().split('T')[0];
+            }
+            const confSelect = document.getElementById('deliveryConformitySelect');
+            if (confSelect) {
+                let optionsHtml = '<option value="">-- Selecione um laudo de conformidade (Opcional) --</option>';
+                const confList = state.conformities || [];
+                confList.forEach(c => {
+                    optionsHtml += `<option value="${c.id}">Laudo de ${c.date} - ${c.fuelType} (${c.technicianName}) - ${c.isConforme ? 'Conforme' : 'Irregular'}</option>`;
+                });
+                confSelect.innerHTML = optionsHtml;
+            }
+            document.getElementById('addDeliveryModal').classList.remove('hidden');
+        };
+
+        window.submitAddDelivery = function(e) {
+            e.preventDefault();
+            const date = document.getElementById('deliveryDate').value;
+            const invoiceNumber = document.getElementById('deliveryInvoice').value.trim();
+            const fuelType = document.getElementById('deliveryFuelType').value;
+            const volume = parseFloat(document.getElementById('deliveryVolume').value);
+            const driverName = document.getElementById('deliveryDriverName').value.trim();
+            const driverCnh = document.getElementById('deliveryDriverCnh').value.trim();
+            const truckPlate = document.getElementById('deliveryTruckPlate').value.trim();
+            const conformityIdVal = document.getElementById('deliveryConformitySelect').value;
+            const conformityId = conformityIdVal ? parseInt(conformityIdVal) : null;
+
+            if (!invoiceNumber || !driverName || isNaN(volume)) {
+                alert("Por favor preencha todos os campos obrigatórios.");
+                return;
+            }
+
+            const newDel = {
+                id: Date.now(),
+                date,
+                invoiceNumber,
+                fuelType,
+                volume,
+                driverName,
+                driverCnh,
+                truckPlate,
+                conformityId,
+                stationCnpj: state.activeUser?.stationCnpj || "12.345.678/0001-99"
+            };
+
+            if (!state.deliveries) state.deliveries = [];
+            state.deliveries.unshift(newDel);
+            saveLocalDb();
+            
+            // Add audit log
+            logActivity("CADASTRO", "Entrega", `Nota Fiscal ${invoiceNumber} registrada para motorista ${driverName}. Combustível: ${fuelType} - ${volume}L.`);
+            
+            closeModal('addDeliveryModal');
+            renderWorkspace();
+        };
+
+        window.deleteDelivery = function(id) {
+            if (confirm("Deseja realmente apagar este registro de entrega?")) {
+                state.deliveries = (state.deliveries || []).filter(d => d.id !== id);
+                saveLocalDb();
+                logActivity("EXCLUSAO", "Entrega", `Registro de entrega #${id} excluído.`);
+                renderWorkspace();
+            }
+        };
+
+
+        // --- EDIT & DELETE TANKS / NOZZLES HANDLERS ---
+        
+        window.editTank = function(id) {
+            const tank = state.tanks.find(t => t.id === id);
+            if (!tank) return;
+            window.editingTankId = id;
+            const titleEl = document.getElementById('addTankModalTitle');
+            if (titleEl) titleEl.innerText = 'Editar Tanque de Combustível';
+            document.getElementById('tankNameInput').value = tank.name;
+            document.getElementById('tankCapacityInput').value = tank.capacity;
+            document.getElementById('tankThresholdInput').value = tank.threshold;
+            document.getElementById('tankCurrentLevelInput').value = tank.currentLevel;
+            document.getElementById('tankPriceInput').value = tank.pricePerLiter;
+            document.getElementById('tankColorInput').value = tank.color || "#005AC1";
+            document.getElementById('addTankModal').classList.remove('hidden');
+        };
+
+        window.deleteTank = function(id) {
+            if (!confirm('Deseja realmente excluir este tanque? Todos os bicos vinculados a ele podem ser afetados.')) return;
+            const tank = state.tanks.find(t => t.id === id);
+            state.tanks = state.tanks.filter(t => t.id !== id);
+            saveLocalDb();
+            if (isFirebaseActive) {
+                deleteFromFirestore("fuel_tanks", id);
+            }
+            logActivity("DELETE", "Tanques", `Tanque ${tank ? tank.name : "nº " + id} removido do sistema`);
+            renderWorkspace();
+        };
+
+        window.editNozzle = function(id) {
+            const noz = state.nozzles.find(n => n.id === id);
+            if (!noz) return;
+            window.editingNozzleId = id;
+            const titleEl = document.getElementById('addNozzleModalTitle');
+            if (titleEl) titleEl.innerText = 'Editar Bico de Abastecimento';
+            document.getElementById('nozNumInput').value = noz.nozzleNumber;
+            document.getElementById('nozPumpInput').value = noz.pumpName;
+            document.getElementById('nozTankSelect').value = noz.tankId;
+            document.getElementById('nozTypeSelect').value = noz.fuelType;
+            document.getElementById('nozColorInput').value = noz.color || "#005AC1";
+            document.getElementById('addNozzleModal').classList.remove('hidden');
+        };
+
+        window.deleteNozzle = function(id) {
+            if (!confirm('Deseja realmente remover este bico de abastecimento?')) return;
+            const noz = state.nozzles.find(n => n.id === id);
+            state.nozzles = state.nozzles.filter(n => n.id !== id);
+            saveLocalDb();
+            if (isFirebaseActive) {
+                deleteFromFirestore("nozzles", id);
+            }
+            logActivity("DELETE", "Bicos", `Bico ${noz ? noz.nozzleNumber : "nº " + id} removido do sistema`);
+            renderWorkspace();
+        };
 
         // --- DELETE HANDLERS ---
         
@@ -2959,6 +3394,148 @@
                 }
                 logActivity("DELETE", "Relatórios", `Relatório diário excluído do histórico`);
                 renderWorkspace();
+            }
+        };
+
+        window.downloadReportsPDF = function() {
+            try {
+                if (!state.reports || state.reports.length === 0) {
+                    alert("Não há relatórios para exportar.");
+                    return;
+                }
+
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('l', 'mm', 'a4'); // landscape format is better for many table columns!
+
+                const cnpj = state.activeUser?.stationCnpj || "12.345.678/0001-99";
+                const razaoSocial = state.stationSettings?.razaoSocial || "Posto Estrela Cadente Ltda";
+
+                // Header
+                doc.setFillColor(37, 99, 235); // Blue-600
+                doc.rect(0, 0, 297, 25, 'F');
+
+                doc.setTextColor(255, 255, 255);
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(16);
+                doc.text(razaoSocial, 14, 10);
+                
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(9);
+                doc.text(`CNPJ: ${cnpj} | Histórico de Vendas Petrolíferas`, 14, 15);
+                doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 14, 20);
+
+                doc.setFontSize(14);
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(255, 255, 255);
+                doc.text("RELATÓRIO DIÁRIO DE OPERAÇÃO", 283, 15, { align: 'right' });
+
+                // Content Section Title
+                doc.setFontSize(11);
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(31, 41, 55); // Gray-800
+                doc.text("Histórico Completo de Vendas e Fechamento de Caixa", 14, 35);
+
+                const tableData = [];
+                let totalSold = 0;
+                let totalFaturamento = 0;
+
+                // Sort reports by date descending
+                const sortedReports = [...state.reports].sort((a, b) => b.date.localeCompare(a.date));
+
+                sortedReports.forEach(rep => {
+                    totalSold += rep.litersSold || 0;
+                    totalFaturamento += rep.totalSales || 0;
+
+                    tableData.push([
+                        rep.date,
+                        rep.fuelName,
+                        `${(rep.openingStock || 0).toLocaleString('pt-BR')} L`,
+                        `${(rep.receivedVolume || 0).toLocaleString('pt-BR')} L`,
+                        `${(rep.litersSold || 0).toLocaleString('pt-BR')} L`,
+                        `${(rep.closingStock || 0).toLocaleString('pt-BR')} L`,
+                        `R$ ${(rep.totalSales || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                        rep.observation || '--'
+                    ]);
+                });
+
+                // Add summary row to table data
+                tableData.push([
+                    'TOTAL',
+                    '---',
+                    '---',
+                    '---',
+                    `${totalSold.toLocaleString('pt-BR')} L`,
+                    '---',
+                    `R$ ${totalFaturamento.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                    'Soma dos períodos selecionados'
+                ]);
+
+                doc.autoTable({
+                    startY: 38,
+                    head: [['Data', 'Combustível', 'Est. Inicial', 'Recebido', 'Vol. Vendido', 'Est. Final', 'Faturamento', 'Observações']],
+                    body: tableData,
+                    theme: 'grid',
+                    headStyles: {
+                        fillColor: [37, 99, 235],
+                        textColor: [255, 255, 255],
+                        fontSize: 9,
+                        fontStyle: 'bold',
+                        halign: 'left'
+                    },
+                    footStyles: {
+                        fillColor: [243, 244, 246],
+                        textColor: [31, 41, 55],
+                        fontSize: 9,
+                        fontStyle: 'bold'
+                    },
+                    columnStyles: {
+                        2: { halign: 'right' },
+                        3: { halign: 'right' },
+                        4: { halign: 'right' },
+                        5: { halign: 'right' },
+                        6: { halign: 'right' }
+                    },
+                    styles: {
+                        fontSize: 8,
+                        cellPadding: 3
+                    },
+                    didParseCell: function (data) {
+                        // Highlight the final total row
+                        if (data.row.index === tableData.length - 1) {
+                            data.cell.styles.fontStyle = 'bold';
+                            data.cell.styles.fillColor = [219, 234, 254]; // blue-100
+                        }
+                    }
+                });
+
+                // Footer signature section
+                const finalY = doc.lastAutoTable.finalY + 15;
+                if (finalY < 180) {
+                    doc.setDrawColor(209, 213, 219);
+                    doc.line(14, finalY + 15, 100, finalY + 15);
+                    doc.setFontSize(8);
+                    doc.setTextColor(107, 114, 128);
+                    doc.text("Assinatura do Gerente de Operações", 14, finalY + 19);
+
+                    doc.line(197, finalY + 15, 283, finalY + 15);
+                    doc.text("Visto da Controladoria / Auditoria", 197, finalY + 19);
+                }
+
+                // Page numbering and metadata
+                const pageCount = doc.internal.getNumberOfPages();
+                for (let i = 1; i <= pageCount; i++) {
+                    doc.setPage(i);
+                    doc.setFontSize(8);
+                    doc.setTextColor(156, 163, 175);
+                    doc.text(`Página ${i} de ${pageCount}`, 283, 200, { align: 'right' });
+                    doc.text("Relatório gerado automaticamente por Meu Posto - Sistema Integrado de Gestão Comercial e de Conformidade.", 14, 200);
+                }
+
+                doc.save(`relatorio_diario_posto_${new Date().toISOString().split('T')[0]}.pdf`);
+                logActivity("DOWNLOAD", "Relatórios", `Exportado relatório PDF com ${sortedReports.length} registros.`);
+            } catch (error) {
+                console.error("Erro ao gerar PDF:", error);
+                alert("Ocorreu um erro ao gerar o PDF. Verifique os logs do console.");
             }
         };
 
@@ -3193,6 +3770,155 @@
             }
         };
 
+        // Supabase Cloud Sync Web Functions
+        window.toggleSupabaseModal = function() {
+            const modal = document.getElementById('supabaseModal');
+            modal.classList.toggle('hidden');
+            let savedConfig = localStorage.getItem('posto_supabase_config_web');
+            if (!savedConfig) {
+                savedConfig = JSON.stringify({
+                    url: "https://fgogbzscfqkwlqazugkx.supabase.co",
+                    key: "sb_publishable_Zp5YN0CWKy0nV8Ku5C7ALw_uqMe6HUG"
+                });
+            }
+            if (savedConfig) {
+                const { url, key } = JSON.parse(savedConfig);
+                document.getElementById('supabaseUrlInput').value = url || "";
+                document.getElementById('supabaseKeyInput').value = key || "";
+            }
+        };
+
+        window.saveSupabaseConfigWeb = function() {
+            const url = document.getElementById('supabaseUrlInput').value.trim();
+            const key = document.getElementById('supabaseKeyInput').value.trim();
+            if (!url || !key) {
+                alert("Preencha todos os campos do Supabase!");
+                return;
+            }
+            localStorage.setItem('posto_supabase_config_web', JSON.stringify({ url, key }));
+            toggleSupabaseModal();
+            updateSupabaseStatusUI();
+            alert("Credenciais do Supabase salvas com sucesso!");
+        };
+
+        window.clearSupabaseConfigWeb = function() {
+            localStorage.removeItem('posto_supabase_config_web');
+            document.getElementById('supabaseUrlInput').value = "";
+            document.getElementById('supabaseKeyInput').value = "";
+            toggleSupabaseModal();
+            updateSupabaseStatusUI();
+            alert("Configurações do Supabase apagadas.");
+        };
+
+        window.updateSupabaseStatusUI = function() {
+            const badge = document.getElementById('supabaseStatusBadge');
+            if (!badge) return;
+            let savedConfig = localStorage.getItem('posto_supabase_config_web');
+            if (!savedConfig) {
+                savedConfig = JSON.stringify({
+                    url: "https://fgogbzscfqkwlqazugkx.supabase.co",
+                    key: "sb_publishable_Zp5YN0CWKy0nV8Ku5C7ALw_uqMe6HUG"
+                });
+            }
+            if (savedConfig) {
+                const { url } = JSON.parse(savedConfig);
+                badge.className = "p-3 rounded-xl bg-emerald-50 text-emerald-800 text-[11px] font-semibold border border-emerald-100 flex items-center justify-between";
+                badge.innerHTML = `
+                    <span>⚡ Supabase Cloud Sync: ATIVO (${new URL(url).hostname})</span>
+                    <button onclick="toggleSupabaseModal()" class="text-emerald-700 font-bold hover:underline">Alterar Credenciais</button>
+                `;
+            } else {
+                badge.className = "p-3 rounded-xl bg-yellow-50 text-yellow-800 text-[11px] font-semibold border border-yellow-100 flex items-center justify-between";
+                badge.innerHTML = `
+                    <span>⚠️ Supabase Off-line (Banco local ativo)</span>
+                    <button onclick="toggleSupabaseModal()" class="text-hdPrimary font-bold hover:underline">Configurar Credenciais</button>
+                `;
+            }
+        };
+
+        window.uploadToSupabaseWeb = async function() {
+            let savedConfig = localStorage.getItem('posto_supabase_config_web');
+            if (!savedConfig) {
+                savedConfig = JSON.stringify({
+                    url: "https://fgogbzscfqkwlqazugkx.supabase.co",
+                    key: "sb_publishable_Zp5YN0CWKy0nV8Ku5C7ALw_uqMe6HUG"
+                });
+            }
+            const { url, key } = JSON.parse(savedConfig);
+            const cnpj = (state.activeUser && state.activeUser.stationCnpj) || "12.345.678/0001-99";
+            
+            try {
+                const payload = {
+                    id: cnpj,
+                    data: state,
+                    updated_at: new Date().toISOString()
+                };
+                
+                const response = await fetch(`${url}/rest/v1/posto_backups`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': key,
+                        'Authorization': `Bearer ${key}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'resolution=merge-duplicates'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (response.ok) {
+                    alert("Backup enviado com sucesso para a nuvem Supabase! ☁️⚡");
+                } else {
+                    const errText = await response.text();
+                    alert("Erro ao enviar backup: " + errText);
+                }
+            } catch (e) {
+                alert("Falha na conexão com o Supabase: " + e.message);
+            }
+        };
+
+        window.downloadFromSupabaseWeb = async function() {
+            let savedConfig = localStorage.getItem('posto_supabase_config_web');
+            if (!savedConfig) {
+                savedConfig = JSON.stringify({
+                    url: "https://fgogbzscfqkwlqazugkx.supabase.co",
+                    key: "sb_publishable_Zp5YN0CWKy0nV8Ku5C7ALw_uqMe6HUG"
+                });
+            }
+            const { url, key } = JSON.parse(savedConfig);
+            const cnpj = (state.activeUser && state.activeUser.stationCnpj) || "12.345.678/0001-99";
+            
+            try {
+                const response = await fetch(`${url}/rest/v1/posto_backups?id=eq.${cnpj}&select=data`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': key,
+                        'Authorization': `Bearer ${key}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && data.length > 0 && data[0].data) {
+                        const backupState = data[0].data;
+                        const currentUser = state.activeUser;
+                        state = backupState;
+                        state.activeUser = currentUser;
+                        saveLocalDb();
+                        renderWorkspace();
+                        alert("Dados sincronizados / restaurados com sucesso da nuvem Supabase! ⚡☁️");
+                    } else {
+                        alert("Nenhum backup encontrado para o CNPJ " + cnpj + " no Supabase.");
+                    }
+                } else {
+                    const errText = await response.text();
+                    alert("Erro ao buscar backup: " + errText);
+                }
+            } catch (e) {
+                alert("Falha na conexão com o Supabase: " + e.message);
+            }
+        };
+
     </script>
 
     <!-- Modal trigger helpers in Vanilla JS -->
@@ -3207,7 +3933,19 @@
             document.getElementById('addAppointmentModal').classList.remove('hidden');
         }
 
+        window.editingTankId = null;
+        window.editingNozzleId = null;
+
         function openAddTankModal() {
+            window.editingTankId = null;
+            const titleEl = document.getElementById('addTankModalTitle');
+            if (titleEl) titleEl.innerText = 'Adicionar Tanque';
+            document.getElementById('tankNameInput').value = '';
+            document.getElementById('tankCapacityInput').value = '30000';
+            document.getElementById('tankThresholdInput').value = '5000';
+            document.getElementById('tankCurrentLevelInput').value = '20000';
+            document.getElementById('tankPriceInput').value = '5.899';
+            document.getElementById('tankColorInput').value = '#005AC1';
             document.getElementById('addTankModal').classList.remove('hidden');
         }
 
@@ -3226,10 +3964,195 @@
         }
 
         function openAddNozzleModal() {
+            window.editingNozzleId = null;
+            const titleEl = document.getElementById('addNozzleModalTitle');
+            if (titleEl) titleEl.innerText = 'Adicionar Novo Bico de Abastecimento';
+            document.getElementById('nozNumInput').value = '';
+            document.getElementById('nozPumpInput').value = '';
+            const selectEl = document.getElementById('nozTankSelect');
+            if (selectEl && selectEl.options.length > 0) selectEl.value = selectEl.options[0].value;
+            document.getElementById('nozTypeSelect').value = 'Gasolina Comum';
+            document.getElementById('nozColorInput').value = '#005AC1';
             document.getElementById('addNozzleModal').classList.remove('hidden');
         }
 
+        // MOBILE SIDEBAR TOGGLE
+        window.toggleMobileSidebar = function() {
+            const sidebar = document.getElementById('sidebarNav');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            if (!sidebar) return;
+
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('hidden');
+                setTimeout(() => {
+                    sidebar.classList.remove('-translate-x-full');
+                    sidebar.classList.add('translate-x-0');
+                    if (backdrop) backdrop.classList.remove('hidden');
+                }, 10);
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                sidebar.classList.remove('translate-x-0');
+                if (backdrop) backdrop.classList.add('hidden');
+                setTimeout(() => {
+                    if (window.innerWidth < 768) {
+                        sidebar.classList.add('hidden');
+                    }
+                }, 300);
+            }
+        };
+
         window.selectedCalendarDay = "Dia 01";
+        window.selectedEmployeeForAssign = null; // Holds selected employee ID for mobile touch mode
+
+        window.selectedAppointmentDate = "2026-07-06"; // Default selected date
+
+        window.selectAppointmentCalendarDay = function(dateStr) {
+            window.selectedAppointmentDate = dateStr;
+            window.renderFullMonthCalendar();
+        };
+
+        window.openAddAppointmentForSelectedDay = function() {
+            document.getElementById('appDateInput').value = window.selectedAppointmentDate;
+            document.getElementById('addAppointmentModal').classList.remove('hidden');
+        };
+
+        window.renderFullMonthCalendar = function() {
+            const grid = document.getElementById('fullMonthDaysGrid');
+            if (!grid) return;
+
+            grid.innerHTML = '';
+            const cnpj = state.activeUser?.stationCnpj || "12.345.678/0001-99";
+
+            // July 2026 starts on Wednesday (offset = 3)
+            const startOffset = 3;
+            for (let i = 0; i < startOffset; i++) {
+                grid.innerHTML += `<div class="bg-transparent h-16 sm:h-20 rounded-2xl"></div>`;
+            }
+
+            for (let dayNum = 1; dayNum <= 31; dayNum++) {
+                const dayStrNum = String(dayNum).padStart(2, '0');
+                const dayStr = "Dia " + dayStrNum;
+                const dateStr = "2026-07-" + dayStrNum;
+
+                const dayAppointments = (state.appointments || []).filter(app => app.stationCnpj === cnpj && app.date === dateStr);
+                const dayShifts = (state.shifts || []).filter(sh => sh.stationCnpj === cnpj && sh.dayOfWeek === dayStr);
+
+                const isSelected = window.selectedAppointmentDate === dateStr;
+
+                let innerBadgesHtml = '';
+                
+                // Appointment badge/indicator
+                if (dayAppointments.length > 0) {
+                    const firstApp = dayAppointments[0];
+                    const countLabel = dayAppointments.length > 1 ? ` (+${dayAppointments.length - 1})` : '';
+                    innerBadgesHtml += `
+                        <div class="px-1 py-0.5 text-[7px] sm:text-[8px] font-black border border-amber-200 bg-amber-50 text-amber-800 rounded truncate w-full flex items-center gap-0.5" title="${firstApp.title}">
+                            <span class="material-symbols-outlined text-[8px] shrink-0">warning</span>
+                            <span class="truncate">${firstApp.title}${countLabel}</span>
+                        </div>
+                    `;
+                }
+
+                // Shift badge/indicator
+                if (dayShifts.length > 0) {
+                    innerBadgesHtml += `
+                        <div class="px-1 py-0.5 text-[7px] sm:text-[8px] font-black border border-blue-200 bg-blue-50 text-blue-800 rounded truncate w-full flex items-center gap-0.5">
+                            <span class="material-symbols-outlined text-[8px] shrink-0">badge</span>
+                            <span class="truncate">${dayShifts.length} Frentistas</span>
+                        </div>
+                    `;
+                }
+
+                const borderClass = isSelected ? 'border-2 border-hdPrimary bg-hdPrimaryContainer/10' : 'border border-hdBorder hover:border-hdPrimary/50 bg-white';
+
+                grid.innerHTML += `
+                    <div 
+                        onclick="window.selectAppointmentCalendarDay('${dateStr}')" 
+                        class="h-16 sm:h-20 p-1 sm:p-2 rounded-xl sm:rounded-2xl flex flex-col justify-between cursor-pointer transition ${borderClass}"
+                    >
+                        <div class="text-right text-[9px] sm:text-[10px] font-extrabold ${isSelected ? 'text-hdPrimary' : 'text-hdTextSecondary'}">${dayNum}</div>
+                        <div class="space-y-0.5 overflow-hidden flex-1 flex flex-col justify-end mt-1">
+                            ${innerBadgesHtml}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Update Right Side Day Agenda Details Panel
+            const dayNum = window.selectedAppointmentDate.split('-')[2] || '06';
+            const formattedDayTitle = `Dia ${parseInt(dayNum)} de Julho, 2026`;
+            
+            const titleEl = document.getElementById('selectedDayAgendaTitle');
+            if (titleEl) titleEl.innerText = formattedDayTitle;
+
+            const appointmentsListEl = document.getElementById('selectedDayAppointmentsList');
+            const shiftsListEl = document.getElementById('selectedDayShiftsList');
+
+            const dayAppointments = (state.appointments || []).filter(app => app.stationCnpj === cnpj && app.date === window.selectedAppointmentDate);
+            const dayShifts = (state.shifts || []).filter(sh => sh.stationCnpj === cnpj && sh.dayOfWeek === "Dia " + dayNum);
+
+            // Populate Appointments List
+            if (appointmentsListEl) {
+                if (dayAppointments.length === 0) {
+                    appointmentsListEl.innerHTML = `
+                        <div class="text-center py-4 text-[10px] text-hdTextSecondary bg-hdSurface border border-dashed border-hdBorder rounded-xl">
+                            Nenhum compromisso hoje.
+                        </div>
+                    `;
+                } else {
+                    let appHtml = '';
+                    dayAppointments.forEach(app => {
+                        appHtml += `
+                            <div class="bg-hdSurfaceContainer border border-hdBorder/60 rounded-xl p-2.5 flex justify-between items-start gap-2">
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex items-center gap-1">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                        <h5 class="font-bold text-[11px] text-hdTextPrimary truncate">${app.title}</h5>
+                                    </div>
+                                    <p class="text-[9px] text-hdTextSecondary mt-0.5 leading-normal line-clamp-2">${app.description || 'Sem descrição.'}</p>
+                                    <span class="inline-block text-[8px] font-black text-hdPrimary mt-1 bg-hdPrimaryContainer/30 px-1 py-0.2 rounded">${app.time}</span>
+                                </div>
+                                <button onclick="deleteAppointment(${app.id})" class="text-[9px] font-black text-hdRed hover:underline uppercase tracking-wider shrink-0" title="Marcar como Concluído">
+                                    Concluir
+                                </button>
+                            </div>
+                        `;
+                    });
+                    appointmentsListEl.innerHTML = appHtml;
+                }
+            }
+
+            // Populate Shifts List
+            if (shiftsListEl) {
+                if (dayShifts.length === 0) {
+                    shiftsListEl.innerHTML = `
+                        <div class="text-center py-4 text-[10px] text-hdTextSecondary bg-hdSurface border border-dashed border-hdBorder rounded-xl">
+                            Sem frentistas escalados.
+                        </div>
+                    `;
+                } else {
+                    let shiftHtml = '';
+                    dayShifts.forEach(sh => {
+                        let badgeClass = 'bg-blue-100 text-blue-800 border-blue-200';
+                        if (sh.shift.toLowerCase().includes('horista 2')) badgeClass = 'bg-purple-100 text-purple-800 border-purple-200';
+                        else if (sh.shift.toLowerCase().includes('horista')) badgeClass = 'bg-fuchsia-100 text-fuchsia-800 border-fuchsia-200';
+                        else if (sh.shift.toLowerCase().includes('tarde')) badgeClass = 'bg-amber-100 text-amber-800 border-amber-200';
+                        else if (sh.shift.toLowerCase().includes('noite')) badgeClass = 'bg-red-100 text-red-800 border-red-200';
+                        else if (sh.shift.toLowerCase().includes('folga')) badgeClass = 'bg-green-100 text-green-800 border-green-200';
+
+                        shiftHtml += `
+                            <div class="bg-hdSurfaceContainer border border-hdBorder/40 rounded-xl p-2.5 flex justify-between items-center gap-1.5">
+                                <div class="min-w-0 flex-1">
+                                    <p class="font-bold text-[11px] text-hdTextPrimary truncate">${sh.employeeName}</p>
+                                    <span class="inline-block text-[8px] font-bold border rounded-full px-2 py-0.1 mt-0.5 ${badgeClass}">${sh.shift}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    shiftsListEl.innerHTML = shiftHtml;
+                }
+            }
+        };
 
         window.setEmployeeViewTab = function(tab) {
             if (tab === 'list') {
@@ -3243,10 +4166,16 @@
                 document.getElementById('btnEmpTabList').className = "pb-3 border-b-2 border-transparent text-hdTextSecondary hover:text-hdTextPrimary transition focus:outline-none";
                 document.getElementById('btnEmpTabCalendar').className = "pb-3 border-b-2 border-hdPrimary text-hdPrimary transition focus:outline-none";
                 window.renderShiftCalendar();
+                window.renderDraggableEmployees();
             }
         };
 
         window.selectCalendarDay = function(dayStr) {
+            // Mobile Touch Assign Flow: If employee is selected, allocate them immediately to this day!
+            if (window.selectedEmployeeForAssign) {
+                window.allocateEmployeeToDay(window.selectedEmployeeForAssign, dayStr);
+                return;
+            }
             window.selectedCalendarDay = dayStr;
             window.renderShiftCalendar();
         };
@@ -3256,58 +4185,309 @@
             openAddShiftModal();
         };
 
+        // DRAG AND DROP / TOUCH ASSIGN HANDLERS
+        window.renderDraggableEmployees = function() {
+            const list = document.getElementById('draggableEmployeesList');
+            if (!list) return;
+            list.innerHTML = '';
+
+            if (state.employees.length === 0) {
+                list.innerHTML = '<p class="text-[11px] text-hdTextSecondary text-center py-4">Nenhum funcionário cadastrado. Adicione um na aba anterior.</p>';
+                return;
+            }
+
+            state.employees.forEach(emp => {
+                const isSelected = String(window.selectedEmployeeForAssign) === String(emp.id);
+                const selectedClass = isSelected ? 'border-2 border-emerald-500 bg-emerald-50' : 'border border-hdBorder hover:border-hdPrimary hover:bg-hdSurface';
+
+                list.innerHTML += `
+                    <div 
+                        draggable="true" 
+                        ondragstart="handleEmployeeDragStart(event, '${emp.id}')"
+                        onclick="handleEmployeeTapSelect('${emp.id}')"
+                        class="p-2 rounded-xl flex items-center justify-between cursor-pointer transition select-none ${selectedClass}"
+                        title="Arraste para o dia desejado ou toque para selecionar (mobile)"
+                    >
+                        <div class="flex items-center space-x-2 truncate">
+                            <div class="w-6 h-6 rounded-full bg-hdPrimary/10 text-hdPrimary flex items-center justify-center font-black text-[9px] uppercase">
+                                ${emp.name.charAt(0)}
+                            </div>
+                            <div class="truncate">
+                                <p class="text-[11px] font-bold text-hdTextPrimary truncate">${emp.name}</p>
+                                <p class="text-[9px] text-hdTextSecondary truncate">${emp.role || 'Frentista'}</p>
+                            </div>
+                        </div>
+                        ${isSelected ? '<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>' : ''}
+                    </div>
+                `;
+            });
+        };
+
+        window.handleEmployeeDragStart = function(event, empId) {
+            event.dataTransfer.setData("text/plain", empId);
+            event.dataTransfer.effectAllowed = "move";
+        };
+
+        window.handleEmployeeTapSelect = function(empId) {
+            if (String(window.selectedEmployeeForAssign) === String(empId)) {
+                window.selectedEmployeeForAssign = null; // deselect
+            } else {
+                window.selectedEmployeeForAssign = empId;
+            }
+            window.renderDraggableEmployees();
+        };
+
+        window.handleEmployeeDrop = function(event, dayStr) {
+            event.preventDefault();
+            const empIdStr = event.dataTransfer.getData("text/plain");
+            if (!empIdStr) return;
+            window.allocateEmployeeToDay(empIdStr, dayStr);
+        };
+
+        window.allocateEmployeeToDay = function(empId, dayStr) {
+            const emp = state.employees.find(x => String(x.id) === String(empId));
+            if (!emp) return;
+
+            const shiftType = document.getElementById('dragShiftType').value;
+            const cnpj = state.activeUser?.stationCnpj || "12.345.678/0001-99";
+
+            // Check duplicate allocation
+            const isDuplicate = state.shifts.some(sh => 
+                String(sh.employeeId) === String(empId) && 
+                sh.dayOfWeek === dayStr && 
+                sh.shift === shiftType
+            );
+
+            if (isDuplicate) {
+                alert(`Atenção: ${emp.name} já está escalado para o turno "${shiftType}" no ${dayStr}.`);
+                return;
+            }
+
+            const newShift = {
+                id: Date.now(),
+                employeeId: parseInt(empId),
+                employeeName: emp.name,
+                dayOfWeek: dayStr,
+                shift: shiftType,
+                stationCnpj: cnpj
+            };
+
+            state.shifts.push(newShift);
+            saveLocalDb();
+
+            if (isFirebaseActive) {
+                saveToFirestore("shift_schedules", newShift.id, newShift);
+            }
+
+            logActivity("CREATE", "Agenda", `Frentista ${emp.name} alocado via arrastar para ${shiftType} no ${dayStr}`);
+
+            // Clear selection
+            window.selectedEmployeeForAssign = null;
+
+            // Update Views
+            window.renderShiftCalendar();
+            window.renderDraggableEmployees();
+            renderWorkspace();
+        };
+
+        window.currentPlannerMonthIndex = 0;
+        window.plannerMonths = [
+            { name: "Julho de 2026", days: 31, offset: 3, year: 2026, monthNum: 7 },
+            { name: "Agosto de 2026", days: 31, offset: 6, year: 2026, monthNum: 8 },
+            { name: "Setembro de 2026", days: 30, offset: 2, year: 2026, monthNum: 9 },
+            { name: "Outubro de 2026", days: 31, offset: 4, year: 2026, monthNum: 10 }
+        ];
+
+        window.prevPlannerMonth = function() {
+            if (window.currentPlannerMonthIndex > 0) {
+                window.currentPlannerMonthIndex--;
+                window.onPlannerMonthIndexChange();
+            }
+        };
+
+        window.nextPlannerMonth = function() {
+            if (window.currentPlannerMonthIndex < window.plannerMonths.length - 1) {
+                window.currentPlannerMonthIndex++;
+                window.onPlannerMonthIndexChange();
+            }
+        };
+
+        window.onPlannerMonthChange = function(indexVal) {
+            window.currentPlannerMonthIndex = parseInt(indexVal);
+            window.onPlannerMonthIndexChange();
+        };
+
+        window.onPlannerMonthIndexChange = function() {
+            const selectEl = document.getElementById('plannerMonthSelect');
+            if (selectEl) selectEl.value = window.currentPlannerMonthIndex;
+            window.selectedCalendarDay = "Dia 01";
+            window.renderShiftCalendar();
+        };
+
+        window.isShiftSidebarOpen = true;
+        window.toggleShiftSidebar = function() {
+            window.isShiftSidebarOpen = !window.isShiftSidebarOpen;
+            const sidebar = document.getElementById('shiftPlannerSidebar');
+            const calendarCol = document.getElementById('shiftPlannerCalendarCol');
+            const toggleIcon = document.getElementById('toggleShiftSidebarIcon');
+            const toggleText = document.getElementById('toggleShiftSidebarText');
+
+            if (window.isShiftSidebarOpen) {
+                if (sidebar) sidebar.classList.remove('hidden');
+                if (calendarCol) calendarCol.className = "lg:col-span-3 bg-white border border-hdBorder rounded-3xl p-5 shadow-sm";
+                if (toggleIcon) toggleIcon.innerText = "left_panel_close";
+                if (toggleText) toggleText.innerText = "Ocultar Painel Lateral";
+            } else {
+                if (sidebar) sidebar.classList.add('hidden');
+                if (calendarCol) calendarCol.className = "lg:col-span-4 bg-white border border-hdBorder rounded-3xl p-5 shadow-sm";
+                if (toggleIcon) toggleIcon.innerText = "left_panel_open";
+                if (toggleText) toggleText.innerText = "Exibir Painel Lateral";
+            }
+        };
+
         window.renderShiftCalendar = function() {
             const grid = document.getElementById('shiftCalendarGrid');
             if (!grid) return;
 
             grid.innerHTML = '';
 
-            const startOffset = 3; // Wednesday start for July 2026
-            for (let i = 0; i < startOffset; i++) {
-                grid.innerHTML += `<div class="bg-transparent h-20 rounded-2xl"></div>`;
-            }
+            const currentMonth = window.plannerMonths[window.currentPlannerMonthIndex || 0];
+            const offset = currentMonth.offset;
+            const totalDays = currentMonth.days;
+            const prevMonthTotalDays = (window.currentPlannerMonthIndex || 0) > 0 ? window.plannerMonths[(window.currentPlannerMonthIndex || 0) - 1].days : 30; // June is 30
 
-            for (let dayNum = 1; dayNum <= 31; dayNum++) {
-                const dayStr = "Dia " + String(dayNum).padStart(2, '0');
-                const daySchedules = state.shifts.filter(sh => sh.dayOfWeek === dayStr);
-                const isSelected = window.selectedCalendarDay === dayStr;
+            // Update generated date watermark
+            const today = new Date();
+            const formattedToday = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
+            const genDateEl = document.getElementById('plannerGeneratedDate');
+            if (genDateEl) genDateEl.innerText = `Gerado: ${formattedToday}`;
 
-                let innerBadgeHtml = '';
-                daySchedules.slice(0, 2).forEach(sh => {
-                    let bg = 'bg-blue-50 text-blue-800 border-blue-200';
-                    let label = 'M';
-                    if (sh.shift.toLowerCase().includes('tarde')) {
-                        bg = 'bg-amber-50 text-amber-800 border-amber-200';
-                        label = 'T';
-                    } else if (sh.shift.toLowerCase().includes('noite')) {
-                        bg = 'bg-red-50 text-red-800 border-red-200';
-                        label = 'N';
-                    } else if (sh.shift.toLowerCase().includes('folga')) {
-                        bg = 'bg-green-50 text-green-800 border-green-200';
-                        label = 'F';
-                    }
+            // Highlight selected weekday header column
+            const dayNumSelected = parseInt(window.selectedCalendarDay.replace("Dia ", ""), 10) || 1;
+            const selectedColIndex = (dayNumSelected - 1 + offset) % 7;
 
-                    innerBadgeHtml += `
-                        <div class="px-1 py-0.5 text-[8px] font-bold border rounded truncate w-full ${bg}">
-                            ${sh.employeeName.split(' ')[0]} (${label})
+            const weekdayHeaders = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+            let weekdayHeadersHtml = '';
+            weekdayHeaders.forEach((day, index) => {
+                if (index === selectedColIndex) {
+                    weekdayHeadersHtml += `
+                        <div class="flex items-center justify-center h-8 bg-[#2D4A6B] text-white font-black rounded-xl text-[10px] uppercase tracking-wider">
+                            ${day}
                         </div>
                     `;
-                });
-
-                if (daySchedules.length > 2) {
-                    innerBadgeHtml += `<div class="text-[8px] text-hdTextSecondary text-center font-bold">+${daySchedules.length - 2}</div>`;
-                }
-
-                const borderClass = isSelected ? 'border-2 border-hdPrimary bg-hdPrimaryContainer/10' : 'border border-hdBorder hover:border-hdPrimary/50 bg-white';
-                
-                grid.innerHTML += `
-                    <div onclick="selectCalendarDay('${dayStr}')" class="h-20 p-2 rounded-2xl flex flex-col justify-between cursor-pointer transition ${borderClass}">
-                        <div class="text-right text-[10px] font-extrabold ${isSelected ? 'text-hdPrimary' : 'text-hdTextSecondary'}">${dayNum}</div>
-                        <div class="space-y-0.5 overflow-hidden flex-1 flex flex-col justify-end mt-1">
-                            ${innerBadgeHtml}
+                } else {
+                    weekdayHeadersHtml += `
+                        <div class="flex items-center justify-center h-8 text-[9px] font-black text-hdTextSecondary uppercase tracking-wider">
+                            ${day}
                         </div>
-                    </div>
-                `;
+                    `;
+                }
+            });
+            const headersGrid = document.getElementById('shiftWeekdayHeadersGrid');
+            if (headersGrid) headersGrid.innerHTML = weekdayHeadersHtml;
+
+            // Render Slots
+            const totalSlots = offset + totalDays;
+            const rowsCount = Math.ceil(totalSlots / 7);
+            const totalGridCells = rowsCount * 7;
+
+            for (let i = 0; i < totalGridCells; i++) {
+                if (i < offset) {
+                    // Previous month out-of-month day
+                    const prevDayNum = prevMonthTotalDays - offset + i + 1;
+                    grid.innerHTML += `
+                        <div class="bg-slate-50 border border-slate-100 rounded-2xl h-28 sm:h-32 p-2 flex flex-col justify-between pointer-events-none select-none opacity-40">
+                            <div class="text-right text-[10px] font-black text-slate-400">${prevDayNum}</div>
+                            <div class="flex-1 flex items-center justify-center text-[8px] font-bold text-slate-300"></div>
+                        </div>
+                    `;
+                } else if (i >= offset && i < offset + totalDays) {
+                    // Current month active day
+                    const dayNum = i - offset + 1;
+                    const dayStr = "Dia " + String(dayNum).padStart(2, '0');
+                    const daySchedules = state.shifts.filter(sh => sh.dayOfWeek === dayStr);
+                    const isSelected = window.selectedCalendarDay === dayStr;
+
+                    let innerBadgeHtml = '';
+                    daySchedules.forEach(sh => {
+                        let color = '#1E88E5'; // Blue
+                        let label = 'M';
+                        let borderStyle = 'border-blue-500';
+                        let pillBg = 'bg-blue-600';
+
+                        if (sh.shift.toLowerCase().includes('horista 2')) {
+                            color = '#7C3AED'; // Purple
+                            label = 'H2';
+                            borderStyle = 'border-purple-500';
+                            pillBg = 'bg-purple-600';
+                        } else if (sh.shift.toLowerCase().includes('horista')) {
+                            color = '#D946EF'; // Fuchsia
+                            label = 'H';
+                            borderStyle = 'border-fuchsia-500';
+                            pillBg = 'bg-fuchsia-600';
+                        } else if (sh.shift.toLowerCase().includes('tarde')) {
+                            color = '#16A34A'; // Green
+                            label = 'T';
+                            borderStyle = 'border-green-500';
+                            pillBg = 'bg-green-600';
+                        } else if (sh.shift.toLowerCase().includes('noite')) {
+                            color = '#DC2626'; // Red
+                            label = 'N';
+                            borderStyle = 'border-red-500';
+                            pillBg = 'bg-red-600';
+                        } else if (sh.shift.toLowerCase().includes('folga')) {
+                            color = '#4B5563'; // Gray
+                            label = 'F';
+                            borderStyle = 'border-gray-500';
+                            pillBg = 'bg-gray-600';
+                        } else if (sh.shift.toLowerCase().includes('repouso')) {
+                            color = '#92400E'; // Brown
+                            label = 'R';
+                            borderStyle = 'border-amber-800';
+                            pillBg = 'bg-amber-800';
+                        }
+
+                        let initials = sh.employeeName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                        if (!initials) initials = "?";
+
+                        innerBadgeHtml += `
+                            <div class="flex flex-col items-center shrink-0 w-10 transition-transform hover:scale-110 duration-200" title="${sh.employeeName} - ${sh.shift}">
+                                <div class="w-8 h-8 rounded-full bg-slate-50 border-2 ${borderStyle} text-slate-800 text-[10px] font-black flex items-center justify-center shadow-sm">
+                                    ${initials}
+                                </div>
+                                <div class="px-1 py-0.5 text-[7.5px] font-black rounded-full text-white ${pillBg} mt-1 w-full text-center truncate shadow-sm tracking-wider">
+                                    ${initials}:${label}
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    const borderClass = isSelected ? 'border-2 border-hdPrimary bg-blue-50/10 shadow-sm' : 'border border-hdBorder hover:border-hdPrimary/40 bg-white';
+
+                    grid.innerHTML += `
+                        <div 
+                            onclick="selectCalendarDay('${dayStr}')" 
+                            ondragover="event.preventDefault(); this.classList.add('bg-blue-50/10');"
+                            ondragleave="this.classList.remove('bg-blue-50/10');"
+                            ondrop="this.classList.remove('bg-blue-50/10'); handleEmployeeDrop(event, '${dayStr}')"
+                            class="h-28 sm:h-32 p-2 rounded-2xl flex flex-col cursor-pointer transition ${borderClass}"
+                        >
+                            <div class="text-right text-[10px] font-black ${isSelected ? 'text-hdPrimary' : 'text-hdTextSecondary'} w-full">${dayNum}</div>
+                            <div class="flex-1 flex flex-row flex-wrap gap-1.5 items-center justify-center overflow-y-auto custom-scrollbar mt-1 w-full h-full">
+                                ${innerBadgeHtml}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Next month out-of-month day
+                    const nextDayNum = i - (offset + totalDays) + 1;
+                    grid.innerHTML += `
+                        <div class="bg-slate-50 border border-slate-100 rounded-2xl h-28 sm:h-32 p-2 flex flex-col justify-between pointer-events-none select-none opacity-40">
+                            <div class="text-right text-[10px] font-black text-slate-400">${nextDayNum}</div>
+                            <div class="flex-1 flex items-center justify-center text-[8px] font-bold text-slate-300"></div>
+                        </div>
+                    `;
+                }
             }
 
             document.getElementById('calendarSelectedDayTitle').innerText = `Plantonistas do ${window.selectedCalendarDay}`;
@@ -3315,14 +4495,17 @@
             const daySchedules = state.shifts.filter(sh => sh.dayOfWeek === window.selectedCalendarDay);
 
             if (daySchedules.length === 0) {
-                detailsList.innerHTML = `<div class="col-span-full text-center py-6 text-xs text-hdTextSecondary">Nenhum funcionário escalado para este dia.</div>`;
+                detailsList.innerHTML = `<div class="col-span-full text-center py-6 text-xs text-hdTextSecondary">Nenhum frentista alocado para este dia.</div>`;
             } else {
                 let detailsHtml = '';
                 daySchedules.forEach(sh => {
                     let badgeClass = 'bg-blue-100 text-blue-800';
-                    if (sh.shift.toLowerCase().includes('tarde')) badgeClass = 'bg-amber-100 text-amber-800';
+                    if (sh.shift.toLowerCase().includes('horista 2')) badgeClass = 'bg-purple-100 text-purple-800';
+                    else if (sh.shift.toLowerCase().includes('horista')) badgeClass = 'bg-fuchsia-100 text-fuchsia-800';
+                    else if (sh.shift.toLowerCase().includes('tarde')) badgeClass = 'bg-green-100 text-green-800';
                     else if (sh.shift.toLowerCase().includes('noite')) badgeClass = 'bg-red-100 text-red-800';
-                    else if (sh.shift.toLowerCase().includes('folga')) badgeClass = 'bg-green-100 text-green-800';
+                    else if (sh.shift.toLowerCase().includes('folga')) badgeClass = 'bg-slate-100 text-slate-800';
+                    else if (sh.shift.toLowerCase().includes('repouso')) badgeClass = 'bg-amber-100 text-amber-800';
 
                     detailsHtml += `
                         <div class="bg-hdSurfaceContainer border border-hdBorder/60 rounded-2xl p-4 flex justify-between items-center shadow-sm">

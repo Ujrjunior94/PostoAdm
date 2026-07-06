@@ -111,6 +111,10 @@ class PostoViewModel(application: Application) : AndroidViewModel(application) {
         .combine(_stationCnpj) { items, cnpj -> items.filter { it.stationCnpj == cnpj } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val fuelDeliveries: StateFlow<List<FuelDelivery>> = repository.allFuelDeliveries
+        .combine(_stationCnpj) { items, cnpj -> items.filter { it.stationCnpj == cnpj } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val auditLogEntries: StateFlow<List<AuditLogEntry>> = repository.allAuditLogEntries
         .combine(_stationCnpj) { items, cnpj -> items.filter { it.stationCnpj == cnpj } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -275,6 +279,11 @@ class PostoViewModel(application: Application) : AndroidViewModel(application) {
     val notifications: StateFlow<List<String>> = _notifications.asStateFlow()
 
     init {
+        try {
+            FirebaseHelper.initializeFromPreferences(application)
+        } catch (e: Exception) {
+            Log.e("PostoViewModel", "Error initializing dynamic Firebase helper on boot", e)
+        }
         viewModelScope.launch {
             // Wait for DB, then seed data if empty
             val tanks = repository.allFuelTanks.first()
@@ -426,6 +435,66 @@ class PostoViewModel(application: Application) : AndroidViewModel(application) {
             )
         )
         initialAuditLogs.forEach { repository.insertAuditLogEntry(it) }
+
+        // 9. Seed conformity records
+        val initialConformities = listOf(
+            FuelConformityRecord(
+                id = 1,
+                date = "2026-07-02",
+                fuelType = "Gasolina Comum",
+                densityMeasured = 0.742,
+                temperature = 20.0,
+                ethanolPercent = 27.0,
+                aspectColor = "Límpido, isento de impurezas",
+                isConforme = true,
+                technicianName = "Roberto Técnico",
+                observation = "Análise físico-química perfeita dentro dos limites da ANP.",
+                stationCnpj = cnpj
+            ),
+            FuelConformityRecord(
+                id = 2,
+                date = "2026-07-04",
+                fuelType = "Diesel S10",
+                densityMeasured = 0.840,
+                temperature = 22.0,
+                ethanolPercent = 0.0,
+                aspectColor = "Aspecto límpido, sem sedimentos",
+                isConforme = true,
+                technicianName = "Patrícia Lima",
+                observation = "Diesel S10 em conformidade com as normas ANP.",
+                stationCnpj = cnpj
+            )
+        )
+        initialConformities.forEach { repository.insertFuelConformityRecord(it) }
+
+        // 10. Seed fuel deliveries
+        val initialDeliveries = listOf(
+            FuelDelivery(
+                id = 1,
+                date = "2026-07-02",
+                invoiceNumber = "NF-e 87342",
+                fuelType = "Gasolina Comum",
+                volume = 10000.0,
+                driverName = "Carlos Silveira",
+                driverCnh = "123456789-0",
+                truckPlate = "ABC-1234",
+                conformityRecordId = 1,
+                stationCnpj = cnpj
+            ),
+            FuelDelivery(
+                id = 2,
+                date = "2026-07-04",
+                invoiceNumber = "NF-e 87405",
+                fuelType = "Diesel S10",
+                volume = 15000.0,
+                driverName = "Marcos Paulo",
+                driverCnh = "987654321-0",
+                truckPlate = "XYZ-9876",
+                conformityRecordId = 2,
+                stationCnpj = cnpj
+            )
+        )
+        initialDeliveries.forEach { repository.insertFuelDelivery(it) }
     }
 
     // Actions
@@ -913,6 +982,490 @@ class PostoViewModel(application: Application) : AndroidViewModel(application) {
         _notifications.update { current -> current.filter { it != message } }
     }
 
+    fun getSavedFirebaseConfig(): Triple<String, String, String> {
+        val prefs = getApplication<Application>().getSharedPreferences("FirebasePrefs", android.content.Context.MODE_PRIVATE)
+        return Triple(
+            prefs.getString("apiKey", "") ?: "",
+            prefs.getString("projectId", "") ?: "",
+            prefs.getString("appId", "") ?: ""
+        )
+    }
+
+    fun saveFirebaseConfig(apiKey: String, projectId: String, appId: String): Boolean {
+        val context = getApplication<Application>()
+        val success = FirebaseHelper.saveAndInitialize(context, apiKey.trim(), projectId.trim(), appId.trim())
+        if (success) {
+            addToast("Firebase configurado e ativado com sucesso!")
+        } else {
+            addToast("Erro ao inicializar Firebase. Verifique as credenciais.")
+        }
+        return success
+    }
+
+    fun clearFirebaseConfig() {
+        val context = getApplication<Application>()
+        FirebaseHelper.clearFirebaseConfig(context)
+        addToast("Configuração do Firebase apagada.")
+    }
+
+    fun getBackupJsonInternal(): String {
+        val backup = org.json.JSONObject()
+        
+        val tanksArray = org.json.JSONArray()
+        fuelTanks.value.forEach { t ->
+            val obj = org.json.JSONObject().apply {
+                put("id", t.id)
+                put("name", t.name)
+                put("capacity", t.capacity)
+                put("currentLevel", t.currentLevel)
+                put("threshold", t.threshold)
+                put("pricePerLiter", t.pricePerLiter)
+                put("stationCnpj", t.stationCnpj)
+                put("color", t.color)
+            }
+            tanksArray.put(obj)
+        }
+        backup.put("fuelTanks", tanksArray)
+
+        val empArray = org.json.JSONArray()
+        employees.value.forEach { e ->
+            val obj = org.json.JSONObject().apply {
+                put("id", e.id)
+                put("name", e.name)
+                put("role", e.role)
+                put("phone", e.phone)
+                put("activeShift", e.activeShift)
+                put("stationCnpj", e.stationCnpj)
+            }
+            empArray.put(obj)
+        }
+        backup.put("employees", empArray)
+
+        val shiftArray = org.json.JSONArray()
+        shiftSchedules.value.forEach { s ->
+            val obj = org.json.JSONObject().apply {
+                put("id", s.id)
+                put("employeeId", s.employeeId)
+                put("employeeName", s.employeeName)
+                put("dayOfWeek", s.dayOfWeek)
+                put("shift", s.shift)
+                put("stationCnpj", s.stationCnpj)
+            }
+            shiftArray.put(obj)
+        }
+        backup.put("shiftSchedules", shiftArray)
+
+        val appArray = org.json.JSONArray()
+        appointments.value.forEach { a ->
+            val obj = org.json.JSONObject().apply {
+                put("id", a.id)
+                put("title", a.title)
+                put("date", a.date)
+                put("time", a.time)
+                put("description", a.description)
+                put("stationCnpj", a.stationCnpj)
+            }
+            appArray.put(obj)
+        }
+        backup.put("appointments", appArray)
+
+        val repArray = org.json.JSONArray()
+        dailyReports.value.forEach { r ->
+            val obj = org.json.JSONObject().apply {
+                put("id", r.id)
+                put("date", r.date)
+                put("fuelName", r.fuelName)
+                put("openingStock", r.openingStock)
+                put("receivedVolume", r.receivedVolume)
+                put("litersSold", r.litersSold)
+                put("closingStock", r.closingStock)
+                put("totalSales", r.totalSales)
+                put("transactionsCount", r.transactionsCount)
+                put("observation", r.observation)
+                put("stationCnpj", r.stationCnpj)
+            }
+            repArray.put(obj)
+        }
+        backup.put("dailyReports", repArray)
+
+        val nozArray = org.json.JSONArray()
+        nozzles.value.forEach { n ->
+            val obj = org.json.JSONObject().apply {
+                put("id", n.id)
+                put("nozzleNumber", n.nozzleNumber)
+                put("pumpName", n.pumpName)
+                put("tankId", n.tankId)
+                put("tankName", n.tankName)
+                put("fuelType", n.fuelType)
+                put("status", n.status)
+                put("stationCnpj", n.stationCnpj)
+                put("color", n.color)
+            }
+            nozArray.put(obj)
+        }
+        backup.put("nozzles", nozArray)
+
+        val calArray = org.json.JSONArray()
+        calibrations.value.forEach { c ->
+            val obj = org.json.JSONObject().apply {
+                put("id", c.id)
+                put("date", c.date)
+                put("referenceName", c.referenceName)
+                put("nominalVolume", c.nominalVolume)
+                put("measuredVolume", c.measuredVolume)
+                put("errorPercent", c.errorPercent)
+                put("inspector", c.inspector)
+                put("laudo", c.laudo)
+                put("isConforme", c.isConforme)
+                put("stationCnpj", c.stationCnpj)
+            }
+            calArray.put(obj)
+        }
+        backup.put("calibrations", calArray)
+
+        val confArray = org.json.JSONArray()
+        fuelConformityRecords.value.forEach { cf ->
+            val obj = org.json.JSONObject().apply {
+                put("id", cf.id)
+                put("date", cf.date)
+                put("fuelType", cf.fuelType)
+                put("densityMeasured", cf.densityMeasured)
+                put("temperature", cf.temperature)
+                put("ethanolPercent", cf.ethanolPercent)
+                put("aspectColor", cf.aspectColor)
+                put("isConforme", cf.isConforme)
+                put("technicianName", cf.technicianName)
+                put("observation", cf.observation)
+                put("stationCnpj", cf.stationCnpj)
+            }
+            confArray.put(obj)
+        }
+        backup.put("fuelConformityRecords", confArray)
+
+        val audArray = org.json.JSONArray()
+        auditLogEntries.value.forEach { ad ->
+            val obj = org.json.JSONObject().apply {
+                put("id", ad.id)
+                put("date", ad.date)
+                put("time", ad.time)
+                put("actionType", ad.actionType)
+                put("target", ad.target)
+                put("details", ad.details)
+                put("operator", ad.operator)
+                put("complianceStatus", ad.complianceStatus)
+                put("stationCnpj", ad.stationCnpj)
+            }
+            audArray.put(obj)
+        }
+        backup.put("auditLogEntries", audArray)
+
+        val credArray = org.json.JSONArray()
+        systemCredentials.value.forEach { cr ->
+            val obj = org.json.JSONObject().apply {
+                put("id", cr.id)
+                put("systemName", cr.systemName)
+                put("category", cr.category)
+                put("login", cr.login)
+                put("password", cr.password)
+                put("description", cr.description)
+            }
+            credArray.put(obj)
+        }
+        backup.put("systemCredentials", credArray)
+
+        val userArray = org.json.JSONArray()
+        userAccounts.value.forEach { u ->
+            val obj = org.json.JSONObject().apply {
+                put("email", u.email)
+                put("name", u.name)
+                put("role", u.role)
+                put("password", u.password)
+                put("stationName", u.stationName)
+                put("stationCnpj", u.stationCnpj)
+                put("stationEndereco", u.stationEndereco)
+                put("parentManagerEmail", u.parentManagerEmail ?: "")
+                put("bankName", u.bankName)
+                put("bankAgency", u.bankAgency)
+                put("bankAccount", u.bankAccount)
+                put("bankPixKey", u.bankPixKey)
+            }
+            userArray.put(obj)
+        }
+        backup.put("userAccounts", userArray)
+
+        return backup.toString(4)
+    }
+
+    fun restoreFromJson(backupJson: String) {
+        viewModelScope.launch {
+            try {
+                val backup = org.json.JSONObject(backupJson)
+                
+                val tanksArray = backup.optJSONArray("fuelTanks")
+                tanksArray?.let { arr ->
+                    for (i in 0 until arr.length()) {
+                        val obj = arr.getJSONObject(i)
+                        val t = FuelTank(
+                            id = obj.optInt("id", 0),
+                            name = obj.optString("name", ""),
+                            capacity = obj.optDouble("capacity", 0.0),
+                            currentLevel = obj.optDouble("currentLevel", 0.0),
+                            threshold = obj.optDouble("threshold", 0.0),
+                            pricePerLiter = obj.optDouble("pricePerLiter", 0.0),
+                            stationCnpj = obj.optString("stationCnpj", "12.345.678/0001-99"),
+                            color = obj.optString("color", "#005AC1")
+                        )
+                        repository.insertFuelTank(t)
+                    }
+                }
+
+                val empArray = backup.optJSONArray("employees")
+                empArray?.let { arr ->
+                    for (i in 0 until arr.length()) {
+                        val obj = arr.getJSONObject(i)
+                        val e = Employee(
+                            id = obj.optInt("id", 0),
+                            name = obj.optString("name", ""),
+                            role = obj.optString("role", ""),
+                            phone = obj.optString("phone", ""),
+                            activeShift = obj.optString("activeShift", ""),
+                            stationCnpj = obj.optString("stationCnpj", "12.345.678/0001-99")
+                        )
+                        repository.insertEmployee(e)
+                    }
+                }
+
+                val shiftArray = backup.optJSONArray("shiftSchedules")
+                shiftArray?.let { arr ->
+                    for (i in 0 until arr.length()) {
+                        val obj = arr.getJSONObject(i)
+                        val s = ShiftSchedule(
+                            id = obj.optInt("id", 0),
+                            employeeId = obj.optInt("employeeId", 0),
+                            employeeName = obj.optString("employeeName", ""),
+                            dayOfWeek = obj.optString("dayOfWeek", ""),
+                            shift = obj.optString("shift", ""),
+                            stationCnpj = obj.optString("stationCnpj", "12.345.678/0001-99")
+                        )
+                        repository.insertShiftSchedule(s)
+                    }
+                }
+
+                val appArray = backup.optJSONArray("appointments")
+                appArray?.let { arr ->
+                    for (i in 0 until arr.length()) {
+                        val obj = arr.getJSONObject(i)
+                        val a = Appointment(
+                            id = obj.optInt("id", 0),
+                            title = obj.optString("title", ""),
+                            date = obj.optString("date", ""),
+                            time = obj.optString("time", ""),
+                            description = obj.optString("description", ""),
+                            stationCnpj = obj.optString("stationCnpj", "12.345.678/0001-99")
+                        )
+                        repository.insertAppointment(a)
+                    }
+                }
+
+                val repArray = backup.optJSONArray("dailyReports")
+                repArray?.let { arr ->
+                    for (i in 0 until arr.length()) {
+                        val obj = arr.getJSONObject(i)
+                        val r = DailyReport(
+                            id = obj.optInt("id", 0),
+                            date = obj.optString("date", ""),
+                            fuelName = obj.optString("fuelName", ""),
+                            openingStock = obj.optDouble("openingStock", 0.0),
+                            receivedVolume = obj.optDouble("receivedVolume", 0.0),
+                            litersSold = obj.optDouble("litersSold", 0.0),
+                            closingStock = obj.optDouble("closingStock", 0.0),
+                            totalSales = obj.optDouble("totalSales", 0.0),
+                            transactionsCount = obj.optInt("transactionsCount", 0),
+                            observation = obj.optString("observation", ""),
+                            stationCnpj = obj.optString("stationCnpj", "12.345.678/0001-99")
+                        )
+                        repository.insertDailyReport(r)
+                    }
+                }
+
+                val nozArray = backup.optJSONArray("nozzles")
+                nozArray?.let { arr ->
+                    for (i in 0 until arr.length()) {
+                        val obj = arr.getJSONObject(i)
+                        val n = Nozzle(
+                            id = obj.optInt("id", 0),
+                            nozzleNumber = obj.optString("nozzleNumber", ""),
+                            pumpName = obj.optString("pumpName", ""),
+                            tankId = obj.optInt("tankId", 0),
+                            tankName = obj.optString("tankName", ""),
+                            fuelType = obj.optString("fuelType", ""),
+                            status = obj.optString("status", ""),
+                            stationCnpj = obj.optString("stationCnpj", "12.345.678/0001-99"),
+                            color = obj.optString("color", "#005AC1")
+                        )
+                        repository.insertNozzle(n)
+                    }
+                }
+
+                val calArray = backup.optJSONArray("calibrations")
+                calArray?.let { arr ->
+                    for (i in 0 until arr.length()) {
+                        val obj = arr.getJSONObject(i)
+                        val c = Calibration(
+                            id = obj.optInt("id", 0),
+                            date = obj.optString("date", ""),
+                            referenceName = obj.optString("referenceName", ""),
+                            nominalVolume = obj.optDouble("nominalVolume", 0.0),
+                            measuredVolume = obj.optDouble("measuredVolume", 0.0),
+                            errorPercent = obj.optDouble("errorPercent", 0.0),
+                            inspector = obj.optString("inspector", ""),
+                            laudo = obj.optString("laudo", ""),
+                            isConforme = obj.optBoolean("isConforme", true),
+                            stationCnpj = obj.optString("stationCnpj", "12.345.678/0001-99")
+                        )
+                        repository.insertCalibration(c)
+                    }
+                }
+
+                val confArray = backup.optJSONArray("fuelConformityRecords")
+                confArray?.let { arr ->
+                    for (i in 0 until arr.length()) {
+                        val obj = arr.getJSONObject(i)
+                        val cf = FuelConformityRecord(
+                            id = obj.optInt("id", 0),
+                            date = obj.optString("date", ""),
+                            fuelType = obj.optString("fuelType", ""),
+                            densityMeasured = obj.optDouble("densityMeasured", 0.0),
+                            temperature = obj.optDouble("temperature", 0.0),
+                            ethanolPercent = obj.optDouble("ethanolPercent", 0.0),
+                            aspectColor = obj.optString("aspectColor", ""),
+                            isConforme = obj.optBoolean("isConforme", true),
+                            technicianName = obj.optString("technicianName", ""),
+                            observation = obj.optString("observation", ""),
+                            stationCnpj = obj.optString("stationCnpj", "12.345.678/0001-99")
+                        )
+                        repository.insertFuelConformityRecord(cf)
+                    }
+                }
+
+                val audArray = backup.optJSONArray("auditLogEntries")
+                audArray?.let { arr ->
+                    for (i in 0 until arr.length()) {
+                        val obj = arr.getJSONObject(i)
+                        val ad = AuditLogEntry(
+                            id = obj.optInt("id", 0),
+                            date = obj.optString("date", ""),
+                            time = obj.optString("time", ""),
+                            actionType = obj.optString("actionType", ""),
+                            target = obj.optString("target", ""),
+                            details = obj.optString("details", ""),
+                            operator = obj.optString("operator", ""),
+                            complianceStatus = obj.optString("complianceStatus", "Regular"),
+                            stationCnpj = obj.optString("stationCnpj", "12.345.678/0001-99")
+                        )
+                        repository.insertAuditLogEntry(ad)
+                    }
+                }
+
+                val userArray = backup.optJSONArray("userAccounts")
+                userArray?.let { arr ->
+                    for (i in 0 until arr.length()) {
+                        val obj = arr.getJSONObject(i)
+                        val u = UserAccount(
+                            email = obj.optString("email", ""),
+                            name = obj.optString("name", ""),
+                            role = obj.optString("role", ""),
+                            password = obj.optString("password", ""),
+                            stationName = obj.optString("stationName", ""),
+                            stationCnpj = obj.optString("stationCnpj", ""),
+                            stationEndereco = obj.optString("stationEndereco", ""),
+                            parentManagerEmail = if (obj.isNull("parentManagerEmail") || obj.optString("parentManagerEmail", "").isEmpty()) null else obj.optString("parentManagerEmail"),
+                            bankName = obj.optString("bankName", "Banco do Brasil"),
+                            bankAgency = obj.optString("bankAgency", ""),
+                            bankAccount = obj.optString("bankAccount", ""),
+                            bankPixKey = obj.optString("bankPixKey", "")
+                        )
+                        repository.insertUserAccount(u)
+                    }
+                }
+
+                val credArray = backup.optJSONArray("systemCredentials")
+                credArray?.let { arr ->
+                    val creds = mutableListOf<SystemCredential>()
+                    for (i in 0 until arr.length()) {
+                        val obj = arr.getJSONObject(i)
+                        creds.add(SystemCredential(
+                            id = obj.optInt("id", 0),
+                            systemName = obj.optString("systemName", ""),
+                            category = obj.optString("category", ""),
+                            login = obj.optString("login", ""),
+                            password = obj.optString("password", ""),
+                            description = obj.optString("description", "")
+                        ))
+                    }
+                    if (creds.isNotEmpty()) {
+                        _systemCredentials.value = creds
+                    }
+                }
+
+                addToast("Sincronização / Restauração concluída com sucesso! ⚡")
+            } catch (e: Exception) {
+                addToast("Erro ao restaurar dados: ${e.message}")
+            }
+        }
+    }
+
+    fun getSavedSupabaseConfig(): Pair<String, String> {
+        return SupabaseHelper.getCredentials(getApplication())
+    }
+
+    fun isSupabaseAvailable(): Boolean {
+        return SupabaseHelper.isConfigured(getApplication())
+    }
+
+    fun saveSupabaseConfig(url: String, key: String): Boolean {
+        if (url.isEmpty() || key.isEmpty()) return false
+        SupabaseHelper.saveCredentials(getApplication(), url, key)
+        addToast("Supabase configurado com sucesso!")
+        return true
+    }
+
+    fun clearSupabaseConfig() {
+        SupabaseHelper.clearCredentials(getApplication())
+        addToast("Credenciais Supabase removidas.")
+    }
+
+    fun uploadToSupabase(cnpj: String) {
+        viewModelScope.launch {
+            addToast("Enviando backup para o Supabase...")
+            val backupJson = getBackupJsonInternal()
+            val result = SupabaseHelper.uploadBackup(getApplication(), cnpj, backupJson)
+            result.onSuccess {
+                addToast("Backup enviado com sucesso para a nuvem Supabase! ☁️")
+            }
+            result.onFailure { e ->
+                addToast("Erro ao enviar backup: ${e.message}")
+            }
+        }
+    }
+
+    fun downloadFromSupabase(cnpj: String) {
+        viewModelScope.launch {
+            addToast("Buscando backup no Supabase...")
+            val result = SupabaseHelper.downloadBackup(getApplication(), cnpj)
+            result.onSuccess { backupJson ->
+                if (backupJson != null) {
+                    restoreFromJson(backupJson)
+                } else {
+                    addToast("Nenhum backup encontrado para este CNPJ no Supabase.")
+                }
+            }
+            result.onFailure { e ->
+                addToast("Erro ao baixar backup: ${e.message}")
+            }
+        }
+    }
+
     // Interactive operations
     fun addFuelTank(name: String, capacity: Double, currentLevel: Double, threshold: Double, pricePerLiter: Double, color: String = "#005AC1") {
         viewModelScope.launch {
@@ -945,6 +1498,17 @@ class PostoViewModel(application: Application) : AndroidViewModel(application) {
             }
             repository.deleteFuelTank(tank)
             addToast("Tanque '${tank.name}' removido.")
+        }
+    }
+
+    fun updateFuelTank(tank: FuelTank) {
+        viewModelScope.launch {
+            if (isReadOnly.value) {
+                addToast("Erro: Visualizadores não têm permissão para alterar dados!")
+                return@launch
+            }
+            repository.updateFuelTank(tank)
+            addToast("Tanque '${tank.name}' atualizado.")
         }
     }
 
@@ -1037,6 +1601,66 @@ class PostoViewModel(application: Application) : AndroidViewModel(application) {
                 )
             )
             addToast("Escala definida para '$employeeName' na $dayOfWeek.")
+        }
+    }
+
+    fun autoFillShiftSchedules(monthName: String, totalDays: Int) {
+        viewModelScope.launch {
+            if (isReadOnly.value) {
+                addToast("Erro: Visualizadores não têm permissão para alterar dados!")
+                return@launch
+            }
+            val employeeList = employees.value
+            if (employeeList.isEmpty()) {
+                addToast("Erro: Cadastre frentistas antes de auto-preencher!")
+                return@launch
+            }
+
+            // Clear previous schedules
+            repository.deleteShiftSchedulesByStation(_stationCnpj.value)
+
+            val shifts = listOf("Manhã (06h - 14h)", "Tarde (14h - 22h)", "Noite (22h - 06h)")
+            val schedulesToInsert = mutableListOf<ShiftSchedule>()
+            var employeeIndex = 0
+
+            for (day in 1..totalDays) {
+                val dayStr = "Dia %02d".format(day)
+                val scheduledOnDay = mutableSetOf<Int>()
+
+                // 1. Assign to shifts
+                for (shift in shifts) {
+                    val emp = employeeList[employeeIndex]
+                    schedulesToInsert.add(
+                        ShiftSchedule(
+                            employeeId = emp.id,
+                            employeeName = emp.name,
+                            dayOfWeek = dayStr,
+                            shift = shift,
+                            stationCnpj = _stationCnpj.value
+                        )
+                    )
+                    scheduledOnDay.add(emp.id)
+                    employeeIndex = (employeeIndex + 1) % employeeList.size
+                }
+
+                // 2. Assign "Folga (Descanso)" to other frentistas not scheduled today
+                employeeList.forEach { emp ->
+                    if (!scheduledOnDay.contains(emp.id)) {
+                        schedulesToInsert.add(
+                            ShiftSchedule(
+                                employeeId = emp.id,
+                                employeeName = emp.name,
+                                dayOfWeek = dayStr,
+                                shift = "Folga (Descanso)",
+                                stationCnpj = _stationCnpj.value
+                            )
+                        )
+                    }
+                }
+            }
+
+            repository.insertShiftSchedules(schedulesToInsert)
+            addToast("Escala de $monthName auto-preenchida com sucesso! ⚡")
         }
     }
 
@@ -1206,6 +1830,80 @@ class PostoViewModel(application: Application) : AndroidViewModel(application) {
             )
 
             addToast("Análise de conformidade excluída.")
+        }
+    }
+
+    fun addFuelDelivery(
+        date: String,
+        invoiceNumber: String,
+        fuelType: String,
+        volume: Double,
+        driverName: String,
+        driverCnh: String,
+        truckPlate: String,
+        conformityRecordId: Int?
+    ) {
+        viewModelScope.launch {
+            if (isReadOnly.value) {
+                addToast("Erro: Visualizadores não têm permissão para alterar dados!")
+                return@launch
+            }
+            if (invoiceNumber.isBlank() || driverName.isBlank() || volume <= 0) {
+                addToast("Erro: Preencha todos os campos obrigatórios corretamente!")
+                return@launch
+            }
+            val delivery = FuelDelivery(
+                date = date,
+                invoiceNumber = invoiceNumber,
+                fuelType = fuelType,
+                volume = volume,
+                driverName = driverName,
+                driverCnh = driverCnh,
+                truckPlate = truckPlate,
+                conformityRecordId = conformityRecordId,
+                stationCnpj = _stationCnpj.value
+            )
+            repository.insertFuelDelivery(delivery)
+
+            // Auto Audit log entry
+            repository.insertAuditLogEntry(
+                AuditLogEntry(
+                    date = date,
+                    time = "12:00",
+                    actionType = "Cadastro de Entrega (NF-e)",
+                    target = fuelType,
+                    details = "Nota Fiscal $invoiceNumber registrada. Volume: $volume L. Motorista: $driverName (CNH: $driverCnh, Placa: $truckPlate). Vinculado a laudo: ${if (conformityRecordId != null) "Laudo #$conformityRecordId" else "Sem laudo"}",
+                    operator = "Gerente de Pátio",
+                    complianceStatus = "Regular",
+                    stationCnpj = _stationCnpj.value
+                )
+            )
+            addToast("Entrega da Nota Fiscal $invoiceNumber registrada!")
+        }
+    }
+
+    fun deleteFuelDelivery(delivery: FuelDelivery) {
+        viewModelScope.launch {
+            if (isReadOnly.value) {
+                addToast("Erro: Visualizadores não têm permissão para alterar dados!")
+                return@launch
+            }
+            repository.deleteFuelDelivery(delivery)
+            
+            // Auto Audit log entry
+            repository.insertAuditLogEntry(
+                AuditLogEntry(
+                    date = "2026-07-04",
+                    time = "12:05",
+                    actionType = "Exclusão de Entrega",
+                    target = delivery.fuelType,
+                    details = "Registro de Nota Fiscal ${delivery.invoiceNumber} (Volume: ${delivery.volume}L, Motorista: ${delivery.driverName}) foi excluído pelo operador.",
+                    operator = "Operador do Sistema",
+                    complianceStatus = "Aviso",
+                    stationCnpj = _stationCnpj.value
+                )
+            )
+            addToast("Registro de entrega excluído.")
         }
     }
 

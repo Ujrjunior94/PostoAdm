@@ -9,13 +9,75 @@ import kotlinx.coroutines.tasks.await
 object FirebaseHelper {
     private const val TAG = "FirebaseHelper"
 
-    val isAvailable: Boolean by lazy {
+    val isAvailable: Boolean
+        get() = false
+
+    fun initializeDynamically(
+        context: android.content.Context,
+        apiKey: String,
+        projectId: String,
+        appId: String
+    ): Boolean {
+        return try {
+            try {
+                val existingApp = FirebaseApp.getInstance()
+                if (existingApp != null) {
+                    existingApp.delete()
+                }
+            } catch (e: Exception) {
+                // Not initialized yet, that's fine
+            }
+
+            val options = com.google.firebase.FirebaseOptions.Builder()
+                .setApiKey(apiKey)
+                .setProjectId(projectId)
+                .setApplicationId(appId)
+                .build()
+
+            FirebaseApp.initializeApp(context, options)
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Error dynamically initializing Firebase", e)
+            false
+        }
+    }
+
+    fun initializeFromPreferences(context: android.content.Context): Boolean {
+        val prefs = context.getSharedPreferences("FirebasePrefs", android.content.Context.MODE_PRIVATE)
+        val apiKey = prefs.getString("apiKey", null)
+        val projectId = prefs.getString("projectId", null)
+        val appId = prefs.getString("appId", null)
+
+        if (!apiKey.isNullOrEmpty() && !projectId.isNullOrEmpty() && !appId.isNullOrEmpty()) {
+            return initializeDynamically(context, apiKey, projectId, appId)
+        }
+        return false
+    }
+
+    fun saveAndInitialize(
+        context: android.content.Context,
+        apiKey: String,
+        projectId: String,
+        appId: String
+    ): Boolean {
+        val prefs = context.getSharedPreferences("FirebasePrefs", android.content.Context.MODE_PRIVATE)
+        prefs.edit()
+            .putString("apiKey", apiKey)
+            .putString("projectId", projectId)
+            .putString("appId", appId)
+            .apply()
+        
+        return initializeDynamically(context, apiKey, projectId, appId)
+    }
+
+    fun clearFirebaseConfig(context: android.content.Context) {
+        val prefs = context.getSharedPreferences("FirebasePrefs", android.content.Context.MODE_PRIVATE)
+        prefs.edit().clear().apply()
         try {
             val app = FirebaseApp.getInstance()
-            app != null
+            app?.delete()
         } catch (e: Exception) {
-            Log.w(TAG, "Firebase is not initialized (google-services.json might be missing): ${e.message}")
-            false
+            Log.e(TAG, "Error deleting FirebaseApp instance", e)
         }
     }
 
