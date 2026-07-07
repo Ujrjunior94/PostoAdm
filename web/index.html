@@ -4410,53 +4410,62 @@ create table posto_backups (
 
                     let innerBadgeHtml = '';
                     daySchedules.forEach(sh => {
-                        let color = '#1E88E5'; // Blue
-                        let label = 'M';
-                        let borderStyle = 'border-blue-500';
+                        let bgColor = 'bg-blue-50';
+                        let borderColor = 'border-blue-500';
+                        let textColor = 'text-blue-800';
                         let pillBg = 'bg-blue-600';
+                        let label = 'M';
 
                         if (sh.shift.toLowerCase().includes('horista 2')) {
-                            color = '#7C3AED'; // Purple
-                            label = 'H2';
-                            borderStyle = 'border-purple-500';
+                            bgColor = 'bg-purple-50';
+                            borderColor = 'border-purple-500';
+                            textColor = 'text-purple-800';
                             pillBg = 'bg-purple-600';
+                            label = 'H2';
                         } else if (sh.shift.toLowerCase().includes('horista')) {
-                            color = '#D946EF'; // Fuchsia
-                            label = 'H';
-                            borderStyle = 'border-fuchsia-500';
+                            bgColor = 'bg-fuchsia-50';
+                            borderColor = 'border-fuchsia-500';
+                            textColor = 'text-fuchsia-800';
                             pillBg = 'bg-fuchsia-600';
+                            label = 'H';
                         } else if (sh.shift.toLowerCase().includes('tarde')) {
-                            color = '#16A34A'; // Green
-                            label = 'T';
-                            borderStyle = 'border-green-500';
+                            bgColor = 'bg-green-50';
+                            borderColor = 'border-green-500';
+                            textColor = 'text-green-800';
                             pillBg = 'bg-green-600';
+                            label = 'T';
                         } else if (sh.shift.toLowerCase().includes('noite')) {
-                            color = '#DC2626'; // Red
-                            label = 'N';
-                            borderStyle = 'border-red-500';
+                            bgColor = 'bg-red-50';
+                            borderColor = 'border-red-500';
+                            textColor = 'text-red-800';
                             pillBg = 'bg-red-600';
+                            label = 'N';
                         } else if (sh.shift.toLowerCase().includes('folga')) {
-                            color = '#4B5563'; // Gray
+                            bgColor = 'bg-slate-50';
+                            borderColor = 'border-slate-400';
+                            textColor = 'text-slate-700';
+                            pillBg = 'bg-slate-500';
                             label = 'F';
-                            borderStyle = 'border-gray-500';
-                            pillBg = 'bg-gray-600';
                         } else if (sh.shift.toLowerCase().includes('repouso')) {
-                            color = '#92400E'; // Brown
+                            bgColor = 'bg-amber-50';
+                            borderColor = 'border-amber-600';
+                            textColor = 'text-amber-800';
+                            pillBg = 'bg-amber-700';
                             label = 'R';
-                            borderStyle = 'border-amber-800';
-                            pillBg = 'bg-amber-800';
                         }
 
                         let initials = sh.employeeName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
                         if (!initials) initials = "?";
 
                         innerBadgeHtml += `
-                            <div class="flex flex-col items-center shrink-0 w-10 transition-transform hover:scale-110 duration-200" title="${sh.employeeName} - ${sh.shift}">
-                                <div class="w-8 h-8 rounded-full bg-slate-50 border-2 ${borderStyle} text-slate-800 text-[10px] font-black flex items-center justify-center shadow-sm">
+                            <div class="relative shrink-0 w-10 h-10 flex items-center justify-center transition-transform hover:scale-110 duration-200" title="${sh.employeeName} - ${sh.shift}">
+                                <!-- Avatar circle showing initials inside with shift color themed background/border -->
+                                <div class="w-8 h-8 rounded-full ${bgColor} border-2 ${borderColor} ${textColor} text-[9.5px] font-black flex items-center justify-center shadow-md select-none">
                                     ${initials}
                                 </div>
-                                <div class="px-1 py-0.5 text-[7.5px] font-black rounded-full text-white ${pillBg} mt-1 w-full text-center truncate shadow-sm tracking-wider">
-                                    ${initials}:${label}
+                                <!-- Overlapping bottom-right mini badge with high contrast white borders -->
+                                <div class="absolute bottom-0.5 right-0.5 w-4.5 h-4.5 rounded-full ${pillBg} border-2 border-white text-white text-[7.5px] font-black flex items-center justify-center shadow-sm select-none">
+                                    ${label}
                                 </div>
                             </div>
                         `;
