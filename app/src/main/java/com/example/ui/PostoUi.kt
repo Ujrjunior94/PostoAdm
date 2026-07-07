@@ -236,11 +236,11 @@ fun LoginScreen(viewModel: PostoViewModel) {
                 }
 
                 item {
-                    val fbActive = FirebaseHelper.isAvailable
+                    val isSupabaseConfigured = viewModel.isSupabaseAvailable()
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = if (fbActive) Color(0xFFE6F4EA) else Color(0xFFFFF4E5),
-                        border = BorderStroke(1.dp, if (fbActive) Color(0xFF34A853).copy(alpha = 0.5f) else Color(0xFFFBBC05).copy(alpha = 0.5f)),
+                        color = if (isSupabaseConfigured) Color(0xFFE6F4EA) else Color(0xFFFFF4E5),
+                        border = BorderStroke(1.dp, if (isSupabaseConfigured) Color(0xFF34A853).copy(alpha = 0.5f) else Color(0xFFFBBC05).copy(alpha = 0.5f)),
                         modifier = Modifier.padding(bottom = 8.dp)
                     ) {
                         Row(
@@ -249,10 +249,10 @@ fun LoginScreen(viewModel: PostoViewModel) {
                             horizontalArrangement = Arrangement.Center
                         ) {
                             Text(
-                                text = if (fbActive) "🔒 Autenticação Firebase Ativa" else "💻 Banco Local (Modo Off-line)",
+                                text = if (isSupabaseConfigured) "⚡ Sincronização Supabase Ativa" else "💻 Banco Local (Modo Off-line)",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (fbActive) Color(0xFF137333) else Color(0xFFB06000)
+                                color = if (isSupabaseConfigured) Color(0xFF137333) else Color(0xFFB06000)
                             )
                         }
                     }
@@ -437,7 +437,7 @@ fun MainLayout(viewModel: PostoViewModel, currentScreen: String) {
     val configuration = LocalConfiguration.current
     val isTablet = configuration.screenWidthDp >= 600
 
-    Row(modifier = Modifier.fillMaxSize()) {
+    Row(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
         if (isTablet) {
             // Sidebar Navigation for larger screens / layouts (React sidebar look)
             NavigationSidebar(viewModel, currentScreen)
@@ -3573,24 +3573,51 @@ fun StockScreen(viewModel: PostoViewModel) {
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.align(Alignment.Start)
                     )
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        val availableColors = listOf("#005AC1", "#0288D1", "#FF9800", "#4CAF50", "#9C27B0", "#E91E63")
-                        availableColors.forEach { colorStr ->
-                            val isSelected = selectedTankColor == colorStr
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .background(Color(android.graphics.Color.parseColor(colorStr)), shape = CircleShape)
-                                    .border(
-                                        width = if (isSelected) 3.dp else 1.dp,
-                                        color = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray,
-                                        shape = CircleShape
-                                    )
-                                    .clickable { selectedTankColor = colorStr }
-                            )
+                        val row1 = listOf("#005AC1", "#0288D1", "#FF9800", "#E65100", "#4CAF50", "#2E7D32")
+                        val row2 = listOf("#FBC02D", "#D32F2F", "#FFD700", "#9C27B0", "#E91E63", "#607D8B")
+
+                        Row(
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            row1.forEach { colorStr ->
+                                val isSelected = selectedTankColor == colorStr
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .background(Color(android.graphics.Color.parseColor(colorStr)), shape = CircleShape)
+                                        .border(
+                                            width = if (isSelected) 3.dp else 1.dp,
+                                            color = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray,
+                                            shape = CircleShape
+                                        )
+                                        .clickable { selectedTankColor = colorStr }
+                                )
+                            }
+                        }
+
+                        Row(
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            row2.forEach { colorStr ->
+                                val isSelected = selectedTankColor == colorStr
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .background(Color(android.graphics.Color.parseColor(colorStr)), shape = CircleShape)
+                                        .border(
+                                            width = if (isSelected) 3.dp else 1.dp,
+                                            color = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray,
+                                            shape = CircleShape
+                                        )
+                                        .clickable { selectedTankColor = colorStr }
+                                )
+                            }
                         }
                     }
 
@@ -8013,7 +8040,7 @@ fun SystemsScreen(viewModel: PostoViewModel) {
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "1234",
+                                text = "adm001",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = PetrolDark,
                                 fontWeight = FontWeight.ExtraBold

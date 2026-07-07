@@ -171,7 +171,7 @@ class PostoViewModel(application: Application) : AndroidViewModel(application) {
 
     fun unlockSystems(password: String): Boolean {
         // Predefined password as requested
-        val isCorrect = password == "1234" || password == "gerente123"
+        val isCorrect = password == "adm001"
         if (isCorrect) {
             _isSystemsUnlocked.value = true
         }
@@ -612,6 +612,11 @@ class PostoViewModel(application: Application) : AndroidViewModel(application) {
         _bankPixKey.value = account.bankPixKey
         _loginError.value = null
         addToast("Bem-vindo, ${account.name}! (${account.role})")
+        
+        // Auto load from Supabase on successful login if credentials exist
+        if (isSupabaseAvailable()) {
+            downloadFromSupabase(account.stationCnpj)
+        }
     }
 
     fun logout() {
