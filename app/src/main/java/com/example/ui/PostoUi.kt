@@ -9,6 +9,8 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -46,6 +48,8 @@ import android.content.ClipboardManager
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.*
 import com.example.ui.theme.*
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import java.util.Locale
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.graphics.Path
@@ -157,6 +161,7 @@ fun LoginScreen(viewModel: PostoViewModel) {
     var regStationEndereco by remember { mutableStateOf("") }
 
     val error by viewModel.loginError.collectAsStateWithLifecycle()
+    val isLoadingAuth by viewModel.isLoadingAuth.collectAsStateWithLifecycle()
 
     Box(
         modifier = Modifier
@@ -337,6 +342,7 @@ fun LoginScreen(viewModel: PostoViewModel) {
                     item {
                         Button(
                             onClick = { viewModel.login(email, password) },
+                            enabled = !isLoadingAuth,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(top = 8.dp)
@@ -344,7 +350,11 @@ fun LoginScreen(viewModel: PostoViewModel) {
                                 .testTag("submit_button"),
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) {
-                            Text("Entrar no Sistema", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            if (isLoadingAuth) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
+                            } else {
+                                Text("Entrar no Sistema", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            }
                         }
                     }
                 } else {
@@ -412,18 +422,22 @@ fun LoginScreen(viewModel: PostoViewModel) {
                                     pass = regPassword
                                 )
                                 if (ok) {
-                                    email = regEmail
-                                    password = regPassword
+                                    // Feedback is handled inside ViewModel (auto-login or toast)
                                     isRegisterTab = false
                                 }
                             },
+                            enabled = !isLoadingAuth,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(top = 12.dp)
                                 .height(48.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) {
-                            Text("Criar Conta e Iniciar", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            if (isLoadingAuth) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
+                            } else {
+                                Text("Criar Conta e Iniciar", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            }
                         }
                     }
                 }
@@ -460,6 +474,9 @@ fun MainLayout(viewModel: PostoViewModel, currentScreen: String) {
                     "CALENDARIO" -> CalendarScreen(viewModel)
                     "RELATORIOS" -> ReportsScreen(viewModel)
                     "SISTEMAS" -> SystemsScreen(viewModel)
+                    "CONTROLE_QUALIDADE" -> ControleQualidadeScreen(viewModel)
+                    "REGISTRO_AFERICAO" -> RegistrarAfericaoScreen(viewModel)
+                    "REGISTRO_ANALISE" -> RegistrarAnaliseScreen(viewModel)
                 }
             }
 
@@ -527,7 +544,12 @@ fun NavigationSidebar(viewModel: PostoViewModel, currentScreen: String) {
             selected = currentScreen == "SISTEMAS",
             onClick = { viewModel.navigateTo("SISTEMAS") }
         )
-
+        SidebarItem(
+            label = "Qualidade",
+            icon = Icons.Default.VerifiedUser,
+            selected = currentScreen == "CONTROLE_QUALIDADE",
+            onClick = { viewModel.navigateTo("CONTROLE_QUALIDADE") }
+        )
         Spacer(modifier = Modifier.weight(1f))
 
         NavigationRailItem(
@@ -592,49 +614,10 @@ fun MobileBottomNavBar(viewModel: PostoViewModel, currentScreen: String) {
             )
         )
         NavigationBarItem(
-            icon = { Icon(Icons.Default.People, contentDescription = "Equipe") },
-            label = { Text("Equipe", fontSize = 10.sp, fontWeight = if (currentScreen == "FUNCIONARIOS") FontWeight.Bold else FontWeight.Normal) },
-            selected = currentScreen == "FUNCIONARIOS",
-            onClick = { viewModel.navigateTo("FUNCIONARIOS") },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = HdPrimary,
-                unselectedIconColor = HdTextSecondary,
-                selectedTextColor = HdPrimary,
-                unselectedTextColor = HdTextSecondary,
-                indicatorColor = HdPrimaryLight
-            )
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Default.DateRange, contentDescription = "Agendas") },
-            label = { Text("Agendas", fontSize = 10.sp, fontWeight = if (currentScreen == "CALENDARIO") FontWeight.Bold else FontWeight.Normal) },
-            selected = currentScreen == "CALENDARIO",
-            onClick = { viewModel.navigateTo("CALENDARIO") },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = HdPrimary,
-                unselectedIconColor = HdTextSecondary,
-                selectedTextColor = HdPrimary,
-                unselectedTextColor = HdTextSecondary,
-                indicatorColor = HdPrimaryLight
-            )
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Default.Assessment, contentDescription = "Relatórios") },
-            label = { Text("Relatórios", fontSize = 10.sp, fontWeight = if (currentScreen == "RELATORIOS") FontWeight.Bold else FontWeight.Normal) },
-            selected = currentScreen == "RELATORIOS",
-            onClick = { viewModel.navigateTo("RELATORIOS") },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = HdPrimary,
-                unselectedIconColor = HdTextSecondary,
-                selectedTextColor = HdPrimary,
-                unselectedTextColor = HdTextSecondary,
-                indicatorColor = HdPrimaryLight
-            )
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Default.Lock, contentDescription = "Sistemas") },
-            label = { Text("Sistemas", fontSize = 10.sp, fontWeight = if (currentScreen == "SISTEMAS") FontWeight.Bold else FontWeight.Normal) },
-            selected = currentScreen == "SISTEMAS",
-            onClick = { viewModel.navigateTo("SISTEMAS") },
+            icon = { Icon(Icons.Default.VerifiedUser, contentDescription = "Qualidade") },
+            label = { Text("Qualidade", fontSize = 10.sp, fontWeight = if (currentScreen == "CONTROLE_QUALIDADE") FontWeight.Bold else FontWeight.Normal) },
+            selected = currentScreen == "CONTROLE_QUALIDADE",
+            onClick = { viewModel.navigateTo("CONTROLE_QUALIDADE") },
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = HdPrimary,
                 unselectedIconColor = HdTextSecondary,
@@ -862,18 +845,44 @@ fun DashboardScreen(viewModel: PostoViewModel) {
     ) {
         // Welcome and intro
         item {
-            Column {
-                Text(
-                    text = "Dashboard Principal 📊",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Text(
-                    text = "Bem-vindo ao PostoAdmin! Veja o status operacional do posto em tempo real.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-                )
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Dashboard Principal 📊",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Text(
+                        text = "Bem-vindo ao PostoAdmin! Veja o status operacional do posto em tempo real.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                    )
+                }
+                
+                val mContext = androidx.compose.ui.platform.LocalContext.current
+                val stationRazaoSocial by viewModel.stationRazaoSocial.collectAsStateWithLifecycle()
+                val stationCnpj by viewModel.stationCnpj.collectAsStateWithLifecycle()
+                
+                Button(
+                    onClick = {
+                        val currentMonthYear = java.text.SimpleDateFormat("MM/yyyy", java.util.Locale.getDefault()).format(java.util.Date())
+                        PdfReportGenerator.generateMonthlySummaryReport(
+                            context = mContext,
+                            razaoSocial = stationRazaoSocial.ifBlank { "Posto Administrativo" },
+                            cnpj = stationCnpj.ifBlank { "12.345.678/0001-99" },
+                            tanks = tanks,
+                            reports = reports.filter { it.date.startsWith(currentMonthYear.split("/")[1] + "-" + currentMonthYear.split("/")[0]) },
+                            monthYear = currentMonthYear
+                        )
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Icon(Icons.Default.PictureAsPdf, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Resumo do Mês", fontWeight = FontWeight.Bold)
+                }
             }
         }
 
@@ -1567,8 +1576,6 @@ fun DashboardPlannerCard(viewModel: PostoViewModel) {
             }
         }
     }
-
-    // Modal Add Shift Dialog specifically for Dashboard
     if (showAddScheduleDialog) {
         Dialog(onDismissRequest = { showAddScheduleDialog = false }) {
             Card(
@@ -1753,6 +1760,9 @@ fun StockScreen(viewModel: PostoViewModel) {
     val conformityRecords by viewModel.fuelConformityRecords.collectAsStateWithLifecycle()
     val fuelDeliveries by viewModel.fuelDeliveries.collectAsStateWithLifecycle()
     val auditLogEntries by viewModel.auditLogEntries.collectAsStateWithLifecycle()
+    val stationRazaoSocial by viewModel.stationRazaoSocial.collectAsStateWithLifecycle()
+    val stationCnpj by viewModel.stationCnpj.collectAsStateWithLifecycle()
+    val mContext = androidx.compose.ui.platform.LocalContext.current
 
     var activeSubTab by remember { mutableIntStateOf(0) } // 0 = Tanques, 1 = Bicos de Bomba, 2 = Aferições, 3 = Conformidade, 4 = Auditoria & Compliance
     var selectedAuditFilter by remember { mutableStateOf("Todos") }
@@ -1787,9 +1797,13 @@ fun StockScreen(viewModel: PostoViewModel) {
     var calibReference by remember { mutableStateOf("") }
     var calibNominal by remember { mutableStateOf("20.0") }
     var calibMeasured by remember { mutableStateOf("20.0") }
+
     var calibDeviationMl by remember { mutableStateOf("0") }
+    var calibLaudo by remember { mutableStateOf("Aferição física periódica do bico.") }
+    var showCalibReportDialog by remember { mutableStateOf(false) }
+    var selectedCalibrationIds by remember { mutableStateOf(setOf<Int>()) }
+
     var calibInspector by remember { mutableStateOf("") }
-    var calibLaudo by remember { mutableStateOf("") }
 
     // Dialog & Form states for Conformity/Quality Analysis
     var showAddConformityDialog by remember { mutableStateOf(false) }
@@ -1802,20 +1816,31 @@ fun StockScreen(viewModel: PostoViewModel) {
     var confTechnician by remember { mutableStateOf("") }
     var confObservation by remember { mutableStateOf("") }
 
-    // Dialog & Form states for Fuel Delivery Receival
-    var showAddDeliveryDialog by remember { mutableStateOf(false) }
-    var deliveryDate by remember { mutableStateOf("2026-07-04") }
+    var selectedFuelTypesForReport by remember { mutableStateOf(setOf<String>()) }
+    var showQualReportDialog by remember { mutableStateOf(false) }
+    
+    // Also missing variables for delivery, apparently some got mixed up
+    var deliveryDate by remember { mutableStateOf("") }
     var deliveryInvoice by remember { mutableStateOf("") }
     var deliveryFuelType by remember { mutableStateOf("Gasolina Comum") }
     var deliveryVolume by remember { mutableStateOf("") }
     var deliveryDriverName by remember { mutableStateOf("") }
     var deliveryDriverCnh by remember { mutableStateOf("") }
     var deliveryTruckPlate by remember { mutableStateOf("") }
+    var showAddDeliveryDialog by remember { mutableStateOf(false) }
+
+
+    // Dialog & Form states for Fuel Delivery Receival
     var deliveryConformityId by remember { mutableStateOf<Int?>(null) }
 
     // Dialog & Form states for Manual Audit Log Entry
     var showAddAuditDialog by remember { mutableStateOf(false) }
     var auditDate by remember { mutableStateOf("2026-07-04") }
+
+    // NEW: Report Dialog States
+    var reportStartDate by remember { mutableStateOf("2026-07-01") }
+    var reportEndDate by remember { mutableStateOf("2026-07-07") }
+
     var auditTime by remember { mutableStateOf("10:00") }
     var auditActionType by remember { mutableStateOf("Auditoria Manual") }
     var auditTarget by remember { mutableStateOf("Geral do Posto") }
@@ -1865,19 +1890,11 @@ fun StockScreen(viewModel: PostoViewModel) {
                     onClick = { activeSubTab = 1 },
                     text = { Text("Bicos (${nozzles.size})", fontWeight = FontWeight.Bold, fontSize = 11.sp) }
                 )
+
+
                 Tab(
                     selected = activeSubTab == 2,
                     onClick = { activeSubTab = 2 },
-                    text = { Text("Aferições (${calibrations.size})", fontWeight = FontWeight.Bold, fontSize = 11.sp) }
-                )
-                Tab(
-                    selected = activeSubTab == 3,
-                    onClick = { activeSubTab = 3 },
-                    text = { Text("Qualidade (${conformityRecords.size})", fontWeight = FontWeight.Bold, fontSize = 11.sp) }
-                )
-                Tab(
-                    selected = activeSubTab == 4,
-                    onClick = { activeSubTab = 4 },
                     text = { Text("Auditoria (${auditLogEntries.size})", fontWeight = FontWeight.Bold, fontSize = 11.sp) }
                 )
             }
@@ -2348,7 +2365,7 @@ fun StockScreen(viewModel: PostoViewModel) {
                                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                         Button(
                                             onClick = {
-                                                calibDate = "2026-07-04"
+                                                calibDate = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
                                                 calibReference = "Bico ${nozzle.nozzleNumber}"
                                                 calibNominal = "20.0"
                                                 calibMeasured = "20.0"
@@ -2559,591 +2576,8 @@ fun StockScreen(viewModel: PostoViewModel) {
         }
 
         // TAB 2: AFERIÇÕES E CALIBRAÇÕES
+    // TAB 3: CONFORMIDADE DE COMBUSTÍVEL
         if (activeSubTab == 2) {
-            // Legal Compliance Metric Card
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, HdBorder),
-                    colors = CardDefaults.cardColors(containerColor = HdSurface)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Controle Legal de Bombas (INMETRO) ⚖️",
-                                fontWeight = FontWeight.Bold,
-                                style = MaterialTheme.typography.titleMedium,
-                                color = HdTextPrimary
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "Margem de erro legal admitida nas aferições: ±0.5% (equivalente a ±100ml de erro em volume nominal de 20L). Bicos com erros acima do limite devem ser interditados imediatamente.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = HdTextSecondary
-                            )
-
-                            val compliantCount = calibrations.count { it.isConforme }
-                            val totalCount = calibrations.size
-                            val pct = if (totalCount > 0) (compliantCount.toDouble() / totalCount * 100).toInt() else 100
-
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Card(
-                                    shape = RoundedCornerShape(6.dp),
-                                    colors = CardDefaults.cardColors(containerColor = if (pct >= 90) HdGreenLight else HdRedLight)
-                                ) {
-                                    Text(
-                                        text = "$pct% DE CONFORMIDADE",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (pct >= 90) HdGreen else HdRed,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "$compliantCount de $totalCount aferições regulares",
-                                    fontSize = 11.sp,
-                                    color = HdTextSecondary
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Laudos e Aferições Recentes",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Button(
-                        onClick = {
-                            calibDate = "2026-07-04"
-                            calibReference = if (nozzles.isNotEmpty()) "Bico ${nozzles.first().nozzleNumber}" else "Bico 01"
-                            calibNominal = "20.0"
-                            calibMeasured = "20.0"
-                            calibDeviationMl = "0"
-                            calibInspector = "Carlos Silva"
-                            calibLaudo = "Medição dentro do regulamento legal do INMETRO."
-                            showAddCalibDialog = true
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = "Registrar Aferição")
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Registrar")
-                    }
-                }
-            }
-
-            if (calibrations.isEmpty()) {
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        border = BorderStroke(1.dp, HdBorder),
-                        colors = CardDefaults.cardColors(containerColor = HdSurface)
-                    ) {
-                        Box(modifier = Modifier.padding(32.dp), contentAlignment = Alignment.Center) {
-                            Text("Nenhuma aferição cadastrada.")
-                        }
-                    }
-                }
-            } else {
-                items(calibrations) { cal ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, HdBorder),
-                        colors = CardDefaults.cardColors(containerColor = HdSurface)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(text = "🔬", fontSize = 18.sp, modifier = Modifier.padding(end = 8.dp))
-                                    Column {
-                                        Text(text = cal.referenceName, fontWeight = FontWeight.Bold, color = HdTextPrimary)
-                                        Text(text = "Data: ${cal.date} | Fiscal: ${cal.inspector}", style = MaterialTheme.typography.bodySmall, color = HdTextSecondary)
-                                    }
-                                }
-
-                                // Conformity Indicator Badge
-                                Card(
-                                    shape = RoundedCornerShape(8.dp),
-                                    colors = CardDefaults.cardColors(containerColor = if (cal.isConforme) HdGreenLight else HdRedLight)
-                                ) {
-                                    Text(
-                                        text = if (cal.isConforme) "✓ CONFORME" else "✗ REPROVADO",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (cal.isConforme) HdGreen else HdRed,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                    )
-                                }
-                            }
-                            
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = HdBorder)
-
-                            // Volume stats row
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Column {
-                                    Text(text = "Volume Nominal", fontSize = 11.sp, color = HdTextSecondary)
-                                    Text(text = "${String.format(Locale.getDefault(), "%.2f", cal.nominalVolume)} L", fontWeight = FontWeight.Bold)
-                                }
-                                Column {
-                                    Text(text = "Volume Medido", fontSize = 11.sp, color = HdTextSecondary)
-                                    Text(text = "${String.format(Locale.getDefault(), "%.2f", cal.measuredVolume)} L", fontWeight = FontWeight.Bold)
-                                }
-                                Column(horizontalAlignment = Alignment.End) {
-                                    Text(text = "Erro Calculado", fontSize = 11.sp, color = HdTextSecondary)
-                                    val errStr = if (cal.errorPercent >= 0) "+${String.format(Locale.getDefault(), "%.2f", cal.errorPercent)}%" else "${String.format(Locale.getDefault(), "%.2f", cal.errorPercent)}%"
-                                    Text(
-                                        text = errStr,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = if (cal.isConforme) HdTextPrimary else HdRed
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(containerColor = HdGrayLight),
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Column(modifier = Modifier.padding(10.dp)) {
-                                    Text(text = "Laudo Técnico:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = HdTextSecondary)
-                                    Text(text = cal.laudo, style = MaterialTheme.typography.bodySmall, color = HdTextPrimary)
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                                TextButton(
-                                    onClick = { viewModel.deleteCalibration(cal) },
-                                    contentPadding = PaddingValues(0.dp)
-                                ) {
-                                    Text("Excluir Registro", color = HdRed, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // TAB 3: CONFORMIDADE DE COMBUSTÍVEL
-        if (activeSubTab == 3) {
-            // Quality Compliance Metric Card
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, HdBorder),
-                    colors = CardDefaults.cardColors(containerColor = HdSurface)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "Controle de Qualidade ANP 🔬",
-                            fontWeight = FontWeight.Bold,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = HdTextPrimary
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Padrões de conformidade regulados pela ANP:\n" +
-                                    "• Gasolina: Densidade a 20°C de 0.715 a 0.775 g/cm³ | Teor de Etanol de 25% a 29%.\n" +
-                                    "• Etanol: Densidade a 20°C de 0.805 a 0.815 g/cm³.\n" +
-                                    "• Diesel: Densidade a 20°C de 0.820 a 0.880 g/cm³.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = HdTextSecondary,
-                            lineHeight = 16.sp
-                        )
-
-                        val compliantCount = conformityRecords.count { it.isConforme }
-                        val totalCount = conformityRecords.size
-                        val pct = if (totalCount > 0) (compliantCount.toDouble() / totalCount * 100).toInt() else 100
-
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Card(
-                                shape = RoundedCornerShape(6.dp),
-                                colors = CardDefaults.cardColors(containerColor = if (pct >= 90) HdGreenLight else HdRedLight)
-                            ) {
-                                Text(
-                                    text = "$pct% CONFORME",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (pct >= 90) HdGreen else HdRed,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "$compliantCount de $totalCount análises em conformidade",
-                                fontSize = 11.sp,
-                                color = HdTextSecondary
-                            )
-                        }
-                    }
-                }
-            }
-
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Laudos e Ensaios de Qualidade",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Button(
-                        onClick = {
-                            confDate = "2026-07-04"
-                            confFuelType = "Gasolina Comum"
-                            confDensityMeasured = "0.742"
-                            confTemperature = "23.5"
-                            confAspectColor = "Límpido e isento de impurezas"
-                            confWaterPhaseFinalVolume = "63.5"
-                            confTechnician = "Carlos Lima"
-                            confObservation = "Aspecto totalmente límpido. Ensaio de proveta conforme."
-                            showAddConformityDialog = true
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                    ) {
-                        Icon(Icons.Default.Science, contentDescription = "Nova Análise de Conformidade")
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Nova Análise")
-                    }
-                }
-            }
-
-            if (conformityRecords.isEmpty()) {
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        border = BorderStroke(1.dp, HdBorder),
-                        colors = CardDefaults.cardColors(containerColor = HdSurface)
-                    ) {
-                        Box(modifier = Modifier.padding(32.dp), contentAlignment = Alignment.Center) {
-                            Text("Nenhuma análise de conformidade cadastrada.")
-                        }
-                    }
-                }
-            } else {
-                items(conformityRecords) { rec ->
-                    val isEth = rec.fuelType.contains("Etanol", ignoreCase = true)
-                    val correctedDen = ANPUtils.calculateCorrectedDensity(rec.densityMeasured, rec.temperature, isEth)
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, HdBorder),
-                        colors = CardDefaults.cardColors(containerColor = HdSurface)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(text = "🧪", fontSize = 18.sp, modifier = Modifier.padding(end = 8.dp))
-                                    Column {
-                                        Text(text = rec.fuelType, fontWeight = FontWeight.Bold, color = HdTextPrimary)
-                                        Text(text = "Data: ${rec.date} | Responsável: ${rec.technicianName}", style = MaterialTheme.typography.bodySmall, color = HdTextSecondary)
-                                    }
-                                }
-
-                                Card(
-                                    shape = RoundedCornerShape(8.dp),
-                                    colors = CardDefaults.cardColors(containerColor = if (rec.isConforme) HdGreenLight else HdRedLight)
-                                ) {
-                                    Text(
-                                        text = if (rec.isConforme) "✓ CONFORME" else "✗ REPROVADO",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (rec.isConforme) HdGreen else HdRed,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                    )
-                                }
-                            }
-                            
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = HdBorder)
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Column {
-                                    Text(text = "Densidade Medida", fontSize = 11.sp, color = HdTextSecondary)
-                                    Text(text = "${String.format(Locale.getDefault(), "%.4f", rec.densityMeasured)} g/cm³", fontWeight = FontWeight.Bold)
-                                }
-                                Column {
-                                    Text(text = "Temperatura", fontSize = 11.sp, color = HdTextSecondary)
-                                    Text(text = "${String.format(Locale.getDefault(), "%.1f", rec.temperature)} °C", fontWeight = FontWeight.Bold)
-                                }
-                                Column {
-                                    Text(text = "Densidade 20°C", fontSize = 11.sp, color = HdTextSecondary)
-                                    Text(text = "${String.format(Locale.getDefault(), "%.4f", correctedDen)} g/cm³", fontWeight = FontWeight.Bold, color = if (rec.isConforme) HdTextPrimary else HdRed)
-                                }
-                                if (rec.fuelType.contains("Gasolina", ignoreCase = true)) {
-                                    Column(horizontalAlignment = Alignment.End) {
-                                        Text(text = "Teor de Etanol", fontSize = 11.sp, color = HdTextSecondary)
-                                        Text(text = "${String.format(Locale.getDefault(), "%.1f", rec.ethanolPercent)}%", fontWeight = FontWeight.ExtraBold, color = if (rec.isConforme) HdTextPrimary else HdRed)
-                                    }
-                                } else if (isEth) {
-                                    Column(horizontalAlignment = Alignment.End) {
-                                        Text(text = "Teor Alcoólico", fontSize = 11.sp, color = HdTextSecondary)
-                                        Text(text = "${String.format(Locale.getDefault(), "%.1f", rec.ethanolPercent)}% m/m", fontWeight = FontWeight.ExtraBold, color = if (rec.isConforme) HdTextPrimary else HdRed)
-                                    }
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(10.dp))
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(text = "Aspecto e Cor", fontSize = 11.sp, color = HdTextSecondary, fontWeight = FontWeight.Bold)
-                                    Text(text = rec.aspectColor, style = MaterialTheme.typography.bodySmall, color = HdTextPrimary)
-                                }
-                                if (rec.observation.isNotBlank()) {
-                                    Column(modifier = Modifier.weight(1.5f)) {
-                                        Text(text = "Observações", fontSize = 11.sp, color = HdTextSecondary, fontWeight = FontWeight.Bold)
-                                        Text(text = rec.observation, style = MaterialTheme.typography.bodySmall, color = HdTextPrimary)
-                                    }
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                                TextButton(
-                                    onClick = { viewModel.deleteFuelConformityRecord(rec) },
-                                    contentPadding = PaddingValues(0.dp)
-                                ) {
-                                    Text("Excluir Análise", color = HdRed, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // --- FUEL DELIVERIES & DRIVER REGISTRATION SECTION ---
-            item {
-                Spacer(modifier = Modifier.height(24.dp))
-                HorizontalDivider(color = HdBorder, thickness = 1.dp)
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = "Entregas & Notas de Combustível (NF-e) 🚚",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = HdTextPrimary
-                        )
-                        Text(
-                            text = "Rastreabilidade de lotes entregues e vínculo de qualidade ANP.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = HdTextSecondary
-                        )
-                    }
-                    Button(
-                        onClick = {
-                            deliveryDate = "2026-07-04"
-                            deliveryInvoice = ""
-                            deliveryFuelType = "Gasolina Comum"
-                            deliveryVolume = ""
-                            deliveryDriverName = ""
-                            deliveryDriverCnh = ""
-                            deliveryTruckPlate = ""
-                            deliveryConformityId = null
-                            showAddDeliveryDialog = true
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text("Nova Nota", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-
-            if (fuelDeliveries.isEmpty()) {
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                        border = BorderStroke(1.dp, HdBorder),
-                        colors = CardDefaults.cardColors(containerColor = HdSurface)
-                    ) {
-                        Box(modifier = Modifier.padding(24.dp), contentAlignment = Alignment.Center) {
-                            Text("Nenhuma nota fiscal ou entrega registrada.", style = MaterialTheme.typography.bodyMedium, color = HdTextSecondary)
-                        }
-                    }
-                }
-            } else {
-                items(fuelDeliveries) { del ->
-                    val linkedConf = conformityRecords.find { it.id == del.conformityRecordId }
-                    Card(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, HdBorder),
-                        colors = CardDefaults.cardColors(containerColor = HdSurface)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text("📦", fontSize = 16.sp, modifier = Modifier.padding(end = 8.dp))
-                                    Column {
-                                        Text(text = del.invoiceNumber, fontWeight = FontWeight.Bold, color = HdTextPrimary)
-                                        Text(text = "Recebimento: ${del.date}", style = MaterialTheme.typography.bodySmall, color = HdTextSecondary)
-                                    }
-                                }
-                                Card(
-                                    shape = RoundedCornerShape(6.dp),
-                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-                                ) {
-                                    Text(
-                                        text = "${String.format(Locale.getDefault(), "%,.0f", del.volume)} L",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                    )
-                                }
-                            }
-
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = HdBorder, thickness = 0.5.dp)
-
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Column {
-                                    Text("Combustível", fontSize = 11.sp, color = HdTextSecondary)
-                                    Text(del.fuelType, fontWeight = FontWeight.Bold, color = HdPrimary)
-                                }
-                                Column {
-                                    Text("Placa do Caminhão", fontSize = 11.sp, color = HdTextSecondary)
-                                    Text(del.truckPlate.ifBlank { "--" }, fontWeight = FontWeight.Bold)
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            Column {
-                                Text("Motorista Responsável", fontSize = 11.sp, color = HdTextSecondary, fontWeight = FontWeight.Bold)
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text("👤", fontSize = 11.sp, modifier = Modifier.padding(end = 4.dp))
-                                    Text(
-                                        text = "${del.driverName} (CNH: ${del.driverCnh.ifBlank { "--" }})",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        fontWeight = FontWeight.Medium,
-                                        color = HdTextPrimary
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            Column {
-                                Text("Laudo Físico-Químico ANP", fontSize = 11.sp, color = HdTextSecondary, fontWeight = FontWeight.Bold)
-                                Spacer(modifier = Modifier.height(4.dp))
-                                if (linkedConf != null) {
-                                    Card(
-                                        shape = RoundedCornerShape(8.dp),
-                                        colors = CardDefaults.cardColors(
-                                            containerColor = if (linkedConf.isConforme) HdGreenLight else HdRedLight
-                                        ),
-                                        border = BorderStroke(0.5.dp, if (linkedConf.isConforme) HdGreen else HdRed)
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth().padding(8.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            Column {
-                                                Text(
-                                                    text = "Laudo de ${linkedConf.date} - ${linkedConf.technicianName}",
-                                                    fontSize = 11.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = if (linkedConf.isConforme) HdGreen else HdRed
-                                                )
-                                                Text(
-                                                    text = "Teor de Álcool: ${linkedConf.ethanolPercent}% | Densidade: ${linkedConf.densityMeasured} g/cm³",
-                                                    fontSize = 10.sp,
-                                                    color = if (linkedConf.isConforme) HdGreen else HdRed
-                                                )
-                                            }
-                                            Text(
-                                                text = if (linkedConf.isConforme) "✓ CONFORME" else "✗ IRREGULAR",
-                                                fontWeight = FontWeight.Black,
-                                                fontSize = 10.sp,
-                                                color = if (linkedConf.isConforme) HdGreen else HdRed
-                                            )
-                                        }
-                                    }
-                                } else {
-                                    Card(
-                                        shape = RoundedCornerShape(8.dp),
-                                        colors = CardDefaults.cardColors(containerColor = HdAmberLight),
-                                        border = BorderStroke(0.5.dp, HdAmber)
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth().padding(8.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text("⚠️ ", fontSize = 12.sp)
-                                            Text(
-                                                text = "Atenção: Nenhum laudo de conformidade laboratorial vinculado a esta nota.",
-                                                fontSize = 10.sp,
-                                                fontWeight = FontWeight.Medium,
-                                                color = HdAmber
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                                TextButton(
-                                    onClick = { viewModel.deleteFuelDelivery(del) },
-                                    contentPadding = PaddingValues(0.dp)
-                                ) {
-                                    Text("Apagar Entrega", color = HdRed, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // TAB 4: AUDITORIA & COMPLIANCE
-        if (activeSubTab == 4) {
         // Dashboard Card
         item {
             Card(
@@ -3823,250 +3257,6 @@ fun StockScreen(viewModel: PostoViewModel) {
     }
 
     // Modal DIALOG for Registering Calibration
-    if (showAddCalibDialog) {
-        Dialog(onDismissRequest = { showAddCalibDialog = false }) {
-            Card(
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                modifier = Modifier.fillMaxWidth().padding(16.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    Text(
-                        text = "Registrar Aferição Física ⚖️",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    OutlinedTextField(
-                        value = calibDate,
-                        onValueChange = { calibDate = it },
-                        label = { Text("Data (AAAA-MM-DD)") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    // Reference selector row
-                    Text(text = "Identificação do Bico / Equipamento *", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall, modifier = Modifier.align(Alignment.Start))
-                    if (calibReference.isBlank() && nozzles.isNotEmpty()) {
-                        calibReference = "Bico ${nozzles.first().nozzleNumber}"
-                    }
-
-                    OutlinedTextField(
-                        value = calibReference,
-                        onValueChange = { calibReference = it },
-                        label = { Text("Nome do Bico ou Equipamento") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    if (nozzles.isNotEmpty()) {
-                        Text(text = "Seleção rápida:", style = MaterialTheme.typography.bodySmall, color = HdTextSecondary, modifier = Modifier.align(Alignment.Start))
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            nozzles.forEach { nz ->
-                                val isSelected = calibReference == "Bico ${nz.nozzleNumber}" || calibReference == nz.nozzleNumber
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(if (isSelected) HdPrimaryLight else HdGrayLight)
-                                        .clickable { calibReference = "Bico ${nz.nozzleNumber}" }
-                                        .padding(horizontal = 12.dp, vertical = 8.dp)
-                                ) {
-                                    Text(
-                                        text = "Bico ${nz.nozzleNumber}",
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (isSelected) HdPrimaryDark else HdTextPrimary
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    Text(
-                        text = "Erro de Calibração (ml na Medida de 20L):",
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.align(Alignment.Start)
-                    )
-
-                    OutlinedTextField(
-                        value = calibDeviationMl,
-                        onValueChange = { 
-                            if (it.isEmpty() || it == "-" || it == "+") {
-                                calibDeviationMl = it
-                            } else {
-                                val parsed = it.toDoubleOrNull()
-                                if (parsed != null) {
-                                    calibDeviationMl = it
-                                }
-                            }
-                        },
-                        label = { Text("Desvio do Volume (ml)") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        isError = (calibDeviationMl.toDoubleOrNull() ?: 0.0) !in ANPUtils.MIN_CALIB_DEVIATION_ML..ANPUtils.MAX_CALIB_DEVIATION_ML,
-                        supportingText = {
-                            val parsed = calibDeviationMl.toDoubleOrNull()
-                            if (parsed == null && calibDeviationMl.isNotEmpty() && calibDeviationMl != "-" && calibDeviationMl != "+") {
-                                Text("Valor inválido", color = MaterialTheme.colorScheme.error)
-                            } else if (parsed != null && parsed !in ANPUtils.MIN_CALIB_DEVIATION_ML..ANPUtils.MAX_CALIB_DEVIATION_ML) {
-                                Text("Fora do limite técnico de ±200ml!", color = MaterialTheme.colorScheme.error)
-                            } else {
-                                Text("Limite técnico: -200 ml a +200 ml")
-                            }
-                        }
-                    )
-
-                    Text(
-                        text = "Seleção rápida de desvio:",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = HdTextSecondary,
-                        modifier = Modifier.align(Alignment.Start)
-                    )
-
-                    val devOptions = listOf(
-                        "0", "-20", "-40", "-60", "-80", "-100", "-120",
-                        "+20", "+40", "+60", "+80", "+100", "+120"
-                    )
-
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        val chunks = devOptions.chunked(4)
-                        chunks.forEach { rowItems ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                rowItems.forEach { item ->
-                                    val isSelected = calibDeviationMl == item
-                                    Box(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else HdGrayLight)
-                                            .border(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent, RoundedCornerShape(8.dp))
-                                            .clickable { calibDeviationMl = item }
-                                            .padding(vertical = 8.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = if (item == "0") "0 ml" else "$item ml",
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = if (isSelected) MaterialTheme.colorScheme.primary else HdTextPrimary
-                                        )
-                                    }
-                                }
-                                if (rowItems.size < 4) {
-                                    Spacer(modifier = Modifier.weight((4 - rowItems.size).toFloat()))
-                                }
-                            }
-                        }
-                    }
-
-                    OutlinedTextField(
-                        value = calibInspector,
-                        onValueChange = { calibInspector = it },
-                        label = { Text("Nome do Fiscal/Responsável") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    OutlinedTextField(
-                        value = calibLaudo,
-                        onValueChange = { calibLaudo = it },
-                        label = { Text("Laudo / Observações Técnicas") },
-                        modifier = Modifier.fillMaxWidth(),
-                        maxLines = 3
-                    )
-
-                    // Real-time calculated error preview
-                    val nom = 20.0
-                    val deviationVal = calibDeviationMl.toDoubleOrNull()
-                    val isValidDeviation = deviationVal != null && deviationVal in ANPUtils.MIN_CALIB_DEVIATION_ML..ANPUtils.MAX_CALIB_DEVIATION_ML
-                    val finalDeviation = if (isValidDeviation) deviationVal!! else 0.0
-                    val meas = 20.0 + (finalDeviation / 1000.0)
-                    val errPct = ANPUtils.calculateVolumeErrorPercent(finalDeviation)
-                    val isConf = ANPUtils.isVolumeErrorCompliant(finalDeviation)
-
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = if (isConf && isValidDeviation) HdGreenLight else HdRedLight)
-                    ) {
-                        Row(modifier = Modifier.padding(10.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = "Desvio:", fontSize = 12.sp, color = HdTextSecondary, fontWeight = FontWeight.Bold)
-                            val errStr = if (finalDeviation >= 0) "+${finalDeviation.toInt()} ml" else "${finalDeviation.toInt()} ml"
-                            val resultText = if (!isValidDeviation) {
-                                "VALOR DE ENTRADA INVÁLIDO"
-                            } else if (isConf) {
-                                "CONFORME (Regular)"
-                            } else {
-                                "REPROVADO (Interditar)"
-                            }
-                            Text(
-                                text = "$errStr (${String.format(Locale.getDefault(), "%.2f", errPct)}%) | $resultText",
-                                fontWeight = FontWeight.ExtraBold,
-                                color = if (isConf && isValidDeviation) HdGreen else HdRed,
-                                fontSize = 13.sp
-                            )
-                        }
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        OutlinedButton(
-                            onClick = { showAddCalibDialog = false },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Cancelar")
-                        }
-                        Button(
-                            onClick = {
-                                val devParsed = calibDeviationMl.toDoubleOrNull()
-                                if (calibReference.isBlank()) {
-                                    viewModel.addToast("Por favor, selecione ou cadastre um Bico de Teste!")
-                                } else if (calibInspector.isBlank()) {
-                                    viewModel.addToast("Por favor, insira o nome do Fiscal/Responsável pela aferição!")
-                                } else if (devParsed == null || devParsed !in ANPUtils.MIN_CALIB_DEVIATION_ML..ANPUtils.MAX_CALIB_DEVIATION_ML) {
-                                    viewModel.addToast("Desvio fora dos limites técnicos permitidos (±200 ml)!")
-                                } else {
-                                    viewModel.addCalibration(
-                                        date = calibDate,
-                                        referenceName = calibReference,
-                                        nominalVolume = nom,
-                                        measuredVolume = meas,
-                                        errorPercent = errPct,
-                                        inspector = calibInspector,
-                                        laudo = calibLaudo,
-                                        isConforme = isConf
-                                    )
-                                    showAddCalibDialog = false
-                                }
-                            },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Salvar")
-                        }
-                    }
-                }
-            }
-        }
-    }
 
     // Modal dialog to Refuel Tank (Original layout feature preserved)
     if (selectedTankForRefuel != null) {
@@ -4130,319 +3320,6 @@ fun StockScreen(viewModel: PostoViewModel) {
     }
 
     // Modal DIALOG for Adding New Fuel Conformity analysis
-    if (showAddConformityDialog) {
-        Dialog(onDismissRequest = { showAddConformityDialog = false }) {
-            Card(
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(24.dp)
-                        .verticalScroll(rememberScrollState()),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Text(
-                        text = "Nova Análise de Conformidade 🧪",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    OutlinedTextField(
-                        value = confDate,
-                        onValueChange = { confDate = it },
-                        label = { Text("Data do Ensaio (AAAA-MM-DD)") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    // Fuel Type selection
-                    Text(
-                        text = "Tipo de Combustível",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.align(Alignment.Start)
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        val types = listOf("Gasolina Comum", "Etanol Hidratado", "Diesel S10")
-                        types.forEach { t ->
-                            val isSel = confFuelType == t
-                            Card(
-                                shape = RoundedCornerShape(8.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = if (isSel) MaterialTheme.colorScheme.primaryContainer else HdGrayLight
-                                ),
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clickable {
-                                        confFuelType = t
-                                        if (t == "Gasolina Comum") {
-                                            confDensityMeasured = "0.742"
-                                            confWaterPhaseFinalVolume = "63.5"
-                                        } else if (t == "Etanol Hidratado") {
-                                            confDensityMeasured = "0.809"
-                                        } else {
-                                            confDensityMeasured = "0.840"
-                                        }
-                                    }
-                            ) {
-                                Box(modifier = Modifier.padding(8.dp), contentAlignment = Alignment.Center) {
-                                    Text(
-                                        text = t,
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        textAlign = TextAlign.Center,
-                                        color = if (isSel) MaterialTheme.colorScheme.primary else HdTextSecondary
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    OutlinedTextField(
-                        value = confDensityMeasured,
-                        onValueChange = { confDensityMeasured = it },
-                        label = { Text("Densidade Medida (g/cm³)") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        isError = (confDensityMeasured.toDoubleOrNull() ?: 0.0) !in ANPUtils.getDensityLimits(confFuelType),
-                        supportingText = {
-                            val limits = ANPUtils.getDensityLimits(confFuelType)
-                            val parsed = confDensityMeasured.toDoubleOrNull()
-                            if (parsed == null && confDensityMeasured.isNotEmpty()) {
-                                Text("Valor inválido", color = MaterialTheme.colorScheme.error)
-                            } else if (parsed != null && parsed !in limits) {
-                                Text("Fora do limite técnico de ${limits.start} a ${limits.endInclusive} g/cm³", color = MaterialTheme.colorScheme.error)
-                            } else {
-                                Text("Limites técnicos: ${limits.start} a ${limits.endInclusive} g/cm³")
-                            }
-                        }
-                    )
-
-                    OutlinedTextField(
-                        value = confTemperature,
-                        onValueChange = { confTemperature = it },
-                        label = { Text("Temperatura da Amostra (°C)") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        isError = (confTemperature.toDoubleOrNull() ?: 20.0) !in ANPUtils.MIN_TEMPERATURE..ANPUtils.MAX_TEMPERATURE,
-                        supportingText = {
-                            val parsed = confTemperature.toDoubleOrNull()
-                            if (parsed == null && confTemperature.isNotEmpty()) {
-                                Text("Valor inválido", color = MaterialTheme.colorScheme.error)
-                            } else if (parsed != null && parsed !in ANPUtils.MIN_TEMPERATURE..ANPUtils.MAX_TEMPERATURE) {
-                                Text("Fora do limite técnico de 5°C a 45°C!", color = MaterialTheme.colorScheme.error)
-                            } else {
-                                Text("Limites técnicos: 5°C a 45°C")
-                            }
-                        }
-                    )
-
-                    if (confFuelType.contains("Gasolina", ignoreCase = true)) {
-                        Text(
-                            text = "Ensaio da Proveta (Teor de Álcool)",
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.align(Alignment.Start)
-                        )
-                        OutlinedTextField(
-                            value = confWaterPhaseFinalVolume,
-                            onValueChange = { confWaterPhaseFinalVolume = it },
-                            label = { Text("Volume Final Fase Aquosa (ml)") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
-                            isError = (confWaterPhaseFinalVolume.toDoubleOrNull() ?: 50.0) !in ANPUtils.MIN_WATER_PHASE_VOL..ANPUtils.MAX_WATER_PHASE_VOL,
-                            supportingText = {
-                                val parsed = confWaterPhaseFinalVolume.toDoubleOrNull()
-                                if (parsed == null && confWaterPhaseFinalVolume.isNotEmpty()) {
-                                    Text("Valor inválido", color = MaterialTheme.colorScheme.error)
-                                } else if (parsed != null && parsed !in ANPUtils.MIN_WATER_PHASE_VOL..ANPUtils.MAX_WATER_PHASE_VOL) {
-                                    Text("Fora do limite técnico da proveta (50ml a 100ml)!", color = MaterialTheme.colorScheme.error)
-                                } else {
-                                    Text("Fase aquosa final na proveta de 100ml (mínimo 50ml)")
-                                }
-                            }
-                        )
-                    }
-
-                    OutlinedTextField(
-                        value = confAspectColor,
-                        onValueChange = { confAspectColor = it },
-                        label = { Text("Aspecto e Cor") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    OutlinedTextField(
-                        value = confTechnician,
-                        onValueChange = { confTechnician = it },
-                        label = { Text("Nome do Técnico/Responsável") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    OutlinedTextField(
-                        value = confObservation,
-                        onValueChange = { confObservation = it },
-                        label = { Text("Observação") },
-                        modifier = Modifier.fillMaxWidth(),
-                        maxLines = 2
-                    )
-
-                    // Real-time calculation block
-                    val den = confDensityMeasured.toDoubleOrNull() ?: 0.0
-                    val temp = confTemperature.toDoubleOrNull() ?: 20.0
-                    val isEtanol = confFuelType.contains("Etanol", ignoreCase = true)
-                    val isGasolina = confFuelType.contains("Gasolina", ignoreCase = true)
-                    val isDiesel = confFuelType.contains("Diesel", ignoreCase = true)
-
-                    val correctedDen = ANPUtils.calculateCorrectedDensity(den, temp, isEtanol)
-
-                    // Calculate alcohol content (Teor Alcoólico) of Etanol Hidratado (in INPM and GL)
-                    val calculatedINPM = if (isEtanol) {
-                        ANPUtils.calculateEthanolINPM(correctedDen)
-                    } else {
-                        0.0
-                    }
-                    val calculatedGL = if (isEtanol) {
-                        ANPUtils.calculateEthanolGL(correctedDen)
-                    } else {
-                        0.0
-                    }
-
-                    val finalVol = confWaterPhaseFinalVolume.toDoubleOrNull() ?: 50.0
-                    val calculatedEthanol = if (isGasolina) {
-                        ANPUtils.calculateGasolineEthanolPercent(finalVol)
-                    } else 0.0
-
-                    val isConf = ANPUtils.isFuelCompliant(
-                        fuelType = confFuelType,
-                        correctedDensity = correctedDen,
-                        ethanolPercent = if (isEtanol) calculatedINPM else calculatedEthanol
-                    )
-
-                    // Validate inputs are within technical bounds
-                    val densityLimits = ANPUtils.getDensityLimits(confFuelType)
-                    val isDensityValid = den in densityLimits
-                    val isTempValid = temp in ANPUtils.MIN_TEMPERATURE..ANPUtils.MAX_TEMPERATURE
-                    val isWaterPhaseValid = !isGasolina || finalVol in ANPUtils.MIN_WATER_PHASE_VOL..ANPUtils.MAX_WATER_PHASE_VOL
-                    val allInputsValid = isDensityValid && isTempValid && isWaterPhaseValid
-
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = if (isConf && allInputsValid) HdGreenLight else HdRedLight)
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            if (!allInputsValid) {
-                                Text(
-                                    text = "⚠️ ENTRADAS FORA DOS LIMITES TÉCNICOS!",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = HdRed
-                                )
-                            }
-                            Text(
-                                text = "Densidade Corrigida (20°C): ${String.format(Locale.getDefault(), "%.4f", correctedDen)} g/cm³",
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.Bold,
-                                color = if (isConf && allInputsValid) HdGreen else HdRed
-                            )
-                            if (isGasolina) {
-                                Text(
-                                    text = "Teor de Etanol: ${String.format(Locale.getDefault(), "%.1f", calculatedEthanol)}% (Limite ANP: 26% a 28%)",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (isConf && allInputsValid) HdGreen else HdRed
-                                )
-                            }
-                            if (isEtanol) {
-                                Text(
-                                    text = "Teor Alcoólico: ${String.format(Locale.getDefault(), "%.1f", calculatedINPM)}% m/m",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (isConf && allInputsValid) HdGreen else HdRed
-                                )
-                                Text(
-                                    text = "Limites ANP: 92.5% a 95.4% m/m (0.8075 a 0.8110 g/cm³)",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = HdTextSecondary
-                                )
-                            }
-                            if (isDiesel) {
-                                Text(
-                                    text = "Limites ANP Diesel S10: 0.8200 a 0.8500 g/cm³",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = HdTextSecondary
-                                )
-                            }
-                            Text(
-                                text = "Resultado: ${if (isConf && allInputsValid) "CONFORME ✓" else "REPROVADO ✗"}",
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = if (isConf && allInputsValid) HdGreen else HdRed
-                            )
-                        }
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        OutlinedButton(
-                            onClick = { showAddConformityDialog = false },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Cancelar")
-                        }
-                        Button(
-                            onClick = {
-                                val denVal = confDensityMeasured.toDoubleOrNull()
-                                val tempVal = confTemperature.toDoubleOrNull()
-                                val finalVolVal = confWaterPhaseFinalVolume.toDoubleOrNull()
-                                val denLimits = ANPUtils.getDensityLimits(confFuelType)
-
-                                if (confTechnician.isBlank()) {
-                                    viewModel.addToast("Por favor, insira o nome do Técnico/Responsável!")
-                                } else if (denVal == null || denVal !in denLimits) {
-                                    viewModel.addToast("Densidade medida fora dos limites técnicos para $confFuelType!")
-                                } else if (tempVal == null || tempVal !in ANPUtils.MIN_TEMPERATURE..ANPUtils.MAX_TEMPERATURE) {
-                                    viewModel.addToast("Temperatura fora dos limites técnicos permitidos (5°C a 45°C)!")
-                                } else if (isGasolina && (finalVolVal == null || finalVolVal !in ANPUtils.MIN_WATER_PHASE_VOL..ANPUtils.MAX_WATER_PHASE_VOL)) {
-                                    viewModel.addToast("Volume da fase aquosa fora do limite físico da proveta (50ml a 100ml)!")
-                                } else {
-                                    viewModel.addFuelConformityRecord(
-                                        date = confDate,
-                                        fuelType = confFuelType,
-                                        densityMeasured = denVal,
-                                        temperature = tempVal,
-                                        ethanolPercent = if (isEtanol) calculatedINPM else calculatedEthanol,
-                                        aspectColor = confAspectColor,
-                                        isConforme = isConf,
-                                        technicianName = confTechnician,
-                                        observation = confObservation
-                                    )
-                                    showAddConformityDialog = false
-                                }
-                            },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Salvar")
-                        }
-                    }
-                }
-            }
-        }
-    }
 
     // Modal DIALOG for Registering Fuel Delivery and Driver
     if (showAddDeliveryDialog) {
@@ -4782,10 +3659,11 @@ fun StockScreen(viewModel: PostoViewModel) {
             }
         }
     }
-}
 
-@Composable
-fun EmployeesScreen(viewModel: PostoViewModel) {
+    // Modal Export Calibration Report (STOCK SCREEN VERSION)
+}
+    @Composable
+    fun EmployeesScreen(viewModel: PostoViewModel) {
     val employees by viewModel.employees.collectAsStateWithLifecycle()
     val schedules by viewModel.shiftSchedules.collectAsStateWithLifecycle()
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -5162,7 +4040,7 @@ fun EmployeesScreen(viewModel: PostoViewModel) {
                                                             draggedSchedule = null
                                                             dragStartOffset = offset
                                                             dragOffset = Offset.Zero
-                                                            isDraggingThis = true
+                                                            
                                                         },
                                                         onDrag = { change, dragAmount ->
                                                             change.consume()
@@ -5179,7 +4057,7 @@ fun EmployeesScreen(viewModel: PostoViewModel) {
                                                             hoveredDay = matchedDay
                                                         },
                                                         onDragEnd = {
-                                                            isDraggingThis = false
+                                                            
                                                             if (hoveredDay != null) {
                                                                 selectedEmployeeId = emp.id
                                                                 schedDay = hoveredDay!!
@@ -5191,7 +4069,7 @@ fun EmployeesScreen(viewModel: PostoViewModel) {
                                                             hoveredDay = null
                                                         },
                                                         onDragCancel = {
-                                                            isDraggingThis = false
+                                                            
                                                             draggedEmployee = null
                                                             hoveredDay = null
                                                         }
@@ -5653,8 +4531,9 @@ fun EmployeesScreen(viewModel: PostoViewModel) {
                             } else {
                                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     daySchedules.forEach { sched ->
+                                        
+                                        val isDraggingThis = draggedSchedule?.id == sched.id
                                         val isFolga = sched.shift.contains("Folga", ignoreCase = true)
-                                        var isDraggingThis by remember { mutableStateOf(false) }
                                         Row(
                                             modifier = Modifier
                                                 .onGloballyPositioned { coordinates ->
@@ -5675,7 +4554,7 @@ fun EmployeesScreen(viewModel: PostoViewModel) {
                                                             draggedSchedule = sched
                                                             dragStartOffset = offset
                                                             dragOffset = Offset.Zero
-                                                            isDraggingThis = true
+                                                            
                                                         },
                                                         onDrag = { change, dragAmount ->
                                                             change.consume()
@@ -5692,7 +4571,7 @@ fun EmployeesScreen(viewModel: PostoViewModel) {
                                                             hoveredDay = matchedDay
                                                         },
                                                         onDragEnd = {
-                                                            isDraggingThis = false
+                                                            
                                                             if (hoveredDay != null) {
                                                                 selectedEmployeeId = sched.employeeId
                                                                 schedDay = hoveredDay!!
@@ -5704,7 +4583,7 @@ fun EmployeesScreen(viewModel: PostoViewModel) {
                                                             hoveredDay = null
                                                         },
                                                         onDragCancel = {
-                                                            isDraggingThis = false
+                                                            
                                                             draggedSchedule = null
                                                             hoveredDay = null
                                                         }
@@ -6615,7 +5494,7 @@ fun ReportsScreen(viewModel: PostoViewModel) {
     val stationRazaoSocial by viewModel.stationRazaoSocial.collectAsStateWithLifecycle()
 
     var showAddReportDialog by remember { mutableStateOf(false) }
-    var reportDate by remember { mutableStateOf("2026-07-04") }
+    var reportDate by remember { mutableStateOf(java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())) }
     var reportFuelName by remember { mutableStateOf("Gasolina Comum") }
     var reportOpeningStock by remember { mutableStateOf("15000") }
     var reportReceivedVolume by remember { mutableStateOf("5000") }
@@ -6639,6 +5518,20 @@ fun ReportsScreen(viewModel: PostoViewModel) {
             val fuelMatch = filterFuelType == "Todos" || r.fuelName.equals(filterFuelType, ignoreCase = true)
             dateMatch && fuelMatch
         }.sortedBy { it.date }
+    }
+
+    var showCalibReportDialog by remember { mutableStateOf(false) }
+    var calibFilterStartDate by remember { mutableStateOf("2026-07-01") }
+    var calibFilterEndDate by remember { mutableStateOf("2026-07-07") }
+    val nozzles by viewModel.nozzles.collectAsStateWithLifecycle()
+    val calibrations by viewModel.calibrations.collectAsStateWithLifecycle()
+    var selectedNozzleIds by remember { mutableStateOf(setOf<String>()) }
+    
+    // Initialize selectedNozzleIds when dialog opens or nozzles load
+    LaunchedEffect(nozzles) {
+        if (selectedNozzleIds.isEmpty() && nozzles.isNotEmpty()) {
+            selectedNozzleIds = nozzles.map { it.nozzleNumber }.toSet()
+        }
     }
 
     LazyColumn(
@@ -6713,6 +5606,60 @@ fun ReportsScreen(viewModel: PostoViewModel) {
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                     )
+                }
+            }
+        }
+
+        // NEW: Calibration Records Export Card
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.dp, HdBorder)
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                        Icon(
+                            Icons.Default.Verified,
+                            contentDescription = null,
+                            tint = HdPrimary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Registros de Calibração",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = HdTextPrimary
+                        )
+                    }
+                    Button(
+                        onClick = { showCalibReportDialog = true },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFEF2F2)),
+                        shape = RoundedCornerShape(8.dp),
+                        border = BorderStroke(1.dp, Color(0xFFFECACA)),
+                        modifier = Modifier.height(36.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.PictureAsPdf,
+                            contentDescription = null,
+                            tint = Color(0xFFDC2626),
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Gerar Relatório",
+                            color = Color(0xFFDC2626),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }
@@ -7054,10 +6001,8 @@ fun ReportsScreen(viewModel: PostoViewModel) {
             }
         }
     }
-
-    // Modal Add Report Dialog
-    if (showAddReportDialog) {
-        Dialog(onDismissRequest = { showAddReportDialog = false }) {
+        if (showAddReportDialog) {
+Dialog(onDismissRequest = { showAddReportDialog = false }) {
             Card(
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -7339,6 +6284,8 @@ fun ReportsScreen(viewModel: PostoViewModel) {
     }
 }
 
+
+
 private fun generateCSV(data: List<DailyReport>): String {
     val sb = java.lang.StringBuilder()
     sb.append("Data,Combustivel,Volume Vendido (L),Faturamento (RS),Transacoes\n")
@@ -7610,12 +6557,14 @@ private fun exportReportsToPdf(
             pdfFile
         )
         
-        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
-            setDataAndType(uri, "application/pdf")
-            flags = android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+        val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+            type = "application/pdf"
+            putExtra(android.content.Intent.EXTRA_SUBJECT, "Relatório LMC - Fechamento de Caixa")
+            putExtra(android.content.Intent.EXTRA_STREAM, uri)
+            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         
-        val chooser = android.content.Intent.createChooser(intent, "Abrir Relatório PDF")
+        val chooser = android.content.Intent.createChooser(intent, "Exportar Relatório PDF")
         chooser.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(chooser)
         
@@ -8052,7 +7001,7 @@ fun SystemsScreen(viewModel: PostoViewModel) {
         }
     } else {
         // UNLOCKED SCREEN
-        var activeSubTab by remember { mutableIntStateOf(0) } // 0 = Sistemas, 1 = Conta Bancária, 2 = Dados do Posto
+        var activeSubTab by remember { mutableIntStateOf(0) } // 0 = Sistemas, 1 = Conta Bancária, 2 = Dados do Posto, 3 = Visualizadores, 4 = Cloud
 
         Column(
             modifier = Modifier
@@ -8126,26 +7075,32 @@ fun SystemsScreen(viewModel: PostoViewModel) {
                 Tab(
                     selected = activeSubTab == 0,
                     onClick = { activeSubTab = 0 },
-                    text = { Text("Logins & Sistemas", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                    text = { Text("Logins", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
                     icon = { Icon(Icons.Default.VpnKey, contentDescription = null, modifier = Modifier.size(16.dp)) }
                 )
                 Tab(
                     selected = activeSubTab == 1,
                     onClick = { activeSubTab = 1 },
-                    text = { Text("Conta Bancária", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                    text = { Text("Banco", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
                     icon = { Icon(Icons.Default.AccountBalance, contentDescription = null, modifier = Modifier.size(16.dp)) }
                 )
                 Tab(
                     selected = activeSubTab == 2,
                     onClick = { activeSubTab = 2 },
-                    text = { Text("Dados do Posto", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                    text = { Text("Posto", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
                     icon = { Icon(Icons.Default.Business, contentDescription = null, modifier = Modifier.size(16.dp)) }
                 )
                 Tab(
                     selected = activeSubTab == 3,
                     onClick = { activeSubTab = 3 },
-                    text = { Text("Visualizadores", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                    text = { Text("Equipe", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
                     icon = { Icon(Icons.Default.People, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                )
+                Tab(
+                    selected = activeSubTab == 2,
+                    onClick = { activeSubTab = 2 },
+                    text = { Text("Cloud", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
+                    icon = { Icon(Icons.Default.Cloud, contentDescription = null, modifier = Modifier.size(16.dp)) }
                 )
             }
 
@@ -8565,9 +7520,126 @@ fun SystemsScreen(viewModel: PostoViewModel) {
                             }
                         }
                     }
+                }
+                3 -> {
+                    // TAB 3: AUTHORIZED VIEWERS MANAGEMENT
+                    val userList by viewModel.userAccounts.collectAsStateWithLifecycle()
+                    val manager = viewModel.currentUser.collectAsStateWithLifecycle().value
+                    val viewers = userList.filter { it.parentManagerEmail == manager?.email }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Visualizadores Cadastrados (${viewers.size}/5) 👥",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = HdTextPrimary
+                        )
 
+                        if (!viewModel.isReadOnly.value) {
+                            Button(
+                                onClick = {
+                                    newViewerName = ""
+                                    newViewerEmail = ""
+                                    newViewerPassword = ""
+                                    showAddViewerDialog = true
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = HdPrimary),
+                                shape = RoundedCornerShape(8.dp),
+                                enabled = viewers.size < 5
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = "Novo Visualizador", modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Novo Acesso", fontSize = 11.sp)
+                            }
+                        }
+                    }
+
+                    Text(
+                        text = "Gerentes podem autorizar até 5 outros usuários para visualizar os relatórios e estoques do posto em tempo real. Esses usuários terão acesso estritamente de leitura (sem direito a alterar dados).",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = HdTextSecondary
+                    )
+
+                    if (viewers.isEmpty()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = HdSurface),
+                            border = BorderStroke(1.dp, HdBorder)
+                        ) {
+                            Box(modifier = Modifier.padding(32.dp), contentAlignment = Alignment.Center) {
+                                Text("Nenhum usuário visualizador cadastrado.", color = HdTextSecondary, fontSize = 12.sp)
+                            }
+                        }
+                    } else {
+                        viewers.forEach { viewer ->
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = CardDefaults.cardColors(containerColor = HdSurface),
+                                border = BorderStroke(1.dp, HdBorder)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(40.dp)
+                                                .clip(CircleShape)
+                                                .background(PetrolLight),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(Icons.Default.Person, contentDescription = null, tint = PetrolDark, modifier = Modifier.size(20.dp))
+                                        }
+                                        Column {
+                                            Text(
+                                                text = viewer.name,
+                                                fontWeight = FontWeight.Bold,
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                color = HdTextPrimary
+                                            )
+                                            Text(
+                                                text = viewer.email,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = HdTextSecondary
+                                            )
+                                            Card(
+                                                colors = CardDefaults.cardColors(containerColor = HdAmberLight),
+                                                shape = RoundedCornerShape(4.dp),
+                                                modifier = Modifier.padding(top = 4.dp)
+                                            ) {
+                                                Text(
+                                                    text = "Acesso: Somente Leitura ✓",
+                                                    fontSize = 9.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = HdAmberDark,
+                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    if (!viewModel.isReadOnly.value) {
+                                        IconButton(
+                                            onClick = { viewModel.deleteViewer(viewer.email) },
+                                            modifier = Modifier.size(36.dp)
+                                        ) {
+                                            Icon(Icons.Default.Delete, contentDescription = "Remover Acesso", tint = HdRed)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                4 -> {
+                    // TAB 4: SUPABASE CLOUD SYNC
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
@@ -8693,11 +7765,9 @@ fun SystemsScreen(viewModel: PostoViewModel) {
                                                 if (sbUrl.isEmpty() || sbKey.isEmpty()) {
                                                     viewModel.addToast("Preencha todos os campos do Supabase!")
                                                 } else {
-                                                    val success = viewModel.saveSupabaseConfig(sbUrl, sbKey)
+                                                    viewModel.saveSupabaseConfig(sbUrl, sbKey)
                                                     supabaseAvailableTrigger = viewModel.isSupabaseAvailable()
-                                                    if (success) {
-                                                        showConfigForm = false
-                                                    }
+                                                    showConfigForm = false
                                                 }
                                             },
                                             modifier = Modifier.weight(1f),
@@ -8735,11 +7805,11 @@ fun SystemsScreen(viewModel: PostoViewModel) {
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Button(
-                                    onClick = { viewModel.uploadToSupabase(stationCnpj) },
+                                    onClick = { viewModel.syncToSupabase(stationCnpj) },
                                     modifier = Modifier.weight(1f),
                                     colors = ButtonDefaults.buttonColors(containerColor = if (supabaseAvailableTrigger) HdPrimary else Color.Gray),
                                     shape = RoundedCornerShape(8.dp),
-                                    enabled = supabaseAvailableTrigger && !viewModel.isReadOnly.value
+                                    enabled = supabaseAvailableTrigger
                                 ) {
                                     Icon(Icons.Default.CloudUpload, contentDescription = "Backup", modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
@@ -8764,18 +7834,6 @@ fun SystemsScreen(viewModel: PostoViewModel) {
                     Spacer(modifier = Modifier.height(16.dp))
 
                     val context = androidx.compose.ui.platform.LocalContext.current
-                    val fuelTanksState by viewModel.fuelTanks.collectAsStateWithLifecycle()
-                    val employeesState by viewModel.employees.collectAsStateWithLifecycle()
-                    val shiftSchedulesState by viewModel.shiftSchedules.collectAsStateWithLifecycle()
-                    val appointmentsState by viewModel.appointments.collectAsStateWithLifecycle()
-                    val dailyReportsState by viewModel.dailyReports.collectAsStateWithLifecycle()
-                    val nozzlesState by viewModel.nozzles.collectAsStateWithLifecycle()
-                    val calibrationsState by viewModel.calibrations.collectAsStateWithLifecycle()
-                    val conformityState by viewModel.fuelConformityRecords.collectAsStateWithLifecycle()
-                    val auditLogEntriesState by viewModel.auditLogEntries.collectAsStateWithLifecycle()
-                    val systemCredentialsState by viewModel.systemCredentials.collectAsStateWithLifecycle()
-                    val userAccountsState by viewModel.userAccounts.collectAsStateWithLifecycle()
-
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
@@ -8800,19 +7858,7 @@ fun SystemsScreen(viewModel: PostoViewModel) {
                             Button(
                                 onClick = {
                                     try {
-                                        val backupJson = generateBackupJson(
-                                            fuelTanks = fuelTanksState,
-                                            employees = employeesState,
-                                            shifts = shiftSchedulesState,
-                                            appointments = appointmentsState,
-                                            reports = dailyReportsState,
-                                            nozzles = nozzlesState,
-                                            calibrations = calibrationsState,
-                                            conformity = conformityState,
-                                            audits = auditLogEntriesState,
-                                            credentials = systemCredentialsState,
-                                            users = userAccountsState
-                                        )
+                                        val backupJson = viewModel.exportFullStateToJson()
                                         val dateStr = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
                                         val filename = "backup_posto_admin_$dateStr.json"
                                         
@@ -8833,123 +7879,6 @@ fun SystemsScreen(viewModel: PostoViewModel) {
                                 Icon(Icons.Default.CloudDownload, contentDescription = "Baixar Backup", modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text("Baixar Backup (.json)", fontSize = 11.sp)
-                            }
-                        }
-                    }
-                }
-                3 -> {
-                    // TAB 3: AUTHORIZED VIEWERS MANAGEMENT
-                    val userList by viewModel.userAccounts.collectAsStateWithLifecycle()
-                    val manager = viewModel.currentUser.collectAsStateWithLifecycle().value
-                    val viewers = userList.filter { it.parentManagerEmail == manager?.email }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Visualizadores Cadastrados (${viewers.size}/5) 👥",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = HdTextPrimary
-                        )
-
-                        if (!viewModel.isReadOnly.value) {
-                            Button(
-                                onClick = {
-                                    newViewerName = ""
-                                    newViewerEmail = ""
-                                    newViewerPassword = ""
-                                    showAddViewerDialog = true
-                                },
-                                colors = ButtonDefaults.buttonColors(containerColor = HdPrimary),
-                                shape = RoundedCornerShape(8.dp),
-                                enabled = viewers.size < 5
-                            ) {
-                                Icon(Icons.Default.Add, contentDescription = "Novo Visualizador", modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("Novo Acesso", fontSize = 11.sp)
-                            }
-                        }
-                    }
-
-                    Text(
-                        text = "Gerentes podem autorizar até 5 outros usuários para visualizar os relatórios e estoques do posto em tempo real. Esses usuários terão acesso estritamente de leitura (sem direito a alterar dados).",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = HdTextSecondary
-                    )
-
-                    if (viewers.isEmpty()) {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = HdSurface),
-                            border = BorderStroke(1.dp, HdBorder)
-                        ) {
-                            Box(modifier = Modifier.padding(32.dp), contentAlignment = Alignment.Center) {
-                                Text("Nenhum usuário visualizador cadastrado.", color = HdTextSecondary, fontSize = 12.sp)
-                            }
-                        }
-                    } else {
-                        viewers.forEach { viewer ->
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = HdSurface),
-                                border = BorderStroke(1.dp, HdBorder)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(40.dp)
-                                                .clip(CircleShape)
-                                                .background(PetrolLight),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Icon(Icons.Default.Person, contentDescription = null, tint = PetrolDark, modifier = Modifier.size(20.dp))
-                                        }
-                                        Column {
-                                            Text(
-                                                text = viewer.name,
-                                                fontWeight = FontWeight.Bold,
-                                                style = MaterialTheme.typography.bodyLarge,
-                                                color = HdTextPrimary
-                                            )
-                                            Text(
-                                                text = viewer.email,
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = HdTextSecondary
-                                            )
-                                            Card(
-                                                colors = CardDefaults.cardColors(containerColor = HdAmberLight),
-                                                shape = RoundedCornerShape(4.dp),
-                                                modifier = Modifier.padding(top = 4.dp)
-                                            ) {
-                                                Text(
-                                                    text = "Acesso: Somente Leitura ✓",
-                                                    fontSize = 9.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = HdAmberDark,
-                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                                )
-                                            }
-                                        }
-                                    }
-
-                                    if (!viewModel.isReadOnly.value) {
-                                        IconButton(
-                                            onClick = { viewModel.deleteViewer(viewer.email) },
-                                            modifier = Modifier.size(36.dp)
-                                        ) {
-                                            Icon(Icons.Default.Delete, contentDescription = "Remover Acesso", tint = HdRed)
-                                        }
-                                    }
-                                }
                             }
                         }
                     }
@@ -9779,3 +8708,876 @@ private fun getShiftBadgeDetails(shiftName: String): Triple<Color, Color, String
 }
 
 
+@Composable
+fun ControleQualidadeScreen(viewModel: PostoViewModel) {
+    var selectedTab by remember { mutableIntStateOf(0) }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        TabRow(
+            selectedTabIndex = selectedTab,
+            containerColor = HdSurface,
+            contentColor = HdPrimary
+        ) {
+            Tab(
+                selected = selectedTab == 0,
+                onClick = { selectedTab = 0 },
+                text = { Text("Aferição (Bombas)", fontWeight = FontWeight.Bold) }
+            )
+            Tab(
+                selected = selectedTab == 1,
+                onClick = { selectedTab = 1 },
+                text = { Text("Análise (Combustível)", fontWeight = FontWeight.Bold) }
+            )
+        }
+        
+        Box(modifier = Modifier.weight(1f)) {
+            if (selectedTab == 0) {
+                AfericaoScreen(viewModel)
+            } else {
+                AnaliseScreen(viewModel)
+            }
+        }
+    }
+}
+
+
+@Composable
+fun AfericaoScreen(viewModel: PostoViewModel) {
+    val nozzles by viewModel.nozzles.collectAsStateWithLifecycle()
+    val calibrations by viewModel.calibrations.collectAsStateWithLifecycle()
+    val auditLogEntries by viewModel.auditLogEntries.collectAsStateWithLifecycle()
+    var showAddCalibDialog by remember { mutableStateOf(false) }
+    var calibDate by remember { mutableStateOf("") }
+    var calibTime by remember { mutableStateOf("") }
+    var calibReference by remember { mutableStateOf("") }
+    var calibNominal by remember { mutableStateOf("20.0") }
+    var calibMeasured by remember { mutableStateOf("20.0") }
+
+    var calibDeviationMl by remember { mutableStateOf("0") }
+    var calibLaudo by remember { mutableStateOf("Aferição física periódica do bico.") }
+    var showCalibReportDialog by remember { mutableStateOf(false) }
+    var selectedCalibrationIds by remember { mutableStateOf(setOf<Int>()) }
+
+    
+
+var calibInspector by remember { mutableStateOf("") }
+    
+    var reportDate by remember { mutableStateOf(java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())) }
+    val stationRazaoSocial by viewModel.stationRazaoSocial.collectAsStateWithLifecycle()
+    val stationCnpj by viewModel.stationCnpj.collectAsStateWithLifecycle()
+    
+    
+    val mContext = androidx.compose.ui.platform.LocalContext.current
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+            // Legal Compliance Metric Card
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, HdBorder),
+                    colors = CardDefaults.cardColors(containerColor = HdSurface)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Controle Legal de Bombas (INMETRO) ⚖️",
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = HdTextPrimary
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Margem de erro legal admitida nas aferições: ±0.5% (equivalente a ±100ml de erro em volume nominal de 20L). Bicos com erros acima do limite devem ser interditados imediatamente.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = HdTextSecondary
+                            )
+
+                            val compliantCount = calibrations.count { it.isConforme }
+                            val totalCount = calibrations.size
+                            val pct = if (totalCount > 0) (compliantCount.toDouble() / totalCount * 100).toInt() else 100
+
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Card(
+                                    shape = RoundedCornerShape(6.dp),
+                                    colors = CardDefaults.cardColors(containerColor = if (pct >= 90) HdGreenLight else HdRedLight)
+                                ) {
+                                    Text(
+                                        text = "$pct% DE CONFORMIDADE",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (pct >= 90) HdGreen else HdRed,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "$compliantCount de $totalCount aferições regulares",
+                                    fontSize = 11.sp,
+                                    color = HdTextSecondary
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Laudos e Aferições Recentes",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedButton(
+                            onClick = { 
+                                val filtered = calibrations.filter { it.id in selectedCalibrationIds }
+                                if (filtered.isEmpty()) {
+                                    viewModel.addToast("Selecione pelo menos um registro de aferição para gerar o relatório.")
+                                } else {
+                                    PdfReportGenerator.generateCalibrationReport(
+                                        mContext, 
+                                        stationRazaoSocial.ifBlank { "Posto Administrativo" }, 
+                                        stationCnpj.ifBlank { "12.345.678/0001-99" }, 
+                                        filtered
+                                    )
+                                }
+                            },
+                            modifier = Modifier.height(40.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = HdRed),
+                            border = BorderStroke(1.dp, HdRed.copy(alpha = 0.5f)),
+                            contentPadding = PaddingValues(horizontal = 12.dp)
+                        ) {
+                            Icon(Icons.Default.PictureAsPdf, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Relatório PDF", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(
+                            onClick = { viewModel.navigateTo("REGISTRO_AFERICAO") },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                            modifier = Modifier.height(40.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp)
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = "Registrar Aferição", modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Registrar", fontSize = 12.sp)
+                        }
+                    }
+                }
+            }
+
+            if (calibrations.isEmpty()) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        border = BorderStroke(1.dp, HdBorder),
+                        colors = CardDefaults.cardColors(containerColor = HdSurface)
+                    ) {
+                        Box(modifier = Modifier.padding(32.dp), contentAlignment = Alignment.Center) {
+                            Text("Nenhuma aferição cadastrada.")
+                        }
+                    }
+                }
+            } else {
+                items(calibrations) { cal ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, HdBorder),
+                        colors = CardDefaults.cardColors(containerColor = HdSurface)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    androidx.compose.material3.Checkbox(
+                                        checked = selectedCalibrationIds.contains(cal.id),
+                                        onCheckedChange = { isChecked ->
+                                            if (isChecked) {
+                                                selectedCalibrationIds = selectedCalibrationIds + cal.id
+                                            } else {
+                                                selectedCalibrationIds = selectedCalibrationIds - cal.id
+                                            }
+                                        }
+                                    )
+                                    Text(text = "🔬", fontSize = 18.sp, modifier = Modifier.padding(end = 8.dp))
+                                    Column {
+                                        Text(text = cal.referenceName, fontWeight = FontWeight.Bold, color = HdTextPrimary)
+                                        Text(text = "Data: ${cal.date} | Fiscal: ${cal.inspector}", style = MaterialTheme.typography.bodySmall, color = HdTextSecondary)
+                                    }
+                                }
+
+                                // Conformity Indicator Badge
+                                Card(
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = CardDefaults.cardColors(containerColor = if (cal.isConforme) HdGreenLight else HdRedLight)
+                                ) {
+                                    Text(
+                                        text = if (cal.isConforme) "✓ CONFORME" else "✗ REPROVADO",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (cal.isConforme) HdGreen else HdRed,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
+                            
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = HdBorder)
+
+                            // Volume stats row
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column {
+                                    Text(text = "Volume Nominal", fontSize = 11.sp, color = HdTextSecondary)
+                                    Text(text = "${String.format(Locale.getDefault(), "%.2f", cal.nominalVolume)} L", fontWeight = FontWeight.Bold)
+                                }
+                                Column {
+                                    Text(text = "Volume Medido", fontSize = 11.sp, color = HdTextSecondary)
+                                    Text(text = "${String.format(Locale.getDefault(), "%.2f", cal.measuredVolume)} L", fontWeight = FontWeight.Bold)
+                                }
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text(text = "Erro Calculado", fontSize = 11.sp, color = HdTextSecondary)
+                                    val errStr = if (cal.errorPercent >= 0) "+${String.format(Locale.getDefault(), "%.2f", cal.errorPercent)}%" else "${String.format(Locale.getDefault(), "%.2f", cal.errorPercent)}%"
+                                    Text(
+                                        text = errStr,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = if (cal.isConforme) HdTextPrimary else HdRed
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = HdGrayLight),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(10.dp)) {
+                                    Text(text = "Laudo Técnico:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = HdTextSecondary)
+                                    Text(text = cal.laudo, style = MaterialTheme.typography.bodySmall, color = HdTextPrimary)
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                                TextButton(
+                                    onClick = { viewModel.deleteCalibration(cal) },
+                                    contentPadding = PaddingValues(0.dp)
+                                ) {
+                                    Text("Excluir Registro", color = HdRed, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun RegistrarAfericaoScreen(viewModel: PostoViewModel) {
+    val nozzles by viewModel.nozzles.collectAsStateWithLifecycle()
+    val context = androidx.compose.ui.platform.LocalContext.current
+    
+    var calibDate by remember { mutableStateOf(java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())) }
+    var calibReference by remember { mutableStateOf("") }
+    var calibNominal by remember { mutableStateOf("20.0") }
+    var calibMeasured by remember { mutableStateOf("20.0") }
+    var calibDeviationMl by remember { mutableStateOf("0") }
+    var calibInspector by remember { mutableStateOf("Carlos Silva") }
+    var calibLaudo by remember { mutableStateOf("Medição dentro do regulamento legal do INMETRO.") }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = HdSurface),
+            border = BorderStroke(1.dp, HdBorder)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Text(
+                    text = "Registrar Nova Aferição Física ⚖️",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = HdPrimary
+                )
+                
+                Text(
+                    text = "Insira os dados da medida de 20 litros para aferição do bico.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = HdTextSecondary,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                OutlinedTextField(
+                    value = calibDate,
+                    onValueChange = { calibDate = it },
+                    label = { Text("Data da Aferição (AAAA-MM-DD)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                Text(
+                    text = "Identificação do Bico / Equipamento *",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.align(Alignment.Start)
+                )
+
+                OutlinedTextField(
+                    value = calibReference,
+                    onValueChange = { calibReference = it },
+                    label = { Text("Nome do Bico ou Equipamento") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                if (nozzles.isNotEmpty()) {
+                    Text(
+                        text = "Seleção rápida:",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = HdTextSecondary,
+                        modifier = Modifier.align(Alignment.Start)
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        nozzles.forEach { nz ->
+                            val isSelected = calibReference == "Bico ${nz.nozzleNumber}" || calibReference == nz.nozzleNumber
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (isSelected) HdPrimaryLight else HdGrayLight)
+                                    .clickable { calibReference = "Bico ${nz.nozzleNumber}" }
+                                    .padding(horizontal = 16.dp, vertical = 10.dp)
+                            ) {
+                                Text(
+                                    text = "Bico ${nz.nozzleNumber}",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isSelected) HdPrimaryDark else HdTextPrimary
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Text(
+                    text = "Erro de Calibração (ml na Medida de 20L):",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.align(Alignment.Start)
+                )
+
+                OutlinedTextField(
+                    value = calibDeviationMl,
+                    onValueChange = { 
+                        if (it.isEmpty() || it == "-" || it == "+") {
+                            calibDeviationMl = it
+                        } else {
+                            val parsed = it.toDoubleOrNull()
+                            if (parsed != null) {
+                                calibDeviationMl = it
+                            }
+                        }
+                    },
+                    label = { Text("Desvio do Volume (ml)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    isError = (calibDeviationMl.toDoubleOrNull() ?: 0.0) !in ANPUtils.MIN_CALIB_DEVIATION_ML..ANPUtils.MAX_CALIB_DEVIATION_ML,
+                    supportingText = {
+                        val parsed = calibDeviationMl.toDoubleOrNull()
+                        if (parsed == null && calibDeviationMl.isNotEmpty() && calibDeviationMl != "-" && calibDeviationMl != "+") {
+                            Text("Valor inválido", color = MaterialTheme.colorScheme.error)
+                        } else if (parsed != null && parsed !in ANPUtils.MIN_CALIB_DEVIATION_ML..ANPUtils.MAX_CALIB_DEVIATION_ML) {
+                            Text("Fora do limite técnico de ±200ml!", color = MaterialTheme.colorScheme.error)
+                        } else {
+                            Text("Limite técnico: -200 ml a +200 ml")
+                        }
+                    }
+                )
+
+                val devOptions = listOf("0", "-20", "-40", "-60", "-80", "-100", "+20", "+40", "+60", "+80", "+100")
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    devOptions.forEach { item ->
+                        val isSelected = calibDeviationMl == item
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (isSelected) HdPrimaryLight else HdGrayLight)
+                                .clickable { calibDeviationMl = item }
+                                .padding(horizontal = 12.dp, vertical = 8.dp)
+                        ) {
+                            Text(text = if (item == "0") "0 ml" else "$item ml", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+
+                OutlinedTextField(
+                    value = calibInspector,
+                    onValueChange = { calibInspector = it },
+                    label = { Text("Nome do Fiscal/Responsável") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                OutlinedTextField(
+                    value = calibLaudo,
+                    onValueChange = { calibLaudo = it },
+                    label = { Text("Laudo / Observações Técnicas") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    minLines = 3
+                )
+
+                val deviationVal = calibDeviationMl.toDoubleOrNull()
+                val isValidDeviation = deviationVal != null && deviationVal in ANPUtils.MIN_CALIB_DEVIATION_ML..ANPUtils.MAX_CALIB_DEVIATION_ML
+                val finalDeviation = if (isValidDeviation) deviationVal!! else 0.0
+                val errPct = ANPUtils.calculateVolumeErrorPercent(finalDeviation)
+                val isConf = ANPUtils.isVolumeErrorCompliant(finalDeviation)
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = if (isConf && isValidDeviation) HdGreenLight else HdRedLight),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(text = "Resultado:", fontWeight = FontWeight.Bold)
+                        val errStr = if (finalDeviation >= 0) "+${finalDeviation.toInt()} ml" else "${finalDeviation.toInt()} ml"
+                        Text(
+                            text = "$errStr (${String.format(java.util.Locale.getDefault(), "%.2f", errPct)}%) | ${if (isConf) "CONFORME" else "REPROVADO"}",
+                            fontWeight = FontWeight.ExtraBold,
+                            color = if (isConf) HdGreen else HdRed
+                        )
+                    }
+                }
+
+                Button(
+                    onClick = {
+                        val devParsed = calibDeviationMl.toDoubleOrNull()
+                        if (calibReference.isBlank()) {
+                            viewModel.addToast("Informe a identificação do bico!")
+                        } else if (calibInspector.isBlank()) {
+                            viewModel.addToast("Informe o responsável!")
+                        } else if (devParsed == null) {
+                            viewModel.addToast("Informe um valor de desvio válido!")
+                        } else {
+                            viewModel.addCalibration(
+                                date = calibDate,
+                                referenceName = calibReference,
+                                nominalVolume = 20.0,
+                                measuredVolume = 20.0 + (devParsed / 1000.0),
+                                errorPercent = errPct,
+                                inspector = calibInspector,
+                                laudo = calibLaudo,
+                                isConforme = isConf
+                            )
+                            viewModel.navigateTo("AFERICOES")
+                            viewModel.addToast("Aferição registrada com sucesso!")
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Default.Save, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Salvar Registro de Aferição", fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun RegistrarAnaliseScreen(viewModel: PostoViewModel) {
+    var fuelType by remember { mutableStateOf("Gasolina Comum") }
+    var technicianName by remember { mutableStateOf("Carlos Silva") }
+    var densityMeasured by remember { mutableStateOf("745.5") }
+    var temperature by remember { mutableStateOf("25.0") }
+    var ethanolPercent by remember { mutableStateOf("27") }
+    var aspectColor by remember { mutableStateOf("Límpido e Isento de Impurezas") }
+    var observation by remember { mutableStateOf("Amostra atende aos requisitos da Resolução ANP.") }
+    var date by remember { mutableStateOf(java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = HdSurface),
+            border = BorderStroke(1.dp, HdBorder)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Text(
+                    text = "Registrar Análise de Combustível 🧪",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF00796B)
+                )
+
+                OutlinedTextField(
+                    value = date,
+                    onValueChange = { date = it },
+                    label = { Text("Data da Coleta (AAAA-MM-DD)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                Text(text = "Tipo de Combustível", fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.Start))
+                val fuels = listOf("Gasolina Comum", "Gasolina Aditivada", "Etanol Comum", "Diesel S10", "Diesel S500")
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    fuels.forEach { f ->
+                        FilterChip(
+                            selected = fuelType == f,
+                            onClick = { fuelType = f },
+                            label = { Text(f) }
+                        )
+                    }
+                }
+
+                OutlinedTextField(
+                    value = densityMeasured,
+                    onValueChange = { densityMeasured = it },
+                    label = { Text("Massa Específica (kg/m³)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                OutlinedTextField(
+                    value = temperature,
+                    onValueChange = { temperature = it },
+                    label = { Text("Temperatura da Amostra (°C)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                if (fuelType.contains("Gasolina")) {
+                    OutlinedTextField(
+                        value = ethanolPercent,
+                        onValueChange = { ethanolPercent = it },
+                        label = { Text("Teor de Etanol (%)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+
+                OutlinedTextField(
+                    value = aspectColor,
+                    onValueChange = { aspectColor = it },
+                    label = { Text("Aspecto e Cor") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                OutlinedTextField(
+                    value = technicianName,
+                    onValueChange = { technicianName = it },
+                    label = { Text("Nome do Técnico/Responsável") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                OutlinedTextField(
+                    value = observation,
+                    onValueChange = { observation = it },
+                    label = { Text("Conclusão da Análise") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    minLines = 2
+                )
+
+                Button(
+                    onClick = {
+                        viewModel.addFuelConformityRecord(
+                            date = date,
+                            fuelType = fuelType,
+                            densityMeasured = densityMeasured.toDoubleOrNull() ?: 0.0,
+                            temperature = temperature.toDoubleOrNull() ?: 0.0,
+                            ethanolPercent = ethanolPercent.toDoubleOrNull() ?: 0.0,
+                            aspectColor = aspectColor,
+                            technicianName = technicianName,
+                            observation = observation,
+                            isConforme = true
+                        )
+                        viewModel.navigateTo("ANALISES")
+                        viewModel.addToast("Análise registrada com sucesso!")
+                    },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00796B))
+                ) {
+                    Icon(Icons.Default.Save, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Salvar Análise de Qualidade", fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AnaliseScreen(viewModel: PostoViewModel) {
+    val conformityRecords by viewModel.fuelConformityRecords.collectAsStateWithLifecycle()
+    var showQualReportDialog by remember { mutableStateOf(false) }
+    var selectedConformityIds by remember { mutableStateOf(setOf<Int>()) }
+    var reportDate by remember { mutableStateOf(java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())) }
+    
+    val stationRazaoSocial by viewModel.stationRazaoSocial.collectAsStateWithLifecycle()
+    val stationCnpj by viewModel.stationCnpj.collectAsStateWithLifecycle()
+    val mContext = androidx.compose.ui.platform.LocalContext.current
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, HdBorder),
+                colors = CardDefaults.cardColors(containerColor = HdSurface)
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Controle de Qualidade de Combustível (ANP) 🧪",
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = HdTextPrimary
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Amostras e análises físico-químicas regulares conforme regulamentação da ANP.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = HdTextSecondary
+                        )
+                        val compliantCount = conformityRecords.count { it.isConforme }
+                        val totalCount = conformityRecords.size
+                        val pct = if (totalCount > 0) (compliantCount.toDouble() / totalCount * 100).toInt() else 100
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Card(
+                                shape = RoundedCornerShape(6.dp),
+                                colors = CardDefaults.cardColors(containerColor = if (pct >= 90) HdGreenLight else HdRedLight)
+                            ) {
+                                Text(
+                                    text = "$pct% DE CONFORMIDADE",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (pct >= 90) HdGreen else HdRed,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "$compliantCount de $totalCount análises regulares",
+                                fontSize = 11.sp,
+                                color = HdTextSecondary
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Análises Recentes",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedButton(
+                        onClick = { 
+                            val filtered = conformityRecords.filter { it.id in selectedConformityIds }
+                            if (filtered.isEmpty()) {
+                                viewModel.addToast("Selecione pelo menos uma análise para gerar o relatório.")
+                            } else {
+                                PdfReportGenerator.generateConformityReport(
+                                    mContext, 
+                                    stationRazaoSocial.ifBlank { "Posto Administrativo" }, 
+                                    stationCnpj.ifBlank { "12.345.678/0001-99" }, 
+                                    filtered
+                                )
+                            }
+                        },
+                        modifier = Modifier.height(40.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF00796B)),
+                        border = BorderStroke(1.dp, Color(0xFF00796B).copy(alpha = 0.5f)),
+                        contentPadding = PaddingValues(horizontal = 12.dp)
+                    ) {
+                        Icon(Icons.Default.PictureAsPdf, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Relatório PDF", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = { viewModel.navigateTo("REGISTRO_ANALISE") },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00796B)),
+                        modifier = Modifier.height(40.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp)
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Registrar", fontSize = 12.sp)
+                    }
+                }
+            }
+        }
+        if (conformityRecords.isEmpty()) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    border = BorderStroke(1.dp, HdBorder),
+                    colors = CardDefaults.cardColors(containerColor = HdSurface)
+                ) {
+                    Box(modifier = Modifier.padding(32.dp), contentAlignment = Alignment.Center) {
+                        Text("Nenhuma análise cadastrada.")
+                    }
+                }
+            }
+        } else {
+            items(conformityRecords) { rec ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, HdBorder),
+                    colors = CardDefaults.cardColors(containerColor = HdSurface)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                androidx.compose.material3.Checkbox(
+                                    checked = selectedConformityIds.contains(rec.id),
+                                    onCheckedChange = { isChecked ->
+                                        if (isChecked) {
+                                            selectedConformityIds = selectedConformityIds + rec.id
+                                        } else {
+                                            selectedConformityIds = selectedConformityIds - rec.id
+                                        }
+                                    }
+                                )
+                                Text(text = "🧪", fontSize = 18.sp, modifier = Modifier.padding(end = 8.dp))
+                                Column {
+                                    Text(text = rec.fuelType, fontWeight = FontWeight.Bold, color = HdTextPrimary)
+                                    Text(text = "Data: ${rec.date} | Amostra: ${rec.technicianName}", style = MaterialTheme.typography.bodySmall, color = HdTextSecondary)
+                                }
+                            }
+                            Card(
+                                shape = RoundedCornerShape(8.dp),
+                                colors = CardDefaults.cardColors(containerColor = if (rec.isConforme) HdGreenLight else HdRedLight)
+                            ) {
+                                Text(
+                                    text = if (rec.isConforme) "✓ CONFORME" else "✗ REPROVADO",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (rec.isConforme) HdGreen else HdRed,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+                        
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = HdBorder)
+                        
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = HdGrayLight),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(10.dp)) {
+                                Text(text = "Detalhes da Análise:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = HdTextSecondary)
+                                Text(text = "Massa Específica: ${rec.densityMeasured} kg/m³\nTeor de Álcool (Gasolina): ${rec.ethanolPercent}%\nAspecto/Cor: ${rec.aspectColor}\nTermômetro: ${rec.temperature}°C", style = MaterialTheme.typography.bodySmall, color = HdTextPrimary)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(text = "Conclusão: ${rec.observation}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = HdTextPrimary)
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                            TextButton(
+                                onClick = { viewModel.deleteFuelConformityRecord(rec) },
+                                contentPadding = PaddingValues(0.dp)
+                            ) {
+                                Text("Excluir Registro", color = HdRed, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

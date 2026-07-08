@@ -495,6 +495,7 @@
                                         <tr class="text-[10px] text-hdTextSecondary uppercase font-bold border-b border-hdBorder bg-hdSurface">
                                             <th class="py-2.5 px-3">Data</th>
                                             <th class="py-2.5 px-3">Combustível</th>
+                                            <th class="py-2.5 px-3">Nota Fiscal</th>
                                             <th class="py-2.5 px-3 text-right">Liters Vendidos</th>
                                             <th class="py-2.5 px-3 text-right">Total Faturamento</th>
                                         </tr>
@@ -532,7 +533,13 @@
                             <h2 class="text-xl font-bold">Tanques de Combustível</h2>
                             <p class="text-xs text-hdTextSecondary">Monitore a capacidade, configure limites mínimos e gerencie preços por litro.</p>
                         </div>
-                        <button onclick="openAddTankModal()" class="bg-hdPrimary text-white font-bold px-4 py-2.5 rounded-xl hover:bg-blue-700 transition flex items-center space-x-1.5 self-start text-xs">
+                                                <div class="flex space-x-2 self-start">
+                            <button onclick="clearTabData('tanks')" class="bg-red-50 text-red-600 border border-red-200 font-bold px-4 py-2.5 rounded-xl hover:bg-red-100 transition flex items-center space-x-1.5 text-xs">
+                                <span class="material-symbols-outlined text-sm font-bold">delete</span>
+                                <span>Limpar Dados</span>
+                            </button>
+                            <button onclick="openAddTankModal()" class="bg-hdPrimary text-white font-bold px-4 py-2.5 rounded-xl hover:bg-blue-700 transition flex items-center space-x-1.5  text-xs">
+                        </div>
                             <span class="material-symbols-outlined text-sm font-bold">add</span>
                             <span>Adicionar Novo Tanque</span>
                         </button>
@@ -556,7 +563,11 @@
                                 <span class="material-symbols-outlined text-sm font-bold text-red-500">picture_as_pdf</span>
                                 <span>Baixar Planner Mensal</span>
                             </button>
-                            <button onclick="openAddEmployeeModal()" class="bg-hdPrimary text-white font-bold px-4 py-2.5 rounded-xl hover:bg-blue-700 transition flex items-center space-x-1.5 text-xs">
+                                                        <button onclick="clearTabData('employees')" class="bg-red-50 text-red-600 border border-red-200 font-bold px-4 py-2.5 rounded-xl hover:bg-red-100 transition flex items-center space-x-1.5 text-xs">
+                                <span class="material-symbols-outlined text-sm font-bold">delete</span>
+                                <span>Limpar Dados</span>
+                            </button>
+<button onclick="openAddEmployeeModal()" class="bg-hdPrimary text-white font-bold px-4 py-2.5 rounded-xl hover:bg-blue-700 transition flex items-center space-x-1.5 text-xs">
                                 <span class="material-symbols-outlined text-sm font-bold">add_moderator</span>
                                 <span>Novo Frentista/Funcionário</span>
                             </button>
@@ -858,6 +869,10 @@
                                 <span class="material-symbols-outlined text-sm font-bold text-red-500">picture_as_pdf</span>
                                 <span>Exportar PDF</span>
                             </button>
+                                                        <button onclick="clearTabData('reports')" class="bg-red-50 text-red-600 border border-red-200 font-bold px-4 py-2.5 rounded-xl hover:bg-red-100 transition flex items-center space-x-1.5 text-xs">
+                                <span class="material-symbols-outlined text-sm font-bold">delete</span>
+                                <span>Limpar Dados</span>
+                            </button>
                             <button onclick="openAddReportModal()" class="bg-hdPrimary text-white font-bold px-4 py-2.5 rounded-xl hover:bg-blue-700 transition flex items-center space-x-1.5 text-xs">
                                 <span class="material-symbols-outlined text-sm font-bold">playlist_add</span>
                                 <span>Lançar Relatório Diário</span>
@@ -975,6 +990,10 @@
                                 <span class="material-symbols-outlined text-sm font-bold text-red-500">picture_as_pdf</span>
                                 <span>Baixar PDF Oficial</span>
                             </button>
+                                                        <button onclick="clearTabData('lmc')" class="bg-red-50 text-red-600 border border-red-200 font-bold px-4 py-2.5 rounded-xl hover:bg-red-100 transition flex items-center space-x-1.5 text-xs">
+                                <span class="material-symbols-outlined text-sm font-bold">delete</span>
+                                <span>Limpar Dados</span>
+                            </button>
                             <button onclick="openAddLmcModal()" class="bg-hdPrimary text-white font-bold px-4 py-2.5 rounded-xl hover:bg-blue-700 transition flex items-center space-x-1.5 text-xs">
                                 <span class="material-symbols-outlined text-sm font-bold">add_box</span>
                                 <span>Lançar Registro LMC</span>
@@ -1051,7 +1070,13 @@
                             <h2 class="text-xl font-bold">Bicos e Bombas de Combustível</h2>
                             <p class="text-xs text-hdTextSecondary">Gerencie bicos injetores ativos, associados aos tanques de armazenamento.</p>
                         </div>
-                        <button onclick="openAddNozzleModal()" class="bg-hdPrimary text-white font-bold px-4 py-2.5 rounded-xl hover:bg-blue-700 transition flex items-center space-x-1.5 text-xs">
+                                                <div class="flex space-x-2 self-start">
+                            <button onclick="clearTabData('nozzles')" class="bg-red-50 text-red-600 border border-red-200 font-bold px-4 py-2.5 rounded-xl hover:bg-red-100 transition flex items-center space-x-1.5 text-xs">
+                                <span class="material-symbols-outlined text-sm font-bold">delete</span>
+                                <span>Limpar Dados</span>
+                            </button>
+                            <button onclick="openAddNozzleModal()" class="bg-hdPrimary text-white font-bold px-4 py-2.5 rounded-xl hover:bg-blue-700 transition flex items-center space-x-1.5 text-xs">
+                        </div>
                             <span class="material-symbols-outlined text-sm font-bold">add</span>
                             <span>Cadastrar Novo Bico</span>
                         </button>
@@ -1083,22 +1108,46 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="flex gap-4 mb-2 border-b border-hdBorder">
+                        <button id="btnTabAfericao" onclick="switchQualityTab('afericao')" class="px-4 py-2 font-bold text-sm text-hdPrimary border-b-2 border-hdPrimary transition-colors">Aferição (Bombas)</button>
+                        <button id="btnTabAnalise" onclick="switchQualityTab('analise')" class="px-4 py-2 font-bold text-sm text-hdTextSecondary border-b-2 border-transparent hover:text-hdPrimary hover:border-hdBorder transition-colors">Análise (Combustível)</button>
+                    </div>
+
+                    <div class="bg-hdSurface border border-hdBorder p-4 rounded-2xl flex flex-wrap items-end gap-4 mb-4">
+                        <div>
+                            <label class="block text-xs font-bold text-hdTextSecondary mb-1">Data Inicial</label>
+                            <input type="date" id="complianceStartDate" class="bg-white border border-hdBorder text-xs rounded-xl px-3 py-2 w-full focus:outline-none focus:ring-1 focus:ring-hdPrimary" onchange="renderWorkspace()">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-hdTextSecondary mb-1">Data Final</label>
+                            <input type="date" id="complianceEndDate" class="bg-white border border-hdBorder text-xs rounded-xl px-3 py-2 w-full focus:outline-none focus:ring-1 focus:ring-hdPrimary" onchange="renderWorkspace()">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-6">
                         <!-- Left Panel: Calibration Records -->
-                        <div class="bg-white border border-hdBorder rounded-3xl p-6 shadow-sm">
-                            <h3 class="text-sm font-bold text-hdTextPrimary mb-4 flex items-center gap-1.5">
-                                <span class="material-symbols-outlined text-hdPrimary">verified</span>
-                                Registros de Calibração (Bombas)
-                            </h3>
+                        <div id="tabContentAfericao" class="bg-white border border-hdBorder rounded-3xl p-6 shadow-sm">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-sm font-bold text-hdTextPrimary flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-hdPrimary">verified</span>
+                                    Registros de Calibração (Bombas)
+                                </h3>
+                                <button onclick="generateCalibrationsReport()" class="bg-hdPrimary text-white font-semibold px-3 py-1.5 rounded-xl hover:bg-blue-700 transition text-xs flex items-center space-x-1 shrink-0">
+                                    <span class="material-symbols-outlined text-sm">picture_as_pdf</span>
+                                    <span>Gerar Relatório (PDF)</span>
+                                </button>
+                            </div>
                             <div class="overflow-x-auto">
                                 <table class="w-full text-xs text-left">
                                     <thead>
                                         <tr class="text-[10px] text-hdTextSecondary uppercase font-bold border-b border-hdBorder bg-hdSurface">
+                                            <th class="py-2.5 px-3"><input type="checkbox" id="selectAllCals" onchange="toggleSelectAllCals(this)" /></th>
                                             <th class="py-2.5 px-3">Data</th>
                                             <th class="py-2.5 px-3">Referência</th>
                                             <th class="py-2.5 px-3 text-right">Vol Nom/Med (L)</th>
                                             <th class="py-2.5 px-3 text-right">Erro %</th>
                                             <th class="py-2.5 px-3">Laudo Inmetro</th>
+                                            <th class="py-2.5 px-3 text-right">Valor Aferição</th>
                                             <th class="py-2.5 px-3">Status</th>
                                         </tr>
                                     </thead>
@@ -1110,17 +1159,25 @@
                         </div>
 
                         <!-- Right Panel: Fuel Conformity (Quality Tests) -->
-                        <div class="bg-white border border-hdBorder rounded-3xl p-6 shadow-sm">
-                            <h3 class="text-sm font-bold text-hdTextPrimary mb-4 flex items-center gap-1.5">
-                                <span class="material-symbols-outlined text-green-700">science</span>
-                                Análises de Conformidade do Combustível
-                            </h3>
+                        <div id="tabContentAnalise" class="bg-white border border-hdBorder rounded-3xl p-6 shadow-sm" style="display: none;">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-sm font-bold text-hdTextPrimary flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-green-700">science</span>
+                                    Análises de Conformidade do Combustível
+                                </h3>
+                                <button onclick="generateQualityReport()" class="bg-green-700 text-white font-semibold px-3 py-1.5 rounded-xl hover:bg-green-800 transition text-xs flex items-center space-x-1 shrink-0">
+                                    <span class="material-symbols-outlined text-sm">picture_as_pdf</span>
+                                    <span>Gerar Relatório (PDF)</span>
+                                </button>
+                            </div>
                             <div class="overflow-x-auto">
                                 <table class="w-full text-xs text-left">
                                     <thead>
                                         <tr class="text-[10px] text-hdTextSecondary uppercase font-bold border-b border-hdBorder bg-hdSurface">
+                                            <th class="py-2.5 px-3"><input type="checkbox" id="selectAllConfs" onchange="toggleSelectAllConfs(this)" /></th>
                                             <th class="py-2.5 px-3">Data</th>
                                             <th class="py-2.5 px-3">Combustível</th>
+                                            <th class="py-2.5 px-3">Nota Fiscal</th>
                                             <th class="py-2.5 px-3 text-right">Densidade / Temp</th>
                                             <th class="py-2.5 px-3 text-right">Etanol %</th>
                                             <th class="py-2.5 px-3">Técnico</th>
@@ -1196,9 +1253,15 @@
                 <!-- SCREEN H: CALENDAR VIEW -->
                 <div id="screen-calendar" class="hidden space-y-6">
                     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                        <div>
-                            <h2 class="text-xl font-bold">Calendário Geral e Agendas de Compromissos 📅</h2>
-                            <p class="text-xs text-hdTextSecondary">Visão unificada mensal de manutenções programadas, vistorias fiscais, entregas de combustíveis e escalas.</p>
+                        <div class="flex flex-col sm:flex-row justify-between w-full items-start sm:items-center gap-3">
+                            <div>
+                                <h2 class="text-xl font-bold">Calendário Geral e Agendas de Compromissos 📅</h2>
+                                <p class="text-xs text-hdTextSecondary">Visão unificada mensal de manutenções programadas, vistorias fiscais, entregas de combustíveis e escalas.</p>
+                            </div>
+                            <button onclick="clearTabData('calendar')" class="bg-red-50 text-red-600 border border-red-200 font-bold px-4 py-2.5 rounded-xl hover:bg-red-100 transition flex items-center space-x-1.5 text-xs shrink-0 self-start sm:self-auto">
+                                <span class="material-symbols-outlined text-sm font-bold">delete</span>
+                                <span>Limpar Dados</span>
+                            </button>
                         </div>
                     </div>
 
@@ -1376,10 +1439,14 @@
                                         </h3>
                                         <p class="text-[11px] text-hdTextSecondary">Logins, links e senhas dos concentradores, SEFAZ e câmeras.</p>
                                     </div>
-                                    <button onclick="openAddCredentialModal()" class="bg-hdPrimary text-white font-bold px-3 py-2 rounded-xl hover:bg-blue-700 transition text-xs flex items-center space-x-1">
+                                                                        <div class="flex space-x-2"> <button onclick="clearTabData('systems')" class="bg-red-50 text-red-600 border border-red-200 font-bold px-3 py-2 rounded-xl hover:bg-red-100 transition text-xs flex items-center space-x-1">
+                                        <span class="material-symbols-outlined text-sm font-bold">delete</span>
+                                        <span>Limpar Dados</span>
+                                    </button>
+<button onclick="openAddCredentialModal()" class="bg-hdPrimary text-white font-bold px-3 py-2 rounded-xl hover:bg-blue-700 transition text-xs flex items-center space-x-1">
                                         <span class="material-symbols-outlined text-sm">add</span>
                                         <span>Nova Credencial</span>
-                                    </button>
+                                    </button> </div>
                                 </div>
 
                                 <div class="overflow-x-auto">
@@ -1925,6 +1992,13 @@ create table posto_backups (
                         </select>
                     </div>
                 </div>
+                
+                <div class="border-t border-hdBorder/60 my-2 pt-2">
+                    <label class="block text-xs font-bold text-hdTextSecondary mb-1">Vincular a Nota de Combustível (Opcional)</label>
+                    <select id="confDeliverySelect" class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                        <!-- Loaded dynamically via JavaScript -->
+                    </select>
+                </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-hdTextSecondary mb-1">Densidade Medida (g/cm³)</label>
@@ -2015,8 +2089,10 @@ create table posto_backups (
                         <label class="block text-xs font-bold text-hdTextSecondary mb-1">Combustível Entregue</label>
                         <select id="deliveryFuelType" class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
                             <option value="Gasolina Comum">Gasolina Comum</option>
+                            <option value="Gasolina Aditivada">Gasolina Aditivada</option>
                             <option value="Etanol Comum">Etanol Comum</option>
                             <option value="Diesel S10">Diesel S10</option>
+                            <option value="Diesel S500">Diesel S500</option>
                         </select>
                     </div>
                     <div>
@@ -2230,33 +2306,36 @@ create table posto_backups (
                 <input type="hidden" id="lmcEditId">
                 <div>
                     <label class="block text-xs font-bold text-hdTextSecondary mb-1">Produto / Combustível</label>
-                    <select id="lmcModalFuel" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                    <select id="lmcModalFuel" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs" onblur="autoSaveLmc()">
                         <option value="Gasolina C Comum (E30)">Gasolina C Comum (E30)</option>
+                        <option value="Gasolina C Aditivada (E30)">Gasolina C Aditivada (E30)</option>
+                        <option value="Etanol Comum">Etanol Comum</option>
                         <option value="Óleo Diesel B S10 (B15)">Óleo Diesel B S10 (B15)</option>
+                        <option value="Óleo Diesel B S500 (B15)">Óleo Diesel B S500 (B15)</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-hdTextSecondary mb-1">Data</label>
-                    <input type="date" id="lmcModalDate" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs">
+                    <input type="date" id="lmcModalDate" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs" onblur="autoSaveLmc()">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-hdTextSecondary mb-1">Estoque Inicial (L)</label>
-                        <input type="number" step="1" id="lmcModalOpening" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs" oninput="calculateLmcModalSobraFalta()">
+                        <input type="number" step="1" id="lmcModalOpening" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs" oninput="calculateLmcModalSobraFalta()" onblur="autoSaveLmc()">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-hdTextSecondary mb-1">Entrega / Recebimento (L)</label>
-                        <input type="number" step="1" id="lmcModalDelivery" value="0" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs" oninput="calculateLmcModalSobraFalta()">
+                        <input type="number" step="1" id="lmcModalDelivery" value="0" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs" oninput="calculateLmcModalSobraFalta()" onblur="autoSaveLmc()">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-hdTextSecondary mb-1">Venda do Dia (L)</label>
-                        <input type="number" step="1" id="lmcModalSold" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs" oninput="calculateLmcModalSobraFalta()">
+                        <input type="number" step="1" id="lmcModalSold" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs" oninput="calculateLmcModalSobraFalta()" onblur="autoSaveLmc()">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-hdTextSecondary mb-1">Estoque Físico Final (L)</label>
-                        <input type="number" step="1" id="lmcModalPhysical" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs" oninput="calculateLmcModalSobraFalta()">
+                        <input type="number" step="1" id="lmcModalPhysical" required class="w-full bg-hdSurface border border-hdBorder rounded-xl px-3 py-2 text-xs" oninput="calculateLmcModalSobraFalta()" onblur="autoSaveLmc()">
                     </div>
                 </div>
                 <!-- Interactive calculation preview -->
@@ -2283,23 +2362,20 @@ create table posto_backups (
     <!-- ================== CORE JAVASCRIPT & FIREBASE INTEGRATION ================== -->
     <!-- We dynamically load Firebase modules in modular script to ensure high quality execution -->
     <script type="module">
-        // Global variables inside ES Module context (Firebase removed)
-        const isFirebaseActive = false;
-        const firebaseApp = null;
-        const authService = null;
-        const firestoreDb = null;
+        // Global variables inside ES Module context
+        class LMCCalculator {
+            static getSobraFalta(record) {
+                const physical = Number(record.physicalStock || 0);
+                const expected = this.getExpectedStock(record);
+                return physical - expected;
+            }
 
-        let activeSubscriptions = [];
-
-        function clearActiveSubscriptions() {
-            activeSubscriptions.forEach(unsub => {
-                try {
-                    unsub();
-                } catch (e) {
-                    console.error("Unsub error:", e);
-                }
-            });
-            activeSubscriptions = [];
+            static getExpectedStock(record) {
+                const opening = Number(record.openingStock || 0);
+                const delivery = Number(record.deliveryVolume || 0);
+                const sold = Number(record.litersSold || 0);
+                return opening + delivery - sold;
+            }
         }
 
         // In-memory local state fallback to act as "Demo / Local Storage Mode"
@@ -2388,26 +2464,43 @@ create table posto_backups (
             isRegisterForm: false
         };
 
-        // Initialize state from LocalStorage or use Default
+        // 1. Inicialização do Banco Local
         let state = JSON.parse(localStorage.getItem('posto_admin_local_db')) || defaultState;
         window.state = state;
         
+        // Verificações de integridade
         if (!state.appointments) state.appointments = [...defaultState.appointments];
         if (!state.deliveries) state.deliveries = [...defaultState.deliveries];
         if (!state.systemCredentials) state.systemCredentials = [...defaultState.systemCredentials];
         if (!state.nozzleSales) state.nozzleSales = [...defaultState.nozzleSales];
-        if (!state.lmc) {
-            state.lmc = [...defaultState.lmc];
+        if (!state.lmc || !Array.isArray(state.lmc)) {
+            state.lmc = Array.isArray(defaultState.lmc) ? [...defaultState.lmc] : [];
             localStorage.setItem('posto_admin_local_db', JSON.stringify(state));
         }
         
-        // Ensure local admin account exists in list
+        // Garante que o admin local exista
+        if (!state.users) state.users = [...defaultState.users];
         if (!state.users.some(u => u.email === "admin@posto.com")) {
             state.users.push(defaultState.users[0]);
         }
 
-        // Functions to persist local state
+        // 2. Lógica de Debounce para o Supabase (Proteção de Requisições)
+        let syncTimeout = null;
+
+        function debouncedSyncToSupabase() {
+            // Se houver uma requisição agendada, cancela a anterior
+            if (syncTimeout) {
+                clearTimeout(syncTimeout);
+            }
+            // Aguarda 2 segundos sem novas alterações para disparar o upload
+            syncTimeout = setTimeout(() => {
+                autoSyncToSupabase();
+            }, 2000);
+        }
+
         async function autoSyncToSupabase() {
+            if (!state.activeUser) return; // Don't sync if no user is active
+
             let savedConfig = localStorage.getItem('posto_supabase_config_web');
             if (!savedConfig) {
                 savedConfig = JSON.stringify({
@@ -2415,19 +2508,30 @@ create table posto_backups (
                     key: "sb_publishable_Zp5YN0CWKy0nV8Ku5C7ALw_uqMe6HUG"
                 });
             }
-            if (!savedConfig) return;
+            
             const { url, key } = JSON.parse(savedConfig);
             if (!url || !key) return;
-            const cnpj = (state.activeUser && state.activeUser.stationCnpj) || "12.345.678/0001-99";
+            const cnpj = state.activeUser.stationCnpj;
+
+            const text = document.getElementById('connectionBadgeText');
+            const dot = document.getElementById('connectionBadgeDot');
             
             try {
+                if (text && dot) {
+                    text.innerText = "Sincronizando Nuvem...";
+                    dot.className = "w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse";
+                }
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000);
+
                 const payload = {
                     id: cnpj,
                     data: state,
                     updated_at: new Date().toISOString()
                 };
                 
-                await fetch(`${url}/rest/v1/posto_backups`, {
+                const response = await fetch(`${url}/rest/v1/posto_backups?id=eq.${cnpj}`, {
                     method: 'POST',
                     headers: {
                         'apikey': key,
@@ -2435,23 +2539,207 @@ create table posto_backups (
                         'Content-Type': 'application/json',
                         'Prefer': 'resolution=merge-duplicates'
                     },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify(payload),
+                    signal: controller.signal
                 });
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    throw new Error(`Erro Supabase: ${response.statusText}`);
+                }
+
+                console.log("Supabase sincronizado com sucesso em background.");
+                if (text && dot) {
+                    text.innerText = "Sincronizado na Nuvem";
+                    dot.className = "w-2.5 h-2.5 rounded-full bg-green-600";
+                    setTimeout(() => {
+                        if (text.innerText === "Sincronizado na Nuvem") {
+                            text.innerText = "Conectado (Cloud Sync)";
+                        }
+                    }, 3000);
+                }
             } catch (e) {
-                console.warn("Supabase auto-sync failed:", e.message);
+                console.warn("Falha no auto-sync do Supabase:", e.message);
+                if (text && dot) {
+                    text.innerText = "Erro ao Sincronizar";
+                    dot.className = "w-2.5 h-2.5 rounded-full bg-red-500";
+                }
             }
         }
 
-        function saveLocalDb() {
-            localStorage.setItem('posto_admin_local_db', JSON.stringify(state));
-            autoSyncToSupabase();
+        async function autoLoadFromSupabase() {
+            const text = document.getElementById('connectionBadgeText');
+            const dot = document.getElementById('connectionBadgeDot');
+
+            if (!state.activeUser) {
+                if (text && dot) {
+                    text.innerText = "Aguardando Login";
+                    dot.className = "w-2.5 h-2.5 rounded-full bg-gray-400";
+                }
+                return; // Prevent overwriting account list when logged out
+            }
+
+            let savedConfig = localStorage.getItem('posto_supabase_config_web');
+            if (!savedConfig) {
+                savedConfig = JSON.stringify({
+                    url: "https://fgogbzscfqkwlqazugkx.supabase.co",
+                    key: "sb_publishable_Zp5YN0CWKy0nV8Ku5C7ALw_uqMe6HUG"
+                });
+            }
+            
+            const { url, key } = JSON.parse(savedConfig);
+            if (!url || !key) {
+                if (text && dot) {
+                    text.innerText = "Configuração Nuvem Ausente";
+                    dot.className = "w-2.5 h-2.5 rounded-full bg-orange-400";
+                }
+                return;
+            }
+            
+            const cnpj = state.activeUser.stationCnpj;
+
+            try {
+                if (text && dot) {
+                    text.innerText = "Baixando Nuvem...";
+                    dot.className = "w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse";
+                }
+
+                // Add a timeout to the fetch
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 seconds timeout
+
+                const response = await fetch(`${url}/rest/v1/posto_backups?id=eq.${cnpj}&select=data`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': key,
+                        'Authorization': `Bearer ${key}`,
+                        'Content-Type': 'application/json'
+                    },
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && data.length > 0 && data[0].data) {
+                        const backupState = data[0].data;
+                        const currentUser = state.activeUser;
+                        const localUsers = state.users; // Preserve local accounts
+
+                        state = backupState;
+                        state.activeUser = currentUser;
+                        
+                        // Merge users to avoid losing local accounts
+                        if (localUsers && Array.isArray(localUsers)) {
+                            if (!state.users) state.users = [];
+                            localUsers.forEach(lu => {
+                                if (!state.users.find(su => su.email.toLowerCase() === lu.email.toLowerCase())) {
+                                    state.users.push(lu);
+                                }
+                            });
+                        }
+                        
+                        // Integrity checks for new properties that might be missing in old backups
+                        if (!state.lmc || !Array.isArray(state.lmc)) {
+                            state.lmc = Array.isArray(defaultState.lmc) ? [...defaultState.lmc] : [];
+                        }
+                        if (!state.tanks) state.tanks = [...defaultState.tanks];
+                        if (!state.employees) state.employees = [...defaultState.employees];
+                        if (!state.shifts) state.shifts = [...defaultState.shifts];
+                        if (!state.reports) state.reports = [...defaultState.reports];
+                        if (!state.nozzles) state.nozzles = [...defaultState.nozzles];
+                        if (!state.nozzleSales) state.nozzleSales = [...defaultState.nozzleSales];
+                        if (!state.calibrations) state.calibrations = [...defaultState.calibrations];
+                        if (!state.conformities) state.conformities = [...defaultState.conformities];
+                        if (!state.audits) state.audits = [...defaultState.audits];
+                        if (!state.appointments) state.appointments = [...defaultState.appointments];
+                        if (!state.deliveries) state.deliveries = [...defaultState.deliveries];
+                        if (!state.systemCredentials) state.systemCredentials = [...defaultState.systemCredentials];
+                        
+                        // Sincroniza o ponteiro global
+                        window.state = state; 
+                        
+                        localStorage.setItem('posto_admin_local_db', JSON.stringify(state));
+                        renderWorkspace();
+                        console.log("Supabase database loaded and synced automatically.");
+                        
+                        if (text && dot) {
+                            text.innerText = "Conectado (Nuvem)";
+                            dot.className = "w-2.5 h-2.5 rounded-full bg-green-600";
+                        }
+                    } else {
+                        if (text && dot) {
+                            text.innerText = "Conectado (Vazio)";
+                            dot.className = "w-2.5 h-2.5 rounded-full bg-green-600";
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn("Supabase autoload failed:", e.message);
+                if (text && dot) {
+                    text.innerText = "Erro ao Conectar";
+                    dot.className = "w-2.5 h-2.5 rounded-full bg-red-500";
+                }
+            }
         }
 
-        // Firebase is completely removed. We default fully to offline local storage.
+        window.downloadFromSupabaseWeb = async function() {
+            let savedConfig = localStorage.getItem('posto_supabase_config_web');
+            if (!savedConfig) {
+                savedConfig = JSON.stringify({
+                    url: "https://fgogbzscfqkwlqazugkx.supabase.co",
+                    key: "sb_publishable_Zp5YN0CWKy0nV8Ku5C7ALw_uqMe6HUG"
+                });
+            }
+            const { url, key } = JSON.parse(savedConfig);
+            const cnpj = (state.activeUser && state.activeUser.stationCnpj) || "12.345.678/0001-99";
+            
+            try {
+                const response = await fetch(`${url}/rest/v1/posto_backups?id=eq.${cnpj}&select=data`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': key,
+                        'Authorization': `Bearer ${key}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && data.length > 0 && data[0].data) {
+                        const backupState = data[0].data;
+                        const currentUser = state.activeUser;
+                        state = backupState;
+                        state.activeUser = currentUser;
+                        
+                        // Sincroniza o ponteiro global na importação manual
+                        window.state = state; 
+                        
+                        saveLocalDb();
+                        renderWorkspace();
+                        alert("Dados sincronizados / restaurados com sucesso da nuvem Supabase! ⚡☁️");
+                    } else {
+                        alert("Nenhum backup encontrado para o CNPJ " + cnpj + " no Supabase.");
+                    }
+                } else {
+                    const errText = await response.text();
+                    alert("Erro ao buscar backup: " + errText);
+                }
+            } catch (e) {
+                alert("Falha na conexão com o Supabase: " + e.message);
+            }
+        };
+
+        // 3. Centralizador de Salvamento
+        function saveLocalDb() {
+            localStorage.setItem('posto_admin_local_db', JSON.stringify(state));
+            debouncedSyncToSupabase(); // Aciona o salvamento em nuvem otimizado
+        }
+        window.saveLocalDb = saveLocalDb;
+
+        // 4. Tratamento de Conexão (Off-line / On-line)
         async function updateOnlineStatus() {
             const isOnline = window.navigator.onLine;
-            console.log("Connection state changed: online =", isOnline);
-            
             const badge = document.getElementById('connectionBadgeBtn');
             const dot = document.getElementById('connectionBadgeDot');
             const text = document.getElementById('connectionBadgeText');
@@ -2474,26 +2762,41 @@ create table posto_backups (
         window.addEventListener('online', updateOnlineStatus);
         window.addEventListener('offline', updateOnlineStatus);
 
-        function fallbackToLocal() {
-            updateOnlineStatus();
+        window.addEventListener('load', async () => {
+            try {
+                updateOnlineStatus();
+                
+                // Try to sync from Supabase on load
+                await autoLoadFromSupabase();
+            } catch (e) {
+                console.error("Load Sync Error:", e);
+                const text = document.getElementById('connectionBadgeText');
+                if (text && text.innerText === "Verificando...") {
+                    text.innerText = "Modo Local (Erro Sync)";
+                }
+            }
+
+            // Set dynamic dates for LMC filters (current month)
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
             
-            // Check if activeUser is already saved locally
+            const lmcStart = document.getElementById('lmcStartDate');
+            const lmcEnd = document.getElementById('lmcEndDate');
+            if (lmcStart && lmcEnd) {
+                lmcStart.value = `${year}-${month}-01`;
+                lmcEnd.value = `${year}-${month}-${day}`;
+            }
+
             if (state.activeUser) {
                 showWorkspace();
             } else {
                 showAuthScreen();
             }
-        }
-
-        // Auto-check on boot
-        window.addEventListener('load', async () => {
-            fallbackToLocal();
         });
 
         // Stubs for Firebase methods to avoid breaking existing calls
-        async function saveToFirestore(colName, docId, data) {}
-        async function deleteFromFirestore(colName, docId) {}
-
         // Authentication Submission Handler
         window.handleAuthSubmit = async function(event) {
             event.preventDefault();
@@ -2529,128 +2832,37 @@ create table posto_backups (
                     bankPixKey: formattedEmail
                 };
 
-                if (isFirebaseActive) {
-                    try {
-                        const { createUserWithEmailAndPassword, getAuth } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js");
-                        const { doc, setDoc, getFirestore } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
-                        
-                        const auth = getAuth(firebaseApp);
-                        const dbRef = getFirestore(firebaseApp);
-                        
-                        const authResult = await createUserWithEmailAndPassword(auth, formattedEmail, pass);
-                        await setDoc(doc(dbRef, "users", formattedEmail), newAccount);
-                        
-                        // Setup default station items on Firebase automatically
-                        for (const tank of defaultState.tanks) {
-                            const tWithCnpj = { ...tank, stationCnpj };
-                            await setDoc(doc(dbRef, "stations", stationCnpj, "fuel_tanks", tank.id.toString()), tWithCnpj);
-                        }
-                        for (const noz of defaultState.nozzles) {
-                            const nWithCnpj = { ...noz, stationCnpj };
-                            await setDoc(doc(dbRef, "stations", stationCnpj, "nozzles", noz.id.toString()), nWithCnpj);
-                        }
-                        for (const app of defaultState.appointments) {
-                            const appWithCnpj = { ...app, stationCnpj };
-                            await setDoc(doc(dbRef, "stations", stationCnpj, "appointments", app.id.toString()), appWithCnpj);
-                        }
-
-                        state.activeUser = newAccount;
-                        alert("Conta Firebase criada com sucesso! Posto configurado.");
-                    } catch (err) {
-                        alertBox.className = "mb-4 p-3 rounded-xl text-xs font-semibold flex items-center space-x-2 bg-hdRedLight text-hdRed";
-                        document.getElementById('authAlertText').innerText = "Erro ao criar conta: " + err.message;
-                        return;
-                    }
-                } else {
-                    // Local register
-                    state.users.push(newAccount);
-                    state.activeUser = newAccount;
-                    // Add default demo tanks to this station
-                    state.tanks = defaultState.tanks.map(t => ({ ...t, stationCnpj }));
-                    state.nozzles = defaultState.nozzles.map(n => ({ ...n, stationCnpj }));
-                    state.appointments = defaultState.appointments.map(a => ({ ...a, stationCnpj }));
-                    state.systemCredentials = defaultState.systemCredentials.map(s => ({ ...s, stationCnpj }));
-                    saveLocalDb();
-                    alert("Conta local criada com sucesso! Rodando em modo off-line.");
-                }
+                // Local register
+                state.users.push(newAccount);
+                state.activeUser = newAccount;
+                // Add default demo tanks to this station
+                state.tanks = defaultState.tanks.map(t => ({ ...t, stationCnpj }));
+                state.nozzles = defaultState.nozzles.map(n => ({ ...n, stationCnpj }));
+                state.appointments = defaultState.appointments.map(a => ({ ...a, stationCnpj }));
+                state.systemCredentials = defaultState.systemCredentials.map(s => ({ ...s, stationCnpj }));
+                saveLocalDb();
+                alert("Conta local criada com sucesso! Rodando em modo off-line.");
                 
                 showWorkspace();
             } else {
                 // LOGIN PROCESS
-                if (isFirebaseActive) {
-                    try {
-                        const { signInWithEmailAndPassword, getAuth } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js");
-                        const { doc, getDoc, getFirestore } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
-                        
-                        const auth = getAuth(firebaseApp);
-                        const dbRef = getFirestore(firebaseApp);
-                        
-                        await signInWithEmailAndPassword(auth, formattedEmail, pass);
-                        // Handled by onAuthStateChanged listener
-                    } catch (err) {
-                        alertBox.className = "mb-4 p-3 rounded-xl text-xs font-semibold flex items-center space-x-2 bg-hdRedLight text-hdRed";
-                        document.getElementById('authAlertText').innerText = "Senha incorreta ou usuário não encontrado.";
-                    }
+                const acc = state.users.find(u => u.email.toLowerCase() === formattedEmail && u.password === pass);
+                if (acc) {
+                    state.activeUser = acc;
+                    saveLocalDb();
+                    
+                    // Add audit log for login
+                    logActivity("LOGIN", "Autenticação", "Gerente fez login no painel");
+                    
+                    showWorkspace();
                 } else {
-                    // Local login fallback
-                    const acc = state.users.find(u => u.email.toLowerCase() === formattedEmail || u.email.toLowerCase() === login.toLowerCase());
-                    if (acc && acc.password === pass) {
-                        state.activeUser = acc;
-                        saveLocalDb();
-                        
-                        // Add audit log for login
-                        logActivity("LOGIN", "Autenticação", "Gerente fez login no painel em modo offline");
-                        
-                        showWorkspace();
-                    } else {
-                        alertBox.className = "mb-4 p-3 rounded-xl text-xs font-semibold flex items-center space-x-2 bg-hdRedLight text-hdRed";
-                        document.getElementById('authAlertText').innerText = "Credenciais off-line inválidas. Dica: use admin@posto.com / admin123";
-                    }
+                    alertBox.className = "mb-4 p-3 rounded-xl text-xs font-semibold flex items-center space-x-2 bg-hdRedLight text-hdRed";
+                    document.getElementById('authAlertText').innerText = "Credenciais inválidas. Dica: use admin@posto.com / admin123";
                 }
             }
         };
 
         // Switch screen views
-        async function autoLoadFromSupabase() {
-            let savedConfig = localStorage.getItem('posto_supabase_config_web');
-            if (!savedConfig) {
-                savedConfig = JSON.stringify({
-                    url: "https://fgogbzscfqkwlqazugkx.supabase.co",
-                    key: "sb_publishable_Zp5YN0CWKy0nV8Ku5C7ALw_uqMe6HUG"
-                });
-            }
-            if (!savedConfig) return;
-            const { url, key } = JSON.parse(savedConfig);
-            if (!url || !key) return;
-            const cnpj = (state.activeUser && state.activeUser.stationCnpj) || "12.345.678/0001-99";
-            
-            try {
-                const response = await fetch(`${url}/rest/v1/posto_backups?id=eq.${cnpj}&select=data`, {
-                    method: 'GET',
-                    headers: {
-                        'apikey': key,
-                        'Authorization': `Bearer ${key}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data && data.length > 0 && data[0].data) {
-                        const backupState = data[0].data;
-                        const currentUser = state.activeUser;
-                        state = backupState;
-                        state.activeUser = currentUser;
-                        localStorage.setItem('posto_admin_local_db', JSON.stringify(state));
-                        renderWorkspace();
-                        console.log("Supabase database loaded and synced automatically.");
-                    }
-                }
-            } catch (e) {
-                console.warn("Supabase autoload failed:", e.message);
-            }
-        }
-
         function showWorkspace() {
             document.getElementById('authView').classList.add('hidden');
             document.getElementById('workspaceView').classList.remove('hidden');
@@ -2666,24 +2878,50 @@ create table posto_backups (
             document.getElementById('sidebarNav').classList.add('hidden');
             document.getElementById('userHeaderProfile').classList.add('hidden');
             document.getElementById('authView').classList.remove('hidden');
+            
+            // Force reset to login tab to avoid being stuck on register state
+            if (window.switchAuthTab) {
+                window.switchAuthTab('login');
+            }
         }
 
         window.logoutUser = async function() {
-            clearActiveSubscriptions();
-            if (isFirebaseActive && authService) {
-                try {
-                    const { signOut } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js");
-                    await signOut(authService);
-                } catch (e) {
-                    console.error(e);
-                }
-            }
             state.activeUser = null;
             saveLocalDb();
             showAuthScreen();
         };
 
         // Navigation Tabs switching
+
+        window.clearTabData = function(type) {
+            if (confirm("Tem certeza que deseja limpar todos os dados desta seção? Esta ação não pode ser desfeita.")) {
+                if (type === 'tanks') {
+                    state.tanks = [];
+                } else if (type === 'employees') {
+                    state.employees = [];
+                    state.shifts = [];
+                } else if (type === 'reports') {
+                    state.reports = [];
+                    state.nozzleSales = [];
+                } else if (type === 'lmc') {
+                    state.lmc = [];
+                } else if (type === 'nozzles') {
+                    state.nozzles = [];
+                } else if (type === 'compliance') {
+                    state.conformities = [];
+                    state.deliveries = [];
+                    state.calibrations = [];
+                } else if (type === 'systems') {
+                    state.systemCredentials = [];
+                } else if (type === 'calendar') {
+                    state.appointments = [];
+                }
+                saveLocalDb();
+                logActivity("DELETE", "Limpeza", `Os dados da aba ${type} foram apagados.`, "Alerta");
+                renderWorkspace();
+            }
+        };
+
         window.switchTab = function(tabName) {
             state.activeTab = tabName;
             
@@ -2765,19 +3003,11 @@ create table posto_backups (
             state.audits.unshift(newAudit);
             saveLocalDb();
             
-            if (isFirebaseActive) {
-                saveToFirestore("audit_logs", newAudit.id, newAudit);
-            }
             renderWorkspace();
         }
 
         window.clearAuditLogs = function() {
             if (confirm("Tem certeza que deseja apagar todo o livro de auditoria?")) {
-                if (isFirebaseActive) {
-                    state.audits.forEach(aud => {
-                        deleteFromFirestore("audit_logs", aud.id);
-                    });
-                }
                 state.audits = [];
                 logActivity("DELETE", "Auditoria", "Livro de auditoria limpo pelo administrador");
                 renderWorkspace();
@@ -3034,16 +3264,31 @@ create table posto_backups (
             }
 
             // 6. Calibration & Compliance rendering
+            const startDate = document.getElementById('complianceStartDate')?.value;
+            const endDate = document.getElementById('complianceEndDate')?.value;
+
+            // Reset select all checkboxes
+            const selectAllCalsCheckbox = document.getElementById('selectAllCals');
+            if (selectAllCalsCheckbox) selectAllCalsCheckbox.checked = false;
+            const selectAllConfsCheckbox = document.getElementById('selectAllConfs');
+            if (selectAllConfsCheckbox) selectAllConfsCheckbox.checked = false;
+
+            let filteredCalibrations = state.calibrations;
+            if (startDate) filteredCalibrations = filteredCalibrations.filter(c => c.date >= startDate);
+            if (endDate) filteredCalibrations = filteredCalibrations.filter(c => c.date <= endDate);
+
             const calibrationsTable = document.getElementById('calibrationsTableBody');
             let calHtml = '';
-            state.calibrations.forEach(cal => {
+            filteredCalibrations.forEach(cal => {
                 calHtml += `
                     <tr class="border-b border-hdBorder/60 hover:bg-hdSurfaceContainer/40">
+                        <td class="py-2.5 px-3"><input type="checkbox" class="cal-checkbox" value="${cal.id}" /></td>
                         <td class="py-2.5 px-3">${cal.date}</td>
                         <td class="py-2.5 px-3 font-bold">${cal.referenceName}</td>
                         <td class="py-2.5 px-3 text-right">${cal.nominalVolume}L / ${cal.measuredVolume}L</td>
                         <td class="py-2.5 px-3 text-right font-semibold text-hdPrimary">${cal.errorPercent}%</td>
                         <td class="py-2.5 px-3 text-hdTextSecondary">Laudo #${cal.laudo}</td>
+                        <td class="py-2.5 px-3 text-right font-semibold">R$ ${(cal.totalValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                         <td class="py-2.5 px-3">
                             <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${cal.isConforme ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
                                 ${cal.isConforme ? 'Aprovado' : 'Ajustar'}
@@ -3052,15 +3297,36 @@ create table posto_backups (
                     </tr>
                 `;
             });
-            calibrationsTable.innerHTML = calHtml || '<tr><td colspan="6" class="py-4 text-center text-hdTextSecondary">Nenhum laudo lançado.</td></tr>';
+            
+            if (filteredCalibrations.length > 0) {
+                let totalLitros = filteredCalibrations.reduce((sum, cal) => sum + (cal.nominalVolume || 0), 0);
+                let totalValor = filteredCalibrations.reduce((sum, cal) => sum + (cal.totalValue || 0), 0);
+                calHtml += `
+                    <tr class="bg-hdSurface font-bold text-xs border-t-2 border-hdBorder">
+                        <td colspan="3" class="py-2.5 px-3 text-right">Total:</td>
+                        <td class="py-2.5 px-3 text-right text-hdPrimary">${totalLitros.toLocaleString('pt-BR')} L</td>
+                        <td colspan="2" class="py-2.5 px-3"></td>
+                        <td class="py-2.5 px-3 text-right text-hdGreen">R$ ${totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                        <td class="py-2.5 px-3"></td>
+                    </tr>
+                `;
+            }
+            
+            calibrationsTable.innerHTML = calHtml || '<tr><td colspan="8" class="py-4 text-center text-hdTextSecondary">Nenhum laudo lançado no período.</td></tr>';
+
+            let filteredConformities = state.conformities;
+            if (startDate) filteredConformities = filteredConformities.filter(c => c.date >= startDate);
+            if (endDate) filteredConformities = filteredConformities.filter(c => c.date <= endDate);
 
             const conformityTable = document.getElementById('conformityTableBody');
             let confHtml = '';
-            state.conformities.forEach(rec => {
+            filteredConformities.forEach(rec => {
                 confHtml += `
                     <tr class="border-b border-hdBorder/60 hover:bg-hdSurfaceContainer/40">
+                        <td class="py-2.5 px-3"><input type="checkbox" class="conf-checkbox" value="${rec.id}" /></td>
                         <td class="py-2.5 px-3">${rec.date}</td>
                         <td class="py-2.5 px-3 font-bold text-hdPrimary">${rec.fuelType}</td>
+                        <td class="py-2.5 px-3 text-hdTextSecondary">${rec.deliveryId ? ((state.deliveries || []).find(d => d.id === rec.deliveryId)?.invoiceNumber || '-') : '-'}</td>
                         <td class="py-2.5 px-3 text-right">${rec.densityMeasured} / ${rec.temperature}ºC</td>
                         <td class="py-2.5 px-3 text-right font-semibold">${rec.ethanolPercent}%</td>
                         <td class="py-2.5 px-3 text-hdTextSecondary">${rec.technicianName}</td>
@@ -3072,7 +3338,7 @@ create table posto_backups (
                     </tr>
                 `;
             });
-            conformityTable.innerHTML = confHtml || '<tr><td colspan="6" class="py-4 text-center text-hdTextSecondary">Sem análises de laboratório lançadas.</td></tr>';
+            conformityTable.innerHTML = confHtml || '<tr><td colspan="8" class="py-4 text-center text-hdTextSecondary">Sem análises de laboratório lançadas no período.</td></tr>';
 
             const deliveriesTable = document.getElementById('deliveriesTableBody');
             if (deliveriesTable) {
@@ -3297,9 +3563,6 @@ create table posto_backups (
                     tank.pricePerLiter = price;
                     tank.color = color;
                     
-                    if (isFirebaseActive) {
-                        saveToFirestore("fuel_tanks", tank.id, tank);
-                    }
                     logActivity("UPDATE", "Tanques", `Tanque ${name} atualizado no sistema`);
                 }
                 window.editingTankId = null;
@@ -3317,10 +3580,6 @@ create table posto_backups (
 
                 state.tanks.push(newTank);
                 
-                if (isFirebaseActive) {
-                    saveToFirestore("fuel_tanks", newTank.id, newTank);
-                }
-
                 logActivity("CREATE", "Tanques", `Tanque ${name} de ${capacity}L registrado no sistema`);
             }
 
@@ -3348,10 +3607,6 @@ create table posto_backups (
 
             state.employees.push(newEmp);
             saveLocalDb();
-
-            if (isFirebaseActive) {
-                saveToFirestore("employees", newEmp.id, newEmp);
-            }
 
             logActivity("CREATE", "Equipe", `Novo funcionário ${name} (${role}) cadastrado`);
             closeModal('addEmployeeModal');
@@ -3529,9 +3784,6 @@ create table posto_backups (
                     state.shifts[shiftIndex].shift = shiftText;
                     
                     saveLocalDb();
-                    if (isFirebaseActive) {
-                        saveToFirestore("shift_schedules", window.editingShiftId, state.shifts[shiftIndex]);
-                    }
                     logActivity("UPDATE", "Agenda", `Escala de ${emp.name} atualizada para turno ${shiftText} na ${dayOfWeek}`);
                 }
                 window.editingShiftId = null;
@@ -3560,10 +3812,6 @@ create table posto_backups (
 
                 state.shifts.push(newShift);
                 saveLocalDb();
-
-                if (isFirebaseActive) {
-                    saveToFirestore("shift_schedules", newShift.id, newShift);
-                }
 
                 logActivity("CREATE", "Agenda", `Frentista ${emp.name} alocado para turno ${shiftText} na ${dayOfWeek}`);
             }
@@ -3604,10 +3852,6 @@ create table posto_backups (
             state.reports.unshift(newReport);
             saveLocalDb();
 
-            if (isFirebaseActive) {
-                saveToFirestore("daily_reports", newReport.id, newReport);
-            }
-
             logActivity("CREATE", "Relatórios", `Fechamento de caixa lançado para ${fuelName} em ${date} • Total: R$ ${totalSales.toLocaleString()}`);
             closeModal('addReportModal');
             renderWorkspace();
@@ -3637,9 +3881,6 @@ create table posto_backups (
                     noz.fuelType = fuelType;
                     noz.color = color;
 
-                    if (isFirebaseActive) {
-                        saveToFirestore("nozzles", noz.id, noz);
-                    }
                     logActivity("UPDATE", "Bicos", `Bico ${nozzleNumber} atualizado no sistema`);
                 }
                 window.editingNozzleId = null;
@@ -3657,10 +3898,6 @@ create table posto_backups (
                 };
 
                 state.nozzles.push(newNozzle);
-
-                if (isFirebaseActive) {
-                    saveToFirestore("nozzles", newNozzle.id, newNozzle);
-                }
 
                 logActivity("CREATE", "Bicos", `Novo ${nozzleNumber} associado ao ${tankName} registrado`);
             }
@@ -3908,6 +4145,16 @@ create table posto_backups (
             const cnpj = state.activeUser?.stationCnpj || "12.345.678/0001-99";
 
             const isConforme = ANPUtils.isVolumeErrorCompliant(deviationMl);
+            
+            let pricePerLiter = 5.799; // Default fallback
+            const matchedNozzle = (state.nozzles || []).find(n => n.nozzleNumber === referenceName);
+            if (matchedNozzle) {
+                const matchedTank = (state.tanks || []).find(t => t.id === matchedNozzle.tankId);
+                if (matchedTank) {
+                    pricePerLiter = matchedTank.pricePerLiter;
+                }
+            }
+            const totalValue = nominalVolume * pricePerLiter;
 
             const newCal = {
                 id: Date.now(),
@@ -3920,15 +4167,13 @@ create table posto_backups (
                 inspector,
                 laudo,
                 isConforme,
+                pricePerLiter,
+                totalValue,
                 stationCnpj: cnpj
             };
 
             state.calibrations.unshift(newCal);
             saveLocalDb();
-
-            if (isFirebaseActive) {
-                saveToFirestore("calibrations", newCal.id, newCal);
-            }
 
             logActivity("CREATE", "Calibração", `Aferição lançada para ${referenceName} com desvio de ${deviationMl}ml (${errorPercent}%)`, isConforme ? "Regular" : "Irregular");
             closeModal('addCalibrationModal');
@@ -4123,6 +4368,9 @@ create table posto_backups (
             const cnpj = state.activeUser?.stationCnpj || "12.345.678/0001-99";
 
             const isConforme = ANPUtils.isFuelCompliant(fuelType, correctedDensity, ethanolPercent);
+            const deliveryIdVal = document.getElementById('confDeliverySelect')?.value;
+            const deliveryId = deliveryIdVal ? parseInt(deliveryIdVal) : null;
+
 
             const newConf = {
                 id: Date.now(),
@@ -4137,15 +4385,19 @@ create table posto_backups (
                 isConforme,
                 technicianName,
                 observation: isConforme ? "Aprovado sem restrições" : "Análise físico-química fora das normas da ANP",
+                deliveryId: deliveryId,
                 stationCnpj: cnpj
             };
 
             state.conformities.unshift(newConf);
-            saveLocalDb();
-
-            if (isFirebaseActive) {
-                saveToFirestore("conformity_records", newConf.id, newConf);
+            if (deliveryId) {
+                const linkedDelivery = (state.deliveries || []).find(d => d.id === deliveryId);
+                if (linkedDelivery) {
+                    linkedDelivery.conformityId = newConf.id;
+                }
             }
+
+            saveLocalDb();
 
             logActivity("CREATE", "Qualidade", `Análise físico-química lançada para ${fuelType} por ${technicianName}`, isConforme ? "Regular" : "Irregular");
             closeModal('addConformityModal');
@@ -4243,9 +4495,6 @@ create table posto_backups (
             const tank = state.tanks.find(t => t.id === id);
             state.tanks = state.tanks.filter(t => t.id !== id);
             saveLocalDb();
-            if (isFirebaseActive) {
-                deleteFromFirestore("fuel_tanks", id);
-            }
             logActivity("DELETE", "Tanques", `Tanque ${tank ? tank.name : "nº " + id} removido do sistema`);
             renderWorkspace();
         };
@@ -4269,9 +4518,6 @@ create table posto_backups (
             const noz = state.nozzles.find(n => n.id === id);
             state.nozzles = state.nozzles.filter(n => n.id !== id);
             saveLocalDb();
-            if (isFirebaseActive) {
-                deleteFromFirestore("nozzles", id);
-            }
             logActivity("DELETE", "Bicos", `Bico ${noz ? noz.nozzleNumber : "nº " + id} removido do sistema`);
             renderWorkspace();
         };
@@ -4283,9 +4529,6 @@ create table posto_backups (
                 const emp = state.employees.find(e => e.id === id);
                 state.employees = state.employees.filter(e => e.id !== id);
                 saveLocalDb();
-                if (isFirebaseActive) {
-                    deleteFromFirestore("employees", id);
-                }
                 logActivity("DELETE", "Equipe", `Funcionário ${emp ? emp.name : "nº " + id} removido da base de dados`);
                 renderWorkspace();
             }
@@ -4295,9 +4538,6 @@ create table posto_backups (
             if (confirm("Remover esta alocação de turno?")) {
                 state.shifts = state.shifts.filter(s => s.id !== id);
                 saveLocalDb();
-                if (isFirebaseActive) {
-                    deleteFromFirestore("shift_schedules", id);
-                }
                 logActivity("DELETE", "Agenda", `Alocação de turno excluída`);
                 renderWorkspace();
             }
@@ -4340,7 +4580,7 @@ create table posto_backups (
             filteredLmc.forEach(r => {
                 totalSold += Number(r.litersSold || 0);
                 totalReceived += Number(r.deliveryVolume || 0);
-                const sobraFalta = Number(r.physicalStock || 0) - (Number(r.openingStock || 0) + Number(r.deliveryVolume || 0) - Number(r.litersSold || 0));
+                const sobraFalta = LMCCalculator.getSobraFalta(r);
                 totalSobraFalta += sobraFalta;
             });
 
@@ -4381,7 +4621,7 @@ create table posto_backups (
                 rows.forEach(r => {
                     sumDelivery += Number(r.deliveryVolume || 0);
                     sumSold += Number(r.litersSold || 0);
-                    const sf = Number(r.physicalStock || 0) - (Number(r.openingStock || 0) + Number(r.deliveryVolume || 0) - Number(r.litersSold || 0));
+                    const sf = LMCCalculator.getSobraFalta(r);
                     sumSobraFalta += sf;
                 });
 
@@ -4414,7 +4654,7 @@ create table posto_backups (
                 `;
 
                 rows.forEach(r => {
-                    const sf = Number(r.physicalStock || 0) - (Number(r.openingStock || 0) + Number(r.deliveryVolume || 0) - Number(r.litersSold || 0));
+                    const sf = LMCCalculator.getSobraFalta(r);
                     let sfClass = 'text-hdTextPrimary';
                     let sfText = sf.toLocaleString('pt-BR');
                     if (sf > 0) {
@@ -4524,10 +4764,11 @@ create table posto_backups (
                 const deleted = state.lmc.find(x => x.id === id);
                 state.lmc = state.lmc.filter(x => x.id !== id);
                 saveLocalDb();
-                
                 logActivity("DELETE", "Relatórios", `Registro LMC excluído: ${deleted ? deleted.fuelType : ''} de ${deleted ? deleted.date : ''}`);
+                
+                // Força a atualização da interface imediatamente
                 renderWorkspace();
-                renderLMC();
+                if (window.renderLMC) window.renderLMC(); 
             }
         };
 
@@ -4537,8 +4778,17 @@ create table posto_backups (
             const sold = Number(document.getElementById('lmcModalSold').value || 0);
             const physical = Number(document.getElementById('lmcModalPhysical').value || 0);
 
-            const expected = opening + delivery - sold;
-            const diff = physical - expected;
+            const expected = LMCCalculator.getExpectedStock({
+                openingStock: document.getElementById('lmcModalOpening').value,
+                deliveryVolume: document.getElementById('lmcModalDelivery').value,
+                litersSold: document.getElementById('lmcModalSold').value
+            });
+            const diff = LMCCalculator.getSobraFalta({
+                physicalStock: document.getElementById('lmcModalPhysical').value,
+                openingStock: document.getElementById('lmcModalOpening').value,
+                deliveryVolume: document.getElementById('lmcModalDelivery').value,
+                litersSold: document.getElementById('lmcModalSold').value
+            });
 
             document.getElementById('lmcModalExpectedPreview').innerText = expected.toLocaleString('pt-BR') + ' L';
             
@@ -4555,20 +4805,70 @@ create table posto_backups (
             }
         };
 
-        window.submitAddLmc = function(e) {
-            e.preventDefault();
+        window.autoSaveLmc = function() {
+            if (!state.activeUser) return;
+            if (!state.lmc || !Array.isArray(state.lmc)) state.lmc = [];
+
             const idVal = document.getElementById('lmcEditId').value;
             const fuelType = document.getElementById('lmcModalFuel').value;
             const date = document.getElementById('lmcModalDate').value;
-            const opening = Number(document.getElementById('lmcModalOpening').value);
+            const opening = Number(document.getElementById('lmcModalOpening').value || 0);
             const delivery = Number(document.getElementById('lmcModalDelivery').value || 0);
-            const sold = Number(document.getElementById('lmcModalSold').value);
-            const physical = Number(document.getElementById('lmcModalPhysical').value);
+            const sold = Number(document.getElementById('lmcModalSold').value || 0);
+            const physical = Number(document.getElementById('lmcModalPhysical').value || 0);
+            const cnpj = state.activeUser.stationCnpj;
 
-            const cnpj = state.activeUser?.stationCnpj || "12.345.678/0001-99";
+            if (!date || !fuelType) return;
 
             if (idVal) {
-                // Update
+                const r = state.lmc.find(x => x.id === Number(idVal));
+                if (r) {
+                    r.fuelType = fuelType;
+                    r.date = date;
+                    r.openingStock = opening;
+                    r.deliveryVolume = delivery;
+                    r.litersSold = sold;
+                    r.physicalStock = physical;
+                    saveLocalDb();
+                    if (window.renderLMC) window.renderLMC();
+                }
+            } else {
+                // Para novos registros, evitamos salvar se estiver tudo zerado
+                if (opening === 0 && delivery === 0 && sold === 0 && physical === 0) return;
+
+                const nextId = state.lmc.length > 0 ? Math.max(...state.lmc.map(x => Number(x.id || 0))) + 1 : 1;
+                const newLmc = {
+                    id: nextId,
+                    date: date,
+                    fuelType: fuelType,
+                    openingStock: opening,
+                    deliveryVolume: delivery,
+                    litersSold: sold,
+                    physicalStock: physical,
+                    stationCnpj: cnpj
+                };
+                state.lmc.push(newLmc);
+                document.getElementById('lmcEditId').value = nextId;
+                saveLocalDb();
+                if (window.renderLMC) window.renderLMC();
+            }
+        };
+
+        window.submitAddLmc = function(e) {
+            if (e) e.preventDefault();
+            if (!state.activeUser) return;
+            if (!state.lmc || !Array.isArray(state.lmc)) state.lmc = [];
+
+            const idVal = document.getElementById('lmcEditId').value;
+            const fuelType = document.getElementById('lmcModalFuel').value;
+            const date = document.getElementById('lmcModalDate').value;
+            const opening = Number(document.getElementById('lmcModalOpening').value || 0);
+            const delivery = Number(document.getElementById('lmcModalDelivery').value || 0);
+            const sold = Number(document.getElementById('lmcModalSold').value || 0);
+            const physical = Number(document.getElementById('lmcModalPhysical').value || 0);
+            const cnpj = state.activeUser.stationCnpj;
+
+            if (idVal) {
                 const r = state.lmc.find(x => x.id === Number(idVal));
                 if (r) {
                     r.fuelType = fuelType;
@@ -4580,10 +4880,9 @@ create table posto_backups (
                 }
                 logActivity("UPDATE", "Relatórios", `Registro LMC atualizado para ${fuelType} em ${date}`);
             } else {
-                // Insert
-                const newId = state.lmc.length > 0 ? Math.max(...state.lmc.map(x => x.id)) + 1 : 1;
-                state.lmc.push({
-                    id: newId,
+                const nextId = state.lmc.length > 0 ? Math.max(...state.lmc.map(x => Number(x.id || 0))) + 1 : 1;
+                const newLmc = {
+                    id: nextId,
                     date: date,
                     fuelType: fuelType,
                     openingStock: opening,
@@ -4591,266 +4890,149 @@ create table posto_backups (
                     litersSold: sold,
                     physicalStock: physical,
                     stationCnpj: cnpj
-                });
+                };
+                state.lmc.push(newLmc);
                 logActivity("CREATE", "Relatórios", `Novo registro LMC lançado para ${fuelType} em ${date}`);
             }
 
             saveLocalDb();
             closeModal('addLmcModal');
+            
             renderWorkspace();
-            renderLMC();
+            if (window.renderLMC) window.renderLMC(); 
         };
 
         window.downloadLMCPDF = function() {
             try {
-                if (!state.lmc || state.lmc.length === 0) {
-                    alert("Não há registros LMC para exportar.");
+                const lmcContainer = document.getElementById('lmcTablesContainer');
+                if (!lmcContainer || lmcContainer.querySelector('.text-center.py-12')) {
+                    alert("Não há registros LMC visíveis para exportar.");
                     return;
                 }
 
                 const { jsPDF } = window.jspdf;
-                const doc = new jsPDF('p', 'mm', 'a4'); // Portrait format
+                const doc = new jsPDF('p', 'mm', 'a4');
 
                 const cnpj = state.activeUser?.stationCnpj || "12.345.678/0001-99";
+                const stationName = state.activeUser?.stationName || "Posto de Combustíveis";
                 const cityState = state.activeUser?.stationEndereco ? (state.activeUser.stationEndereco.split(',').pop().trim()) : "Feira de Santana - BA";
                 const periodText = `${document.getElementById('lmcStartDate').value.split('-').reverse().join('/')} a ${document.getElementById('lmcEndDate').value.split('-').reverse().join('/')}`;
                 const emissionDate = new Date().toLocaleString('pt-BR');
 
-                // Page width is 210mm. Margins are 12mm left, 12mm right. Usable width: 186mm.
+                const totalSoldLabel = document.getElementById('lmcKpiSold').innerText;
+                const totalReceivedLabel = document.getElementById('lmcKpiReceived').innerText;
+                const totalBalanceLabel = document.getElementById('lmcKpiBalance').innerText;
+
                 const startX = 12;
                 const endX = 198;
                 const usableWidth = 186;
 
-                // 1. HEADER CONTAINER
-                // Top border line in deep blue
-                doc.setDrawColor(30, 58, 138); // #1e3a8a
+                // 1. Cabeçalho
+                doc.setDrawColor(30, 58, 138); 
                 doc.setLineWidth(1);
                 doc.line(startX, 15, endX, 15);
 
-                // Title
-                doc.setTextColor(30, 58, 138); // #1e3a8a
+                doc.setTextColor(30, 58, 138); 
                 doc.setFont("helvetica", "bold");
                 doc.setFontSize(14);
                 doc.text("LIVRO DE MOVIMENTAÇÃO DE COMBUSTÍVEIS (LMC)", startX, 22);
 
-                // Subtitle
-                doc.setTextColor(75, 85, 99); // #4b5563
+                doc.setTextColor(75, 85, 99); 
                 doc.setFont("helvetica", "normal");
                 doc.setFontSize(9);
-                doc.text("Balanço Consolidado de Movimentação Volumétrica", startX, 27);
+                doc.text(`${stationName} - CNPJ: ${cnpj}`, startX, 27);
 
-                // Meta Info (Top Right)
                 doc.setFontSize(8);
                 doc.setTextColor(75, 85, 99);
                 doc.text(`Período: ${periodText}`, endX, 20, { align: 'right' });
                 doc.text(`Emissão: ${emissionDate}`, endX, 24, { align: 'right' });
                 doc.text(`Unidade: ${cityState}`, endX, 28, { align: 'right' });
 
-                // Divider line below header
                 doc.setDrawColor(30, 58, 138);
                 doc.setLineWidth(0.5);
                 doc.line(startX, 31, endX, 31);
 
-                // 2. FORMULA BOX
-                doc.setFillColor(241, 245, 249); // #f1f5f9
-                doc.rect(startX, 35, usableWidth, 14, 'F');
-                doc.setDrawColor(203, 213, 225); // #cbd5e1
-                doc.setLineDash([1, 1]);
-                doc.rect(startX, 35, usableWidth, 14, 'D');
-                doc.setLineDash([]); // Reset dashed style
-                
-                doc.setFont("helvetica", "bold");
-                doc.setFontSize(7.5);
-                doc.setTextColor(71, 85, 105); // #475569
-                doc.text("Métrica de Auditoria Diária (Fórmula Regulamentar ANP):", startX + 3, 39);
-                doc.setFont("helvetica", "normal");
-                doc.text("Sobra/Falta Diária = Estoque Físico Atual - (Estoque Inicial + Entrega do Dia - Venda do Dia)", startX + 3, 43);
-                doc.text("*Valores negativos indicam falta física (perda/evaporação) e valores positivos indicam sobra física de produto nas cubas.", startX + 3, 46);
-
-                // Get filtered LMC data for summary calculations
-                const fuelFilter = document.getElementById('lmcFilterFuel').value;
-                const startDate = document.getElementById('lmcStartDate').value;
-                const endDate = document.getElementById('lmcEndDate').value;
-
-                let filteredLmc = state.lmc || [];
-                if (fuelFilter !== 'all') {
-                    filteredLmc = filteredLmc.filter(r => r.fuelType === fuelFilter);
-                }
-                if (startDate) {
-                    filteredLmc = filteredLmc.filter(r => r.date >= startDate);
-                }
-                if (endDate) {
-                    filteredLmc = filteredLmc.filter(r => r.date <= endDate);
-                }
-
-                let totalSold = 0;
-                let totalReceived = 0;
-                let totalSobraFalta = 0;
-
-                filteredLmc.forEach(r => {
-                    totalSold += Number(r.litersSold || 0);
-                    totalReceived += Number(r.deliveryVolume || 0);
-                    const sf = Number(r.physicalStock || 0) - (Number(r.openingStock || 0) + Number(r.deliveryVolume || 0) - Number(r.litersSold || 0));
-                    totalSobraFalta += sf;
-                });
-
-                // 3. SECTION TITLE: Resumo Volumétrico
-                doc.setFillColor(30, 58, 138); // #1e3a8a
-                doc.rect(startX, 53, 1.2, 4.5, 'F');
-                doc.setFont("helvetica", "bold");
-                doc.setFontSize(10);
-                doc.setTextColor(30, 58, 138);
-                doc.text("Resumo Volumétrico do Período", startX + 3, 57);
-
-                // 4. KPI CARDS
+                // 2. Cards de Resumo
                 const cardW = (usableWidth - 8) / 3;
                 const cardH = 15;
-                const cardY = 61;
+                const cardY = 38;
 
-                // Card 1
-                doc.setFillColor(248, 250, 252); // #f8fafc
-                doc.setDrawColor(226, 232, 240); // #e2e8f0
+                doc.setFillColor(248, 250, 252);
+                doc.setDrawColor(226, 232, 240);
                 doc.rect(startX, cardY, cardW, cardH, 'FD');
                 doc.setFont("helvetica", "bold");
-                doc.setFontSize(7);
-                doc.setTextColor(100, 116, 139); // #64748b
+                doc.setFontSize(6.5);
+                doc.setTextColor(100, 116, 139);
                 doc.text("VOLUME TOTAL VENDIDO", startX + cardW/2, cardY + 5, { align: 'center' });
-                doc.setFont("helvetica", "bold");
-                doc.setFontSize(11);
-                doc.setTextColor(15, 23, 42); // #0f172a
-                doc.text(`${totalSold.toLocaleString('pt-BR')} L`, startX + cardW/2, cardY + 11, { align: 'center' });
+                doc.setFontSize(10);
+                doc.setTextColor(15, 23, 42);
+                doc.text(totalSoldLabel, startX + cardW/2, cardY + 11, { align: 'center' });
 
-                // Card 2
                 const card2X = startX + cardW + 4;
                 doc.setFillColor(248, 250, 252);
                 doc.rect(card2X, cardY, cardW, cardH, 'FD');
                 doc.setFont("helvetica", "bold");
-                doc.setFontSize(7);
+                doc.setFontSize(6.5);
                 doc.setTextColor(100, 116, 139);
                 doc.text("VOLUME TOTAL RECEBIDO", card2X + cardW/2, cardY + 5, { align: 'center' });
-                doc.setFont("helvetica", "bold");
-                doc.setFontSize(11);
+                doc.setFontSize(10);
                 doc.setTextColor(15, 23, 42);
-                doc.text(`${totalReceived.toLocaleString('pt-BR')} L`, card2X + cardW/2, cardY + 11, { align: 'center' });
+                doc.text(totalReceivedLabel, card2X + cardW/2, cardY + 11, { align: 'center' });
 
-                // Card 3
                 const card3X = card2X + cardW + 4;
                 doc.setFillColor(248, 250, 252);
                 doc.rect(card3X, cardY, cardW, cardH, 'FD');
                 doc.setFont("helvetica", "bold");
-                doc.setFontSize(7);
+                doc.setFontSize(6.5);
                 doc.setTextColor(100, 116, 139);
-                doc.text("BALANÇO GERAL (DIFERENÇA)", card3X + cardW/2, cardY + 5, { align: 'center' });
-                doc.setFont("helvetica", "bold");
-                doc.setFontSize(11);
-                if (totalSobraFalta >= 0) {
-                    doc.setTextColor(22, 163, 74); // #16a34a
-                    doc.text(`+${totalSobraFalta.toLocaleString('pt-BR')} L`, card3X + cardW/2, cardY + 11, { align: 'center' });
-                } else {
-                    doc.setTextColor(220, 38, 38); // #dc2626
-                    doc.text(`${totalSobraFalta.toLocaleString('pt-BR')} L`, card3X + cardW/2, cardY + 11, { align: 'center' });
-                }
-
-                // 5. SECTION TITLE: Detalhamento por Combustível
-                let currentY = 82;
-                doc.setFillColor(30, 58, 138); // #1e3a8a
-                doc.rect(startX, currentY, 1.2, 4.5, 'F');
-                doc.setFont("helvetica", "bold");
+                doc.text("BALANÇO DE AUDITORIA", card3X + cardW/2, cardY + 5, { align: 'center' });
                 doc.setFontSize(10);
-                doc.setTextColor(30, 58, 138);
-                doc.text("Detalhamento por Combustível", startX + 3, currentY + 4);
-                currentY += 8;
+                if (totalBalanceLabel.includes('+')) doc.setTextColor(22, 163, 74);
+                else if (totalBalanceLabel.includes('-')) doc.setTextColor(220, 38, 38);
+                else doc.setTextColor(15, 23, 42);
+                doc.text(totalBalanceLabel, card3X + cardW/2, cardY + 11, { align: 'center' });
 
-                // Group data by fuel
-                const grouped = {};
-                filteredLmc.forEach(r => {
-                    if (!grouped[r.fuelType]) grouped[r.fuelType] = [];
-                    grouped[r.fuelType].push(r);
-                });
-
-                const sortedFuels = Object.keys(grouped).sort();
-
-                sortedFuels.forEach((fuel, fuelIdx) => {
-                    const rows = grouped[fuel].sort((a,b) => a.date.localeCompare(b.date));
+                // 3. Listagem por Combustível
+                let currentY = 62;
+                const fuelCards = lmcContainer.querySelectorAll(':scope > div.bg-white');
+                
+                fuelCards.forEach((card) => {
+                    const fuelName = card.querySelector('h3 span:last-child').innerText.replace('Produto: ', '').trim();
+                    const tableRows = card.querySelectorAll('table tbody tr');
                     
-                    let sumDelivery = 0;
-                    let sumSold = 0;
-                    let sumSobraFalta = 0;
-                    let lastPhysicalStock = 0;
-
-                    rows.forEach(r => {
-                        sumDelivery += Number(r.deliveryVolume || 0);
-                        sumSold += Number(r.litersSold || 0);
-                        const sf = Number(r.physicalStock || 0) - (Number(r.openingStock || 0) + Number(r.deliveryVolume || 0) - Number(r.litersSold || 0));
-                        sumSobraFalta += sf;
+                    const tableData = [];
+                    tableRows.forEach(tr => {
+                        const tds = tr.querySelectorAll('td');
+                        if (tds.length >= 6) {
+                            tableData.push([
+                                tds[0].innerText.trim(),
+                                tds[1].innerText.trim(),
+                                tds[2].innerText.trim(),
+                                tds[3].innerText.trim(),
+                                tds[4].innerText.trim(),
+                                tds[5].innerText.trim()
+                            ]);
+                        }
                     });
 
-                    if (rows.length > 0) {
-                        lastPhysicalStock = rows[rows.length - 1].physicalStock;
-                    }
-
-                    // Check if table fits on current page, if not, add page
-                    if (currentY > 210) {
+                    if (currentY > 240) {
                         doc.addPage();
                         currentY = 20;
                     }
 
-                    // Product title
                     doc.setFont("helvetica", "bold");
-                    doc.setFontSize(8.5);
+                    doc.setFontSize(9);
                     doc.setTextColor(30, 58, 138);
-                    doc.text(`Produto: ${fuel}`, startX, currentY);
-                    currentY += 3;
-
-                    // Build rows data
-                    const tableData = [];
-                    rows.forEach(r => {
-                        const sf = Number(r.physicalStock || 0) - (Number(r.openingStock || 0) + Number(r.deliveryVolume || 0) - Number(r.litersSold || 0));
-                        let sfText = sf.toLocaleString('pt-BR');
-                        if (sf > 0) sfText = '+' + sfText;
-
-                        const dateParts = r.date.split('-');
-                        const formattedDate = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : r.date;
-
-                        tableData.push([
-                            formattedDate,
-                            Number(r.openingStock).toLocaleString('pt-BR'),
-                            Number(r.deliveryVolume) ? Number(r.deliveryVolume).toLocaleString('pt-BR') : '0',
-                            Number(r.litersSold).toLocaleString('pt-BR'),
-                            Number(r.physicalStock).toLocaleString('pt-BR'),
-                            sfText
-                        ]);
-                    });
-
-                    // Add Total Row
-                    let totalSfText = sumSobraFalta.toLocaleString('pt-BR') + ' L';
-                    if (sumSobraFalta > 0) totalSfText = '+' + totalSfText;
-
-                    tableData.push([
-                        'TOTAL',
-                        '-',
-                        sumDelivery.toLocaleString('pt-BR'),
-                        sumSold.toLocaleString('pt-BR'),
-                        lastPhysicalStock.toLocaleString('pt-BR'),
-                        totalSfText
-                    ]);
+                    doc.text(`Produto: ${fuelName}`, startX, currentY);
+                    currentY += 2;
 
                     doc.autoTable({
                         startY: currentY,
-                        head: [['Data', 'Est. Inicial (L)', 'Entrega (L)', 'Venda (L)', 'Est. Físico (L)', 'Sobra/Falta (L)']],
+                        head: [['Data', 'Est. Inicial', 'Entrega', 'Venda', 'Est. Físico', 'Sobra/Falta']],
                         body: tableData,
                         theme: 'grid',
                         margin: { left: startX, right: 12 },
-                        headStyles: {
-                            fillColor: [30, 58, 138], // #1e3a8a
-                            textColor: [255, 255, 255],
-                            fontSize: 7.5,
-                            fontStyle: 'bold',
-                            halign: 'right'
-                        },
-                        alternateRowStyles: {
-                            fillColor: [248, 250, 252] // #f8fafc
-                        },
+                        headStyles: { fillColor: [30, 58, 138], textColor: [255, 255, 255], fontSize: 7, fontStyle: 'bold', halign: 'center' },
                         columnStyles: {
                             0: { halign: 'left', fontStyle: 'bold' },
                             1: { halign: 'right' },
@@ -4859,72 +5041,40 @@ create table posto_backups (
                             4: { halign: 'right' },
                             5: { halign: 'right', fontStyle: 'bold' }
                         },
-                        styles: {
-                            fontSize: 7.5,
-                            cellPadding: 2.5,
-                            lineColor: [226, 232, 240] // #e2e8f0
-                        },
-                        didParseCell: function (data) {
-                            // Style header column left
-                            if (data.row.section === 'head' && data.column.index === 0) {
-                                data.cell.styles.halign = 'left';
-                            }
-                            
-                            // Style total row
-                            if (data.row.index === tableData.length - 1) {
-                                data.cell.styles.fontStyle = 'bold';
-                                data.cell.styles.fillColor = [226, 232, 240]; // #e2e8f0
-                                data.cell.styles.textColor = [15, 23, 42]; // #0f172a
-                            }
-
-                            // Style Sobra/Falta colors
-                            if (data.column.index === 5 && data.row.section === 'body') {
-                                const valStr = data.cell.raw;
-                                if (valStr.startsWith('+')) {
-                                    data.cell.styles.textColor = [22, 163, 74]; // #16a34a
-                                } else if (valStr.startsWith('-') || (data.row.index === tableData.length - 1 && sumSobraFalta < 0)) {
-                                    data.cell.styles.textColor = [220, 38, 38]; // #dc2626
-                                }
+                        styles: { fontSize: 7, cellPadding: 2, lineColor: [226, 232, 240] },
+                        didParseCell: function(data) {
+                            if (data.row.section === 'body' && data.column.index === 5) {
+                                if (data.cell.text[0].includes('+')) data.cell.styles.textColor = [22, 163, 74];
+                                else if (data.cell.text[0].includes('-')) data.cell.styles.textColor = [220, 38, 38];
                             }
                         }
                     });
 
-                    currentY = doc.lastAutoTable.finalY + 8;
+                    currentY = doc.lastAutoTable.finalY + 12;
                 });
 
-                // 6. SIGNATURE SECTION
-                // Check if signatures fit on current page
-                if (currentY > 230) {
-                    doc.addPage();
-                    currentY = 30;
-                } else {
-                    currentY += 10;
+                // Footer
+                const totalPages = doc.internal.getNumberOfPages();
+                for (let i = 1; i <= totalPages; i++) {
+                    doc.setPage(i);
+                    doc.setFontSize(7);
+                    doc.setTextColor(150);
+                    doc.text(`Página ${i} de ${totalPages}`, endX, 285, { align: 'right' });
+                    doc.text(`Gerado por Posto Admin Cloud Sync - ${emissionDate}`, startX, 285);
+                    
+                    if (i === totalPages) {
+                        doc.setDrawColor(200);
+                        doc.line(startX + 60, 272, endX - 60, 272);
+                        doc.setFont("helvetica", "italic");
+                        doc.text("Assinatura do Responsável", usableWidth/2 + startX, 276, { align: 'center' });
+                    }
                 }
 
-                const lineW = 65;
-                const sigY = currentY + 18;
-
-                doc.setDrawColor(148, 163, 184); // #94a3b8
-                doc.setLineWidth(0.5);
-
-                // Column 1 Line
-                const col1X = startX + (usableWidth / 4) - (lineW / 2);
-                doc.line(col1X, sigY, col1X + lineW, sigY);
-                doc.setFont("helvetica", "normal");
-                doc.setFontSize(8);
-                doc.setTextColor(71, 85, 105); // #475569
-                doc.text("Responsável Técnico / Gerência", col1X + lineW/2, sigY + 4, { align: 'center' });
-
-                // Column 2 Line
-                const col2X = startX + (3 * usableWidth / 4) - (lineW / 2);
-                doc.line(col2X, sigY, col2X + lineW, sigY);
-                doc.text("Visto da Fiscalização / Auditoria", col2X + lineW/2, sigY + 4, { align: 'center' });
-
-                doc.save(`LMC_Volumetrico_Posto_${new Date().toISOString().split('T')[0]}.pdf`);
-                logActivity("DOWNLOAD", "Relatórios", `Exportado relatório PDF LMC com ${filteredLmc.length} registros.`);
-            } catch (error) {
-                console.error("Erro ao gerar PDF LMC:", error);
-                alert("Ocorreu um erro ao gerar o PDF do LMC. Verifique o console.");
+                doc.save(`LMC_${periodText.replace(/\//g, '-')}.pdf`);
+                logActivity("DOWNLOAD", "Relatórios", `Exportado relatório PDF LMC via DOM.`);
+            } catch (err) {
+                console.error("PDF Export Error:", err);
+                alert("Erro ao gerar PDF: " + err.message);
             }
         };
 
@@ -4932,9 +5082,6 @@ create table posto_backups (
             if (confirm("Apagar o registro deste relatório diário?")) {
                 state.reports = state.reports.filter(r => r.id !== id);
                 saveLocalDb();
-                if (isFirebaseActive) {
-                    deleteFromFirestore("daily_reports", id);
-                }
                 logActivity("DELETE", "Relatórios", `Relatório diário excluído do histórico`);
                 renderWorkspace();
             }
@@ -5342,30 +5489,34 @@ create table posto_backups (
                 stationCnpj: cnpj
             };
 
+            // 1. Ação Reativa: ESTADO LOCAL
             if (!state.appointments) state.appointments = [];
             state.appointments.push(newApp);
             saveLocalDb();
 
-            if (isFirebaseActive) {
-                saveToFirestore("appointments", newApp.id, newApp);
-            }
-
-            logActivity("CREATE", "Calendário", `Novo compromisso agendado: "${title}" em ${date}`);
-            window.selectedAppointmentDate = date; // Reactively update selected date to focus on new appointment
+            window.selectedAppointmentDate = date; // Update selected date to focus on new appointment
             closeModal('addAppointmentModal');
+            
+            // 2. Ação Reativa: RENDERIZAÇÃO IMEDIATA (Atualiza a tela)
             renderWorkspace();
+            logActivity("CREATE", "Calendário", `Novo compromisso agendado: "${title}" em ${date}`);
         };
 
         window.deleteAppointment = function(id) {
             if (confirm("Deseja marcar este compromisso como concluído e removê-lo?")) {
                 const app = state.appointments.find(a => a.id === id);
+                
+                // Opcional: Manipulação direta do DOM para feedback ainda mais rápido
+                // const el = document.getElementById(`app-card-${id}`);
+                // if (el) el.remove();
+
+                // 1. Ação Reativa: ESTADO LOCAL (Filtrar e remover)
                 state.appointments = state.appointments.filter(a => a.id !== id);
                 saveLocalDb();
-                if (isFirebaseActive) {
-                    deleteFromFirestore("appointments", id);
-                }
-                logActivity("DELETE", "Calendário", `Compromisso "${app ? app.title : id}" removido/concluído`);
+                
+                // 2. Ação Reativa: RENDERIZAÇÃO IMEDIATA (Atualiza a tela inteira)
                 renderWorkspace();
+                logActivity("DELETE", "Calendário", `Compromisso "${app ? app.title : id}" removido/concluído`);
             }
         };
 
@@ -5437,19 +5588,6 @@ create table posto_backups (
                 state.users[index] = { ...state.users[index], ...u };
             }
             saveLocalDb();
-
-            if (isFirebaseActive) {
-                async function syncUserDoc() {
-                    try {
-                        const { doc, setDoc, getFirestore } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
-                        const dbRef = getFirestore(firebaseApp);
-                        await setDoc(doc(dbRef, "users", u.email.toLowerCase()), u);
-                    } catch(err) {
-                        console.error("Error updating user bank details in firebase:", err);
-                    }
-                }
-                syncUserDoc();
-            }
 
             logActivity("UPDATE", "Finanças", `Dados PJ e conta bancária atualizados pela gerência`);
             closeModal('editBankModal');
@@ -5536,19 +5674,6 @@ create table posto_backups (
             state.users.push(newViewer);
             saveLocalDb();
 
-            if (isFirebaseActive) {
-                async function syncNewUser() {
-                    try {
-                        const { doc, setDoc, getFirestore } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
-                        const dbRef = getFirestore(firebaseApp);
-                        await setDoc(doc(dbRef, "users", email), newViewer);
-                    } catch(err) {
-                        console.error("Error creating firebase viewer doc:", err);
-                    }
-                }
-                syncNewUser();
-            }
-
             logActivity("CREATE", "Segurança", `Novo visualizador secundário ${name} (${email}) adicionado`);
             closeModal('addViewerModal');
             renderWorkspace();
@@ -5558,19 +5683,6 @@ create table posto_backups (
             if (confirm(`Tem certeza que deseja revogar o acesso do visualizador "${email}"?`)) {
                 state.users = state.users.filter(u => u.email.toLowerCase() !== email.toLowerCase());
                 saveLocalDb();
-
-                if (isFirebaseActive) {
-                    async function deleteUserDoc() {
-                        try {
-                            const { doc, deleteDoc, getFirestore } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
-                            const dbRef = getFirestore(firebaseApp);
-                            await deleteDoc(doc(dbRef, "users", email.toLowerCase()));
-                        } catch(err) {
-                            console.error("Error deleting firebase user doc:", err);
-                        }
-                    }
-                    deleteUserDoc();
-                }
 
                 logActivity("DELETE", "Segurança", `Acesso do visualizador ${email} revogado`);
                 renderWorkspace();
@@ -5822,9 +5934,6 @@ create table posto_backups (
                     const idToDelete = window.editingShiftId;
                     state.shifts = state.shifts.filter(s => s.id !== idToDelete);
                     saveLocalDb();
-                    if (isFirebaseActive) {
-                        deleteFromFirestore("shift_schedules", idToDelete);
-                    }
                     logActivity("DELETE", "Agenda", `Escala removida via painel de edição`);
                     window.editingShiftId = null;
                     closeModal('addShiftModal');
@@ -5839,9 +5948,6 @@ create table posto_backups (
                 const shiftsToClear = state.shifts.filter(sh => sh.dayOfWeek === dayStr && sh.stationCnpj === cnpj);
                 
                 shiftsToClear.forEach(sh => {
-                    if (isFirebaseActive) {
-                        deleteFromFirestore("shift_schedules", sh.id);
-                    }
                 });
 
                 state.shifts = state.shifts.filter(sh => !(sh.dayOfWeek === dayStr && sh.stationCnpj === cnpj));
@@ -5871,9 +5977,6 @@ create table posto_backups (
                 // Clear current day's shifts first
                 const currentShifts = state.shifts.filter(sh => sh.dayOfWeek === dayStr && sh.stationCnpj === cnpj);
                 currentShifts.forEach(sh => {
-                    if (isFirebaseActive) {
-                        deleteFromFirestore("shift_schedules", sh.id);
-                    }
                 });
 
                 // Remove from local state
@@ -5891,9 +5994,6 @@ create table posto_backups (
                         stationCnpj: cnpj
                     };
                     state.shifts.push(duplicatedShift);
-                    if (isFirebaseActive) {
-                        saveToFirestore("shift_schedules", newId, duplicatedShift);
-                    }
                 });
 
                 saveLocalDb();
@@ -6392,13 +6492,11 @@ create table posto_backups (
             const shiftType = shiftOverride || document.getElementById('dragShiftType').value;
             const cnpj = state.activeUser?.stationCnpj || "12.345.678/0001-99";
 
-            // Verificar se o frentista já tem escala neste dia
             const existingShift = state.shifts.find(sh => 
                 String(sh.employeeId) === String(empId) && 
                 sh.dayOfWeek === dayStr
             );
 
-            // Se for toque repetido para remover (toggle), não precisamos validar conflito
             const isToggleRemoval = existingShift && existingShift.shift === shiftType && shiftOverride;
             
             if (!isToggleRemoval) {
@@ -6411,27 +6509,14 @@ create table posto_backups (
 
             if (existingShift) {
                 const existingShiftIndex = state.shifts.findIndex(sh => sh.id === existingShift.id);
-                // Se o turno for exatamente o mesmo e clicado no painel rápido, podemos remover para alternar/toggle
                 if (state.shifts[existingShiftIndex].shift === shiftType && shiftOverride) {
-                    const idToDelete = state.shifts[existingShiftIndex].id;
-                    state.shifts = state.shifts.filter(s => s.id !== idToDelete);
-                    saveLocalDb();
-                    if (isFirebaseActive) {
-                        deleteFromFirestore("shift_schedules", idToDelete);
-                    }
-                    logActivity("DELETE", "Agenda", `Escala de ${emp.name} no ${dayStr} removida por toque repetido`);
+                    state.shifts = state.shifts.filter(s => s.id !== existingShift.id);
+                    if (window.saveLocalDb) window.saveLocalDb();
                 } else {
-                    // Caso contrário, atualiza para o novo turno selecionado
-                    const oldShift = state.shifts[existingShiftIndex].shift;
                     state.shifts[existingShiftIndex].shift = shiftType;
-                    saveLocalDb();
-                    if (isFirebaseActive) {
-                        saveToFirestore("shift_schedules", state.shifts[existingShiftIndex].id, state.shifts[existingShiftIndex]);
-                    }
-                    logActivity("UPDATE", "Agenda", `Turno de ${emp.name} no ${dayStr} atualizado de "${oldShift}" para "${shiftType}"`);
+                    if (window.saveLocalDb) window.saveLocalDb();
                 }
             } else {
-                // Adiciona nova escala
                 const newShift = {
                     id: Date.now(),
                     employeeId: parseInt(empId),
@@ -6440,27 +6525,19 @@ create table posto_backups (
                     shift: shiftType,
                     stationCnpj: cnpj
                 };
-
                 state.shifts.push(newShift);
-                saveLocalDb();
-
-                if (isFirebaseActive) {
-                    saveToFirestore("shift_schedules", newShift.id, newShift);
-                }
-
-                logActivity("CREATE", "Agenda", `Frentista ${emp.name} alocado para turno ${shiftType} no ${dayStr}`);
+                if (window.saveLocalDb) window.saveLocalDb();
             }
 
-            // Limpa a seleção apenas se o modo pincel não estiver ativo
             const brushMode = document.getElementById('brushModeToggle')?.checked === true;
             if (!brushMode) {
                 window.selectedEmployeeForAssign = null;
             }
 
-            // Atualiza visualizações
-            window.renderShiftCalendar();
-            window.renderDraggableEmployees();
-            renderWorkspace();
+            // Atualiza o calendário e a área de trabalho instantaneamente
+            if (window.renderShiftCalendar) window.renderShiftCalendar();
+            if (window.renderDraggableEmployees) window.renderDraggableEmployees();
+            if (window.renderWorkspace) window.renderWorkspace();
         };
 
         window.clearCurrentMonthScale = function() {
@@ -6476,11 +6553,6 @@ create table posto_backups (
             const prevLength = state.shifts.length;
             state.shifts = state.shifts.filter(sh => !daysList.includes(sh.dayOfWeek));
             saveLocalDb();
-            
-            if (isFirebaseActive) {
-                // Remove existing records in firebase too
-                // Real DB is fully synced or updated when we write.
-            }
             
             logActivity("DELETE", "Agenda", `Limpou a escala completa de frentistas`);
             window.renderShiftCalendar();
@@ -7003,6 +7075,17 @@ create table posto_backups (
 
         function openAddConformityModal() {
             document.getElementById('confDateInput').value = new Date().toISOString().split('T')[0];
+            
+            const deliverySelect = document.getElementById('confDeliverySelect');
+            if (deliverySelect) {
+                let optionsHtml = '<option value="">-- Nenhuma Nota Vinculada --</option>';
+                const delList = state.deliveries || [];
+                delList.forEach(d => {
+                    optionsHtml += `<option value="${d.id}">${d.invoiceNumber} - ${d.date} (${d.fuelType})</option>`;
+                });
+                deliverySelect.innerHTML = optionsHtml;
+            }
+            
             document.getElementById('addConformityModal').classList.remove('hidden');
             window.toggleWaterPhaseInput();
             window.updateConformityCalculator();
@@ -7053,6 +7136,158 @@ create table posto_backups (
             };
         }
         window.validarConformidadeGasolinaC = validarConformidadeGasolinaC;
+        function switchQualityTab(tab) {
+            const btnAfericao = document.getElementById('btnTabAfericao');
+            const btnAnalise = document.getElementById('btnTabAnalise');
+            const contentAfericao = document.getElementById('tabContentAfericao');
+            const contentAnalise = document.getElementById('tabContentAnalise');
+
+            if (tab === 'afericao') {
+                contentAfericao.style.display = 'block';
+                contentAnalise.style.display = 'none';
+
+                btnAfericao.classList.add('text-hdPrimary', 'border-hdPrimary');
+                btnAfericao.classList.remove('text-hdTextSecondary', 'border-transparent');
+
+                btnAnalise.classList.add('text-hdTextSecondary', 'border-transparent');
+                btnAnalise.classList.remove('text-hdPrimary', 'border-hdPrimary');
+            } else if (tab === 'analise') {
+                contentAfericao.style.display = 'none';
+                contentAnalise.style.display = 'block';
+
+                btnAnalise.classList.add('text-hdPrimary', 'border-hdPrimary');
+                btnAnalise.classList.remove('text-hdTextSecondary', 'border-transparent');
+
+                btnAfericao.classList.add('text-hdTextSecondary', 'border-transparent');
+                btnAfericao.classList.remove('text-hdPrimary', 'border-hdPrimary');
+            }
+        }
+        
+        window.switchQualityTab = switchQualityTab;
+        function toggleSelectAllCals(source) {
+            const checkboxes = document.querySelectorAll('.cal-checkbox');
+            checkboxes.forEach(cb => cb.checked = source.checked);
+        }
+
+        function toggleSelectAllConfs(source) {
+            const checkboxes = document.querySelectorAll('.conf-checkbox');
+            checkboxes.forEach(cb => cb.checked = source.checked);
+        }
+
+        function generateCalibrationsReport() {
+            const checkboxes = document.querySelectorAll('.cal-checkbox:checked');
+            if (checkboxes.length === 0) {
+                alert('Selecione pelo menos um registro de aferição para gerar o relatório.');
+                return;
+            }
+            
+            const selectedIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+            // Use state from the window or just state if it's in scope, but actually state is passed to renderWorkspace.
+            // Wait, state is defined in the script globally. Let's use global state.
+            const selectedData = state.calibrations.filter(cal => selectedIds.includes(cal.id));
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'pt', 'a4');
+            
+            doc.setFontSize(16);
+            doc.text("Relatório de Calibração (Aferição de Bombas)", 40, 40);
+            
+            doc.setFontSize(10);
+            doc.text("Posto Administrativo - CNPJ: 12.345.678/0001-99", 40, 60);
+            doc.text("Data de Emissão: " + new Date().toLocaleDateString('pt-BR'), 40, 75);
+            
+            let totalLiters = 0;
+            let totalValue = 0;
+            
+            const tableData = selectedData.map(cal => {
+                totalLiters += (cal.nominalVolume || 0);
+                totalValue += (cal.totalValue || 0);
+                
+                return [
+                    cal.date,
+                    cal.referenceName,
+                    `${cal.nominalVolume}L / ${cal.measuredVolume}L`,
+                    `${cal.errorPercent}%`,
+                    cal.laudo,
+                    `R$ ${(cal.totalValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+                    cal.isConforme ? 'Aprovado' : 'Ajustar'
+                ];
+            });
+            
+            tableData.push([
+                '',
+                'TOTAL',
+                `${totalLiters.toLocaleString('pt-BR')} L`,
+                '',
+                '',
+                `R$ ${totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+                ''
+            ]);
+            
+            doc.autoTable({
+                startY: 90,
+                head: [['Data', 'Referência', 'Vol Nom/Med', 'Erro %', 'Laudo', 'Valor Aferição', 'Status']],
+                body: tableData,
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: [41, 128, 185] },
+                didParseCell: function(data) {
+                    // Make last row bold
+                    if (data.row.index === tableData.length - 1) {
+                        data.cell.styles.fontStyle = 'bold';
+                        data.cell.styles.fillColor = [240, 240, 240];
+                    }
+                }
+            });
+            
+            doc.save('relatorio_calibracao.pdf');
+        }
+
+        function generateQualityReport() {
+            const checkboxes = document.querySelectorAll('.conf-checkbox:checked');
+            if (checkboxes.length === 0) {
+                alert('Selecione pelo menos uma análise de qualidade para gerar o relatório.');
+                return;
+            }
+            
+            const selectedIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+            const selectedData = state.conformities.filter(rec => selectedIds.includes(rec.id));
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'pt', 'a4');
+            
+            doc.setFontSize(16);
+            doc.text("Relatório de Análise de Conformidade (Qualidade)", 40, 40);
+            
+            doc.setFontSize(10);
+            doc.text("Posto Administrativo - CNPJ: 12.345.678/0001-99", 40, 60);
+            doc.text("Data de Emissão: " + new Date().toLocaleDateString('pt-BR'), 40, 75);
+            
+            const tableData = selectedData.map(rec => [
+                rec.date,
+                rec.fuelType,
+                rec.deliveryId ? (state.deliveries.find(d => d.id === rec.deliveryId)?.invoiceNumber || '-') : '-',
+                `${rec.densityMeasured} / ${rec.temperature}ºC`,
+                `${rec.ethanolPercent}%`,
+                rec.technicianName,
+                rec.isConforme ? 'Regular' : 'Irregular'
+            ]);
+            
+            doc.autoTable({
+                startY: 90,
+                head: [['Data', 'Combustível', 'Nota Fiscal', 'Densidade / Temp', 'Etanol %', 'Técnico', 'Status']],
+                body: tableData,
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: [39, 174, 96] },
+            });
+            
+            doc.save('relatorio_qualidade.pdf');
+        }
+
+        window.toggleSelectAllCals = toggleSelectAllCals;
+        window.toggleSelectAllConfs = toggleSelectAllConfs;
+        window.generateCalibrationsReport = generateCalibrationsReport;
+        window.generateQualityReport = generateQualityReport;
+        window.renderWorkspace = renderWorkspace;
     </script>
 </body>
 </html>

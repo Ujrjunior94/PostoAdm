@@ -1,0 +1,410 @@
+        if (activeSubTab == 3) {
+            // Quality Compliance Metric Card
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, HdBorder),
+                    colors = CardDefaults.cardColors(containerColor = HdSurface)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Controle de Qualidade ANP 🔬",
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = HdTextPrimary
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Padrões de conformidade regulados pela ANP:\n" +
+                                    "• Gasolina: Densidade a 20°C de 0.715 a 0.775 g/cm³ | Teor de Etanol de 25% a 29%.\n" +
+                                    "• Etanol: Densidade a 20°C de 0.805 a 0.815 g/cm³.\n" +
+                                    "• Diesel: Densidade a 20°C de 0.820 a 0.880 g/cm³.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = HdTextSecondary,
+                            lineHeight = 16.sp
+                        )
+
+                        val compliantCount = conformityRecords.count { it.isConforme }
+                        val totalCount = conformityRecords.size
+                        val pct = if (totalCount > 0) (compliantCount.toDouble() / totalCount * 100).toInt() else 100
+
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Card(
+                                shape = RoundedCornerShape(6.dp),
+                                colors = CardDefaults.cardColors(containerColor = if (pct >= 90) HdGreenLight else HdRedLight)
+                            ) {
+                                Text(
+                                    text = "$pct% CONFORME",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (pct >= 90) HdGreen else HdRed,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "$compliantCount de $totalCount análises em conformidade",
+                                fontSize = 11.sp,
+                                color = HdTextSecondary
+                            )
+                        }
+                    }
+                }
+            }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Laudos e Ensaios de Qualidade",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedButton(
+                            onClick = { 
+                                selectedFuelTypesForReport = setOf("Gasolina Comum", "Etanol Hidratado", "Diesel S10")
+                                showQualReportDialog = true 
+                            },
+                            modifier = Modifier.height(40.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF00796B)),
+                            border = BorderStroke(1.dp, Color(0xFF00796B).copy(alpha = 0.5f)),
+                            contentPadding = PaddingValues(horizontal = 12.dp)
+                        ) {
+                            Icon(Icons.Default.PictureAsPdf, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Relatório PDF", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(
+                            onClick = {
+                            confDate = "2026-07-04"
+                            confFuelType = "Gasolina Comum"
+                            confDensityMeasured = "0.742"
+                            confTemperature = "23.5"
+                            confAspectColor = "Límpido e isento de impurezas"
+                            confWaterPhaseFinalVolume = "63.5"
+                            confTechnician = "Carlos Lima"
+                            confObservation = "Aspecto totalmente límpido. Ensaio de proveta conforme."
+                            showAddConformityDialog = true
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    ) {
+                        Icon(Icons.Default.Science, contentDescription = "Nova Análise de Conformidade")
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Nova Análise")
+                    }
+                }
+            }
+        }
+
+        if (conformityRecords.isEmpty()) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        border = BorderStroke(1.dp, HdBorder),
+                        colors = CardDefaults.cardColors(containerColor = HdSurface)
+                    ) {
+                        Box(modifier = Modifier.padding(32.dp), contentAlignment = Alignment.Center) {
+                            Text("Nenhuma análise de conformidade cadastrada.")
+                        }
+                    }
+                }
+            } else {
+                items(conformityRecords) { rec ->
+                    val isEth = rec.fuelType.contains("Etanol", ignoreCase = true)
+                    val correctedDen = ANPUtils.calculateCorrectedDensity(rec.densityMeasured, rec.temperature, isEth)
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, HdBorder),
+                        colors = CardDefaults.cardColors(containerColor = HdSurface)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(text = "🧪", fontSize = 18.sp, modifier = Modifier.padding(end = 8.dp))
+                                    Column {
+                                        Text(text = rec.fuelType, fontWeight = FontWeight.Bold, color = HdTextPrimary)
+                                        Text(text = "Data: ${rec.date} | Responsável: ${rec.technicianName}", style = MaterialTheme.typography.bodySmall, color = HdTextSecondary)
+                                    }
+                                }
+
+                                Card(
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = CardDefaults.cardColors(containerColor = if (rec.isConforme) HdGreenLight else HdRedLight)
+                                ) {
+                                    Text(
+                                        text = if (rec.isConforme) "✓ CONFORME" else "✗ REPROVADO",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (rec.isConforme) HdGreen else HdRed,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
+                            
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = HdBorder)
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column {
+                                    Text(text = "Densidade Medida", fontSize = 11.sp, color = HdTextSecondary)
+                                    Text(text = "${String.format(Locale.getDefault(), "%.4f", rec.densityMeasured)} g/cm³", fontWeight = FontWeight.Bold)
+                                }
+                                Column {
+                                    Text(text = "Temperatura", fontSize = 11.sp, color = HdTextSecondary)
+                                    Text(text = "${String.format(Locale.getDefault(), "%.1f", rec.temperature)} °C", fontWeight = FontWeight.Bold)
+                                }
+                                Column {
+                                    Text(text = "Densidade 20°C", fontSize = 11.sp, color = HdTextSecondary)
+                                    Text(text = "${String.format(Locale.getDefault(), "%.4f", correctedDen)} g/cm³", fontWeight = FontWeight.Bold, color = if (rec.isConforme) HdTextPrimary else HdRed)
+                                }
+                                if (rec.fuelType.contains("Gasolina", ignoreCase = true)) {
+                                    Column(horizontalAlignment = Alignment.End) {
+                                        Text(text = "Teor de Etanol", fontSize = 11.sp, color = HdTextSecondary)
+                                        Text(text = "${String.format(Locale.getDefault(), "%.1f", rec.ethanolPercent)}%", fontWeight = FontWeight.ExtraBold, color = if (rec.isConforme) HdTextPrimary else HdRed)
+                                    }
+                                } else if (isEth) {
+                                    Column(horizontalAlignment = Alignment.End) {
+                                        Text(text = "Teor Alcoólico", fontSize = 11.sp, color = HdTextSecondary)
+                                        Text(text = "${String.format(Locale.getDefault(), "%.1f", rec.ethanolPercent)}% m/m", fontWeight = FontWeight.ExtraBold, color = if (rec.isConforme) HdTextPrimary else HdRed)
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(text = "Aspecto e Cor", fontSize = 11.sp, color = HdTextSecondary, fontWeight = FontWeight.Bold)
+                                    Text(text = rec.aspectColor, style = MaterialTheme.typography.bodySmall, color = HdTextPrimary)
+                                }
+                                if (rec.observation.isNotBlank()) {
+                                    Column(modifier = Modifier.weight(1.5f)) {
+                                        Text(text = "Observações", fontSize = 11.sp, color = HdTextSecondary, fontWeight = FontWeight.Bold)
+                                        Text(text = rec.observation, style = MaterialTheme.typography.bodySmall, color = HdTextPrimary)
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                                TextButton(
+                                    onClick = { viewModel.deleteFuelConformityRecord(rec) },
+                                    contentPadding = PaddingValues(0.dp)
+                                ) {
+                                    Text("Excluir Análise", color = HdRed, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // --- FUEL DELIVERIES & DRIVER REGISTRATION SECTION ---
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
+                HorizontalDivider(color = HdBorder, thickness = 1.dp)
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "Entregas & Notas de Combustível (NF-e) 🚚",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = HdTextPrimary
+                        )
+                        Text(
+                            text = "Rastreabilidade de lotes entregues e vínculo de qualidade ANP.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = HdTextSecondary
+                        )
+                    }
+                    Button(
+                        onClick = {
+                            deliveryDate = "2026-07-04"
+                            deliveryInvoice = ""
+                            deliveryFuelType = "Gasolina Comum"
+                            deliveryVolume = ""
+                            deliveryDriverName = ""
+                            deliveryDriverCnh = ""
+                            deliveryTruckPlate = ""
+                            deliveryConformityId = null
+                            showAddDeliveryDialog = true
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("Nova Nota", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+
+            if (fuelDeliveries.isEmpty()) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        border = BorderStroke(1.dp, HdBorder),
+                        colors = CardDefaults.cardColors(containerColor = HdSurface)
+                    ) {
+                        Box(modifier = Modifier.padding(24.dp), contentAlignment = Alignment.Center) {
+                            Text("Nenhuma nota fiscal ou entrega registrada.", style = MaterialTheme.typography.bodyMedium, color = HdTextSecondary)
+                        }
+                    }
+                }
+            } else {
+                items(fuelDeliveries) { del ->
+                    val linkedConf = conformityRecords.find { it.id == del.conformityRecordId }
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, HdBorder),
+                        colors = CardDefaults.cardColors(containerColor = HdSurface)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("📦", fontSize = 16.sp, modifier = Modifier.padding(end = 8.dp))
+                                    Column {
+                                        Text(text = del.invoiceNumber, fontWeight = FontWeight.Bold, color = HdTextPrimary)
+                                        Text(text = "Recebimento: ${del.date}", style = MaterialTheme.typography.bodySmall, color = HdTextSecondary)
+                                    }
+                                }
+                                Card(
+                                    shape = RoundedCornerShape(6.dp),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                                ) {
+                                    Text(
+                                        text = "${String.format(Locale.getDefault(), "%,.0f", del.volume)} L",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
+
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = HdBorder, thickness = 0.5.dp)
+
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Column {
+                                    Text("Combustível", fontSize = 11.sp, color = HdTextSecondary)
+                                    Text(del.fuelType, fontWeight = FontWeight.Bold, color = HdPrimary)
+                                }
+                                Column {
+                                    Text("Placa do Caminhão", fontSize = 11.sp, color = HdTextSecondary)
+                                    Text(del.truckPlate.ifBlank { "--" }, fontWeight = FontWeight.Bold)
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Column {
+                                Text("Motorista Responsável", fontSize = 11.sp, color = HdTextSecondary, fontWeight = FontWeight.Bold)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("👤", fontSize = 11.sp, modifier = Modifier.padding(end = 4.dp))
+                                    Text(
+                                        text = "${del.driverName} (CNH: ${del.driverCnh.ifBlank { "--" }})",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.Medium,
+                                        color = HdTextPrimary
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Column {
+                                Text("Laudo Físico-Químico ANP", fontSize = 11.sp, color = HdTextSecondary, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                if (linkedConf != null) {
+                                    Card(
+                                        shape = RoundedCornerShape(8.dp),
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = if (linkedConf.isConforme) HdGreenLight else HdRedLight
+                                        ),
+                                        border = BorderStroke(0.5.dp, if (linkedConf.isConforme) HdGreen else HdRed)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth().padding(8.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Column {
+                                                Text(
+                                                    text = "Laudo de ${linkedConf.date} - ${linkedConf.technicianName}",
+                                                    fontSize = 11.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = if (linkedConf.isConforme) HdGreen else HdRed
+                                                )
+                                                Text(
+                                                    text = "Teor de Álcool: ${linkedConf.ethanolPercent}% | Densidade: ${linkedConf.densityMeasured} g/cm³",
+                                                    fontSize = 10.sp,
+                                                    color = if (linkedConf.isConforme) HdGreen else HdRed
+                                                )
+                                            }
+                                            Text(
+                                                text = if (linkedConf.isConforme) "✓ CONFORME" else "✗ IRREGULAR",
+                                                fontWeight = FontWeight.Black,
+                                                fontSize = 10.sp,
+                                                color = if (linkedConf.isConforme) HdGreen else HdRed
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    Card(
+                                        shape = RoundedCornerShape(8.dp),
+                                        colors = CardDefaults.cardColors(containerColor = HdAmberLight),
+                                        border = BorderStroke(0.5.dp, HdAmber)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth().padding(8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text("⚠️ ", fontSize = 12.sp)
+                                            Text(
+                                                text = "Atenção: Nenhum laudo de conformidade laboratorial vinculado a esta nota.",
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                color = HdAmber
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                                TextButton(
+                                    onClick = { viewModel.deleteFuelDelivery(del) },
+                                    contentPadding = PaddingValues(0.dp)
+                                ) {
+                                    Text("Apagar Entrega", color = HdRed, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+    // TAB 4: AUDITORIA & COMPLIANCE
+        }

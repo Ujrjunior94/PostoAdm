@@ -1,0 +1,209 @@
+        if (activeSubTab == 2) {
+            // Legal Compliance Metric Card
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, HdBorder),
+                    colors = CardDefaults.cardColors(containerColor = HdSurface)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Controle Legal de Bombas (INMETRO) ⚖️",
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = HdTextPrimary
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Margem de erro legal admitida nas aferições: ±0.5% (equivalente a ±100ml de erro em volume nominal de 20L). Bicos com erros acima do limite devem ser interditados imediatamente.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = HdTextSecondary
+                            )
+
+                            val compliantCount = calibrations.count { it.isConforme }
+                            val totalCount = calibrations.size
+                            val pct = if (totalCount > 0) (compliantCount.toDouble() / totalCount * 100).toInt() else 100
+
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Card(
+                                    shape = RoundedCornerShape(6.dp),
+                                    colors = CardDefaults.cardColors(containerColor = if (pct >= 90) HdGreenLight else HdRedLight)
+                                ) {
+                                    Text(
+                                        text = "$pct% DE CONFORMIDADE",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (pct >= 90) HdGreen else HdRed,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "$compliantCount de $totalCount aferições regulares",
+                                    fontSize = 11.sp,
+                                    color = HdTextSecondary
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Laudos e Aferições Recentes",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedButton(
+                            onClick = { 
+                                selectedNozzleIdsForReport = nozzles.map { it.nozzleNumber }.toSet()
+                                showCalibReportDialogInStock = true 
+                            },
+                            modifier = Modifier.height(40.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = HdRed),
+                            border = BorderStroke(1.dp, HdRed.copy(alpha = 0.5f)),
+                            contentPadding = PaddingValues(horizontal = 12.dp)
+                        ) {
+                            Icon(Icons.Default.PictureAsPdf, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Relatório PDF", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(
+                            onClick = {
+                                calibDate = "2026-07-04"
+                                calibReference = if (nozzles.isNotEmpty()) "Bico ${nozzles.first().nozzleNumber}" else "Bico 01"
+                                calibNominal = "20.0"
+                                calibMeasured = "20.0"
+                                calibDeviationMl = "0"
+                                calibInspector = "Carlos Silva"
+                                calibLaudo = "Medição dentro do regulamento legal do INMETRO."
+                                showAddCalibDialog = true
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                            modifier = Modifier.height(40.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp)
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = "Registrar Aferição", modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Registrar", fontSize = 12.sp)
+                        }
+                    }
+                }
+            }
+
+            if (calibrations.isEmpty()) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        border = BorderStroke(1.dp, HdBorder),
+                        colors = CardDefaults.cardColors(containerColor = HdSurface)
+                    ) {
+                        Box(modifier = Modifier.padding(32.dp), contentAlignment = Alignment.Center) {
+                            Text("Nenhuma aferição cadastrada.")
+                        }
+                    }
+                }
+            } else {
+                items(calibrations) { cal ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, HdBorder),
+                        colors = CardDefaults.cardColors(containerColor = HdSurface)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(text = "🔬", fontSize = 18.sp, modifier = Modifier.padding(end = 8.dp))
+                                    Column {
+                                        Text(text = cal.referenceName, fontWeight = FontWeight.Bold, color = HdTextPrimary)
+                                        Text(text = "Data: ${cal.date} | Fiscal: ${cal.inspector}", style = MaterialTheme.typography.bodySmall, color = HdTextSecondary)
+                                    }
+                                }
+
+                                // Conformity Indicator Badge
+                                Card(
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = CardDefaults.cardColors(containerColor = if (cal.isConforme) HdGreenLight else HdRedLight)
+                                ) {
+                                    Text(
+                                        text = if (cal.isConforme) "✓ CONFORME" else "✗ REPROVADO",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (cal.isConforme) HdGreen else HdRed,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
+                            
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = HdBorder)
+
+                            // Volume stats row
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column {
+                                    Text(text = "Volume Nominal", fontSize = 11.sp, color = HdTextSecondary)
+                                    Text(text = "${String.format(Locale.getDefault(), "%.2f", cal.nominalVolume)} L", fontWeight = FontWeight.Bold)
+                                }
+                                Column {
+                                    Text(text = "Volume Medido", fontSize = 11.sp, color = HdTextSecondary)
+                                    Text(text = "${String.format(Locale.getDefault(), "%.2f", cal.measuredVolume)} L", fontWeight = FontWeight.Bold)
+                                }
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text(text = "Erro Calculado", fontSize = 11.sp, color = HdTextSecondary)
+                                    val errStr = if (cal.errorPercent >= 0) "+${String.format(Locale.getDefault(), "%.2f", cal.errorPercent)}%" else "${String.format(Locale.getDefault(), "%.2f", cal.errorPercent)}%"
+                                    Text(
+                                        text = errStr,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = if (cal.isConforme) HdTextPrimary else HdRed
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = HdGrayLight),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(10.dp)) {
+                                    Text(text = "Laudo Técnico:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = HdTextSecondary)
+                                    Text(text = cal.laudo, style = MaterialTheme.typography.bodySmall, color = HdTextPrimary)
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                                TextButton(
+                                    onClick = { viewModel.deleteCalibration(cal) },
+                                    contentPadding = PaddingValues(0.dp)
+                                ) {
+                                    Text("Excluir Registro", color = HdRed, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+        }

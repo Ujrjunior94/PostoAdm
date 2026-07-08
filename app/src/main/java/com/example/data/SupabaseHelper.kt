@@ -42,7 +42,10 @@ object SupabaseHelper {
     }
 
     fun isConfigured(context: Context): Boolean {
-        val (url, key) = getCredentials(context)
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val url = prefs.getString(KEY_URL, "") ?: ""
+        val key = prefs.getString(KEY_ANON, "") ?: ""
+        // Only considered configured if the user has entered their own credentials
         return url.isNotEmpty() && key.isNotEmpty()
     }
 
