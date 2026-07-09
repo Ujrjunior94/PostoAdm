@@ -200,6 +200,32 @@
             background-color: rgba(255, 255, 255, 0.95);
             transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
+        /* Fade-in and Slide-up animation */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in-up {
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
+
+        /* Pulse animation for irregular status */
+        @keyframes pulseRed {
+            0% { background-color: rgba(254, 226, 226, 0.4); }
+            50% { background-color: rgba(254, 226, 226, 0.8); }
+            100% { background-color: rgba(254, 226, 226, 0.4); }
+        }
+
+        .animate-pulse-irregular {
+            animation: pulseRed 2s infinite ease-in-out;
+        }
     </style>
 </head>
 <body class="text-hdTextPrimary min-h-screen flex flex-col antialiased">
@@ -1126,16 +1152,22 @@
 
                     <div class="grid grid-cols-1 gap-6">
                         <!-- Left Panel: Calibration Records -->
-                        <div id="tabContentAfericao" class="bg-white border border-hdBorder rounded-3xl p-6 shadow-sm">
+                        <div id="tabContentAfericao" class="bg-white border border-hdBorder rounded-3xl p-6 shadow-sm animate-fade-in-up">
                             <div class="flex justify-between items-center mb-4">
                                 <h3 class="text-sm font-bold text-hdTextPrimary flex items-center gap-1.5">
                                     <span class="material-symbols-outlined text-hdPrimary">verified</span>
                                     Registros de Calibração (Bombas)
                                 </h3>
-                                <button onclick="generateCalibrationsReport()" class="bg-hdPrimary text-white font-semibold px-3 py-1.5 rounded-xl hover:bg-blue-700 transition text-xs flex items-center space-x-1 shrink-0">
-                                    <span class="material-symbols-outlined text-sm">picture_as_pdf</span>
-                                    <span>Gerar Relatório (PDF)</span>
-                                </button>
+                                <div class="flex space-x-2">
+                                    <button onclick="exportSelectedCalibrationsToCSV()" class="bg-hdSurfaceContainer text-hdTextPrimary border border-hdBorder font-semibold px-3 py-1.5 rounded-xl hover:bg-hdBorder transition text-xs flex items-center space-x-1 shrink-0">
+                                        <span class="material-symbols-outlined text-sm">download</span>
+                                        <span>Exportar CSV</span>
+                                    </button>
+                                    <button onclick="generateCalibrationsReport()" class="bg-hdPrimary text-white font-semibold px-3 py-1.5 rounded-xl hover:bg-blue-700 transition text-xs flex items-center space-x-1 shrink-0">
+                                        <span class="material-symbols-outlined text-sm">picture_as_pdf</span>
+                                        <span>Gerar Relatório (PDF)</span>
+                                    </button>
+                                </div>
                             </div>
                             <div class="overflow-x-auto">
                                 <table class="w-full text-xs text-left">
@@ -1159,7 +1191,7 @@
                         </div>
 
                         <!-- Right Panel: Fuel Conformity (Quality Tests) -->
-                        <div id="tabContentAnalise" class="bg-white border border-hdBorder rounded-3xl p-6 shadow-sm" style="display: none;">
+                        <div id="tabContentAnalise" class="bg-white border border-hdBorder rounded-3xl p-6 shadow-sm animate-fade-in-up" style="display: none;">
                             <div class="flex justify-between items-center mb-4">
                                 <h3 class="text-sm font-bold text-hdTextPrimary flex items-center gap-1.5">
                                     <span class="material-symbols-outlined text-green-700">science</span>
@@ -3281,7 +3313,7 @@ create table posto_backups (
             let calHtml = '';
             filteredCalibrations.forEach(cal => {
                 calHtml += `
-                    <tr class="border-b border-hdBorder/60 hover:bg-hdSurfaceContainer/40">
+                    <tr class="border-b border-hdBorder/60 hover:bg-hdSurfaceContainer/40 ${!cal.isConforme ? 'animate-pulse-irregular' : ''}">
                         <td class="py-2.5 px-3"><input type="checkbox" class="cal-checkbox" value="${cal.id}" /></td>
                         <td class="py-2.5 px-3">${cal.date}</td>
                         <td class="py-2.5 px-3 font-bold">${cal.referenceName}</td>
@@ -3322,7 +3354,7 @@ create table posto_backups (
             let confHtml = '';
             filteredConformities.forEach(rec => {
                 confHtml += `
-                    <tr class="border-b border-hdBorder/60 hover:bg-hdSurfaceContainer/40">
+                    <tr class="border-b border-hdBorder/60 hover:bg-hdSurfaceContainer/40 ${!rec.isConforme ? 'animate-pulse-irregular' : ''}">
                         <td class="py-2.5 px-3"><input type="checkbox" class="conf-checkbox" value="${rec.id}" /></td>
                         <td class="py-2.5 px-3">${rec.date}</td>
                         <td class="py-2.5 px-3 font-bold text-hdPrimary">${rec.fuelType}</td>
@@ -7146,6 +7178,11 @@ create table posto_backups (
                 contentAfericao.style.display = 'block';
                 contentAnalise.style.display = 'none';
 
+                // Re-trigger animation
+                contentAfericao.classList.remove('animate-fade-in-up');
+                void contentAfericao.offsetWidth; // Trigger reflow
+                contentAfericao.classList.add('animate-fade-in-up');
+
                 btnAfericao.classList.add('text-hdPrimary', 'border-hdPrimary');
                 btnAfericao.classList.remove('text-hdTextSecondary', 'border-transparent');
 
@@ -7154,6 +7191,11 @@ create table posto_backups (
             } else if (tab === 'analise') {
                 contentAfericao.style.display = 'none';
                 contentAnalise.style.display = 'block';
+
+                // Re-trigger animation
+                contentAnalise.classList.remove('animate-fade-in-up');
+                void contentAnalise.offsetWidth; // Trigger reflow
+                contentAnalise.classList.add('animate-fade-in-up');
 
                 btnAnalise.classList.add('text-hdPrimary', 'border-hdPrimary');
                 btnAnalise.classList.remove('text-hdTextSecondary', 'border-transparent');
@@ -7173,6 +7215,57 @@ create table posto_backups (
             const checkboxes = document.querySelectorAll('.conf-checkbox');
             checkboxes.forEach(cb => cb.checked = source.checked);
         }
+
+        window.exportSelectedCalibrationsToCSV = function() {
+            const checkboxes = document.querySelectorAll('.cal-checkbox:checked');
+            if (checkboxes.length === 0) {
+                alert("Por favor, selecione ao menos um registro para exportar.");
+                return;
+            }
+
+            const selectedIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+            const selectedData = state.calibrations.filter(cal => selectedIds.includes(cal.id));
+
+            if (selectedData.length === 0) {
+                alert("Erro ao recuperar os dados selecionados.");
+                return;
+            }
+
+            // CSV Header (UTF-8 BOM to handle special characters in Excel)
+            let csvContent = "\ufeff";
+            csvContent += "Data,Referência,Volume Nominal (L),Volume Medido (L),Erro (%),Inspetor,Laudo Inmetro,Status\n";
+
+            // CSV Rows
+            selectedData.forEach(cal => {
+                const status = cal.isConforme ? "Conforme" : "Irregular";
+                const row = [
+                    cal.date,
+                    `"${cal.referenceName}"`,
+                    (cal.nominalVolume || 0).toFixed(3),
+                    (cal.measuredVolume || 0).toFixed(3),
+                    (cal.errorPercent || 0).toFixed(3),
+                    `"${cal.inspector || ''}"`,
+                    `"${cal.laudo || ''}"`,
+                    status
+                ].join(",");
+                csvContent += row + "\n";
+            });
+
+            // Download file
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `afericoes_selecionadas_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            if (window.logActivity) {
+                logActivity("DOWNLOAD", "Qualidade", `Exportado CSV com ${selectedData.length} registros de aferição.`);
+            }
+        };
 
         function generateCalibrationsReport() {
             const checkboxes = document.querySelectorAll('.cal-checkbox:checked');
