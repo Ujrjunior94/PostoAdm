@@ -1,0 +1,18 @@
+{
+  "name": "meu-posto-root",
+  "version": "1.0.0",
+  "description": "Meu Posto - Integrado com Vercel",
+  "scripts": {
+    "build": "tsc",
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.8",
+    "@vercel/kv": "^1.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.24",
+    "@vercel/node": "^3.0.14",
+    "typescript": "^5.3.3"
+  }
+}
