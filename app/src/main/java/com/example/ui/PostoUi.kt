@@ -242,10 +242,12 @@ fun LoginScreen(viewModel: PostoViewModel) {
 
                 item {
                     val isSupabaseConfigured = viewModel.isSupabaseAvailable()
+                    val isVercelConfigured = viewModel.isVercelAvailable()
+                    val isCloudConfigured = isSupabaseConfigured || isVercelConfigured
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = if (isSupabaseConfigured) Color(0xFFE6F4EA) else Color(0xFFFFF4E5),
-                        border = BorderStroke(1.dp, if (isSupabaseConfigured) Color(0xFF34A853).copy(alpha = 0.5f) else Color(0xFFFBBC05).copy(alpha = 0.5f)),
+                        color = if (isCloudConfigured) Color(0xFFE6F4EA) else Color(0xFFFFF4E5),
+                        border = BorderStroke(1.dp, if (isCloudConfigured) Color(0xFF34A853).copy(alpha = 0.5f) else Color(0xFFFBBC05).copy(alpha = 0.5f)),
                         modifier = Modifier.padding(bottom = 8.dp)
                     ) {
                         Row(
@@ -254,10 +256,14 @@ fun LoginScreen(viewModel: PostoViewModel) {
                             horizontalArrangement = Arrangement.Center
                         ) {
                             Text(
-                                text = if (isSupabaseConfigured) "⚡ Sincronização Supabase Ativa" else "💻 Banco Local (Modo Off-line)",
+                                text = if (isCloudConfigured) {
+                                    if (isVercelConfigured && isSupabaseConfigured) "⚡ Sincronização Supabase & Vercel Ativa"
+                                    else if (isVercelConfigured) "⚡ Sincronização Vercel Ativa"
+                                    else "⚡ Sincronização Supabase Ativa"
+                                } else "💻 Banco Local (Modo Off-line)",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (isSupabaseConfigured) Color(0xFF137333) else Color(0xFFB06000)
+                                color = if (isCloudConfigured) Color(0xFF137333) else Color(0xFFB06000)
                             )
                         }
                     }
@@ -7824,6 +7830,200 @@ fun SystemsScreen(viewModel: PostoViewModel) {
                                     enabled = supabaseAvailableTrigger
                                 ) {
                                     Icon(Icons.Default.CloudDownload, contentDescription = "Restaurar", modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Baixar Dados", fontSize = 11.sp)
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // TAB 4.2: VERCEL PLATFORM SYNC
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = HdSurface),
+                        border = BorderStroke(1.dp, HdBorder)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "Plataforma Vercel ⚡",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = HdTextPrimary,
+                                modifier = Modifier.padding(bottom = 4.dp)
+                            )
+                            Text(
+                                text = "Sincronize seus dados com sua API hospedada na plataforma Vercel de forma transparente.",
+                                fontSize = 11.sp,
+                                color = HdTextSecondary,
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
+
+                            val initialVercelConfig = remember { viewModel.getSavedVercelConfig() }
+                            var vercelUrl by remember { mutableStateOf(initialVercelConfig.first) }
+                            var vercelToken by remember { mutableStateOf(initialVercelConfig.second) }
+                            var vercelAvailableTrigger by remember { mutableStateOf(viewModel.isVercelAvailable()) }
+
+                            Surface(
+                                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (vercelAvailableTrigger) Color(0xFFE8F0FE) else Color(0xFFFFF3CD),
+                                border = BorderStroke(1.dp, if (vercelAvailableTrigger) Color(0xFFD2E3FC) else Color(0xFFFFEBAA))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = if (vercelAvailableTrigger) "⚡ Conexão Vercel: ATIVA e CONFIGURADA" else "⚠️ Vercel Inativa (Utilizando outras vias de backup)",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (vercelAvailableTrigger) Color(0xFF1A73E8) else Color(0xFF856404)
+                                    )
+                                }
+                            }
+
+                            var showVercelForm by remember { mutableStateOf(false) }
+
+                            OutlinedButton(
+                                onClick = { showVercelForm = !showVercelForm },
+                                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                                shape = RoundedCornerShape(8.dp),
+                                border = BorderStroke(1.dp, HdPrimary)
+                            ) {
+                                Icon(
+                                    if (showVercelForm) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = HdPrimary
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = if (showVercelForm) "Ocultar Parâmetros Vercel" else "Configurar Integração Vercel",
+                                    fontSize = 11.sp,
+                                    color = HdPrimary,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+
+                            if (showVercelForm) {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    OutlinedTextField(
+                                        value = vercelUrl,
+                                        onValueChange = { vercelUrl = it },
+                                        label = { Text("URL da API na Vercel", fontSize = 11.sp) },
+                                        placeholder = { Text("https://meu-projeto.vercel.app", fontSize = 11.sp) },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        singleLine = true,
+                                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 11.sp)
+                                    )
+
+                                    OutlinedTextField(
+                                        value = vercelToken,
+                                        onValueChange = { vercelToken = it },
+                                        label = { Text("Token de Autorização (Opcional)", fontSize = 11.sp) },
+                                        placeholder = { Text("Bearer token / secret...", fontSize = 11.sp) },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        singleLine = true,
+                                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 11.sp)
+                                    )
+
+                                    // Guide to create API on Vercel
+                                    Surface(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = Color(0xFFF1F3F4)
+                                    ) {
+                                        Column(modifier = Modifier.padding(10.dp)) {
+                                            Text(
+                                                text = "💡 Guia de Criação de API na Vercel:",
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = HdTextPrimary,
+                                                modifier = Modifier.padding(bottom = 4.dp)
+                                            )
+                                            Text(
+                                                text = "1. Hospede uma API (ex: Next.js API Routes, Node, Python, Go) no seu projeto Vercel.\n2. Sua API deve responder em GET /api/backup?cnpj=... (para ler o JSON de backup) e em POST /api/backup com body contendo { id, cnpj, data } para salvar o JSON.",
+                                                fontSize = 9.sp,
+                                                lineHeight = 12.sp,
+                                                color = HdTextSecondary
+                                            )
+                                        }
+                                    }
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Button(
+                                            onClick = {
+                                                if (vercelUrl.isEmpty()) {
+                                                    viewModel.addToast("A URL da Vercel é obrigatória!")
+                                                } else {
+                                                    viewModel.saveVercelConfig(vercelUrl, vercelToken)
+                                                    vercelAvailableTrigger = viewModel.isVercelAvailable()
+                                                    showVercelForm = false
+                                                }
+                                            },
+                                            modifier = Modifier.weight(1f),
+                                            colors = ButtonDefaults.buttonColors(containerColor = HdPrimary),
+                                            shape = RoundedCornerShape(8.dp)
+                                        ) {
+                                            Icon(Icons.Default.Check, contentDescription = "Salvar", modifier = Modifier.size(16.dp))
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("Salvar", fontSize = 11.sp)
+                                        }
+
+                                        if (vercelUrl.isNotEmpty()) {
+                                            Button(
+                                                onClick = {
+                                                    viewModel.clearVercelConfig()
+                                                    vercelUrl = ""
+                                                    vercelToken = ""
+                                                    vercelAvailableTrigger = viewModel.isVercelAvailable()
+                                                },
+                                                modifier = Modifier.weight(1f),
+                                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC3545)),
+                                                shape = RoundedCornerShape(8.dp)
+                                            ) {
+                                                Icon(Icons.Default.Delete, contentDescription = "Limpar", modifier = Modifier.size(16.dp))
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text("Limpar", fontSize = 11.sp)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = { viewModel.syncToSupabase(stationCnpj) },
+                                    modifier = Modifier.weight(1f),
+                                    colors = ButtonDefaults.buttonColors(containerColor = if (vercelAvailableTrigger) HdPrimary else Color.Gray),
+                                    shape = RoundedCornerShape(8.dp),
+                                    enabled = vercelAvailableTrigger
+                                ) {
+                                    Icon(Icons.Default.CloudUpload, contentDescription = "Backup Vercel", modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Enviar Backup", fontSize = 11.sp)
+                                }
+
+                                Button(
+                                    onClick = { viewModel.downloadFromSupabase(stationCnpj) },
+                                    modifier = Modifier.weight(1f),
+                                    colors = ButtonDefaults.buttonColors(containerColor = if (vercelAvailableTrigger) Color(0xFF0D6EFD) else Color.Gray),
+                                    shape = RoundedCornerShape(8.dp),
+                                    enabled = vercelAvailableTrigger
+                                ) {
+                                    Icon(Icons.Default.CloudDownload, contentDescription = "Restaurar Vercel", modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text("Baixar Dados", fontSize = 11.sp)
                                 }

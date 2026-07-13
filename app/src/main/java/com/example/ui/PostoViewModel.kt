@@ -561,42 +561,71 @@ class PostoViewModel(application: Application) : AndroidViewModel(application) {
             _isLoadingAuth.value = true
             _loginError.value = null
             
-            val result = SupabaseHelper.downloadBackup(getApplication(), cnpj)
-            result.onSuccess { json ->
-                if (json != null) {
-                    try {
-                        val stateObj = JSONObject(json)
-                        val usersArray = stateObj.optJSONArray("users") ?: JSONArray()
-                        var found = false
-                        for (i in 0 until usersArray.length()) {
-                            val u = usersArray.getJSONObject(i)
-                            val uEmail = u.getString("email").lowercase()
-                            val uPass = u.getString("password")
-                            
-                            if (uEmail == email.lowercase() && uPass == password) {
-                                // Encontrou na nuvem! Importar dados
-                                importFullStateFromJson(json)
-                                val accounts = repository.allUserAccounts.first()
-                                val importedUser = accounts.find { it.email.lowercase() == email.lowercase() }
-                                if (importedUser != null) {
-                                    applyLoginState(importedUser)
-                                    addToast("Sincronização com Supabase concluída!")
-                                    found = true
-                                }
-                                break
-                            }
-                        }
-                        if (!found) {
-                            _loginError.value = "Credenciais não encontradas no backup da nuvem para este CNPJ."
-                        }
-                    } catch (e: Exception) {
-                        _loginError.value = "Erro ao processar dados da nuvem: ${e.message}"
-                    }
-                } else {
-                    _loginError.value = "Nenhum backup encontrado para o CNPJ: $cnpj"
+            var jsonResult: String? = null
+            var errorMsg: String? = null
+            
+            // Tenta obter do Vercel se estiver configurado
+            if (isVercelAvailable()) {
+                val vResult = VercelHelper.downloadBackup(getApplication(), cnpj)
+                vResult.onSuccess { json ->
+                    jsonResult = json
+                }.onFailure { e ->
+                    errorMsg = "Erro Vercel: ${e.message}"
                 }
-            }.onFailure { e ->
-                _loginError.value = "Erro ao conectar com Supabase: ${e.message}"
+            }
+            
+            // Tenta obter do Supabase se o Vercel não retornou nada ou não está configurado
+            if (jsonResult == null && isSupabaseAvailable()) {
+                val sResult = SupabaseHelper.downloadBackup(getApplication(), cnpj)
+                sResult.onSuccess { json ->
+                    jsonResult = json
+                }.onFailure { e ->
+                    errorMsg = if (errorMsg != null) "$errorMsg | Erro Supabase: ${e.message}" else "Erro Supabase: ${e.message}"
+                }
+            }
+            
+            // Fallback se nenhum deles estiver configurado (tenta credenciais padrão Supabase)
+            if (jsonResult == null && !isVercelAvailable() && !isSupabaseAvailable()) {
+                val sResult = SupabaseHelper.downloadBackup(getApplication(), cnpj)
+                sResult.onSuccess { json ->
+                    jsonResult = json
+                }.onFailure { e ->
+                    errorMsg = "Erro Supabase: ${e.message}"
+                }
+            }
+            
+            val finalJson = jsonResult
+            if (finalJson != null) {
+                try {
+                    val stateObj = JSONObject(finalJson)
+                    val usersArray = stateObj.optJSONArray("users") ?: JSONArray()
+                    var found = false
+                    for (i in 0 until usersArray.length()) {
+                        val u = usersArray.getJSONObject(i)
+                        val uEmail = u.getString("email").lowercase()
+                        val uPass = u.getString("password")
+                        
+                        if (uEmail == email.lowercase() && uPass == password) {
+                            // Encontrou na nuvem! Importar dados
+                            importFullStateFromJson(finalJson)
+                            val accounts = repository.allUserAccounts.first()
+                            val importedUser = accounts.find { it.email.lowercase() == email.lowercase() }
+                            if (importedUser != null) {
+                                applyLoginState(importedUser)
+                                addToast("Sincronização concluída!")
+                                found = true
+                            }
+                            break
+                        }
+                    }
+                    if (!found) {
+                        _loginError.value = "Credenciais não encontradas no backup da nuvem para este CNPJ."
+                    }
+                } catch (e: Exception) {
+                    _loginError.value = "Erro ao processar dados da nuvem: ${e.message}"
+                }
+            } else {
+                _loginError.value = errorMsg ?: "Nenhum backup encontrado para o CNPJ: $cnpj"
             }
             _isLoadingAuth.value = false
         }
@@ -758,11 +787,36 @@ class PostoViewModel(application: Application) : AndroidViewModel(application) {
     fun syncToSupabase(cnpj: String = _stationCnpj.value) {
         viewModelScope.launch {
             val json = exportFullStateToJson()
-            val result = SupabaseHelper.uploadBackup(getApplication(), cnpj, json)
-            result.onSuccess {
-                addToast("Sincronização com Supabase concluída!")
-            }.onFailure { e ->
-                addToast("Erro na sincronização: ${e.message}")
+            var syncedAny = false
+            
+            if (isSupabaseAvailable()) {
+                val result = SupabaseHelper.uploadBackup(getApplication(), cnpj, json)
+                result.onSuccess {
+                    addToast("Sincronização com Supabase concluída!")
+                    syncedAny = true
+                }.onFailure { e ->
+                    addToast("Erro no Supabase: ${e.message}")
+                }
+            }
+            
+            if (isVercelAvailable()) {
+                val result = VercelHelper.uploadBackup(getApplication(), cnpj, json)
+                result.onSuccess {
+                    addToast("Sincronização com Vercel concluída!")
+                    syncedAny = true
+                }.onFailure { e ->
+                    addToast("Erro na Vercel: ${e.message}")
+                }
+            }
+            
+            if (!isSupabaseAvailable() && !isVercelAvailable()) {
+                // Se nenhum está configurado pelo usuário, tenta fazer com as credenciais padrão do Supabase
+                val result = SupabaseHelper.uploadBackup(getApplication(), cnpj, json)
+                result.onSuccess {
+                    addToast("Sincronização concluída!")
+                }.onFailure { e ->
+                    addToast("Erro ao sincronizar: ${e.message}")
+                }
             }
         }
     }
@@ -770,12 +824,33 @@ class PostoViewModel(application: Application) : AndroidViewModel(application) {
     fun downloadFromSupabase(cnpj: String) {
         viewModelScope.launch {
             addToast("Sincronizando com a nuvem...")
+            
+            if (isVercelAvailable()) {
+                val result = VercelHelper.downloadBackup(getApplication(), cnpj)
+                result.onSuccess { json ->
+                    if (json != null) {
+                        importFullStateFromJson(json)
+                        addToast("Dados restaurados com sucesso do Vercel! ⚡")
+                        return@launch
+                    }
+                }.onFailure { e ->
+                    addToast("Erro ao baixar do Vercel: ${e.message}")
+                }
+            }
+            
+            // Tenta Supabase (seja configurado pelo usuário ou padrão)
             val result = SupabaseHelper.downloadBackup(getApplication(), cnpj)
             result.onSuccess { json ->
                 if (json != null) {
                     importFullStateFromJson(json)
+                    addToast("Dados restaurados com sucesso do Supabase! ☁️")
                 } else {
-                    addToast("Nenhum dado encontrado na nuvem para este CNPJ.")
+                    if (isVercelAvailable()) {
+                        // Já tentou Vercel e falhou/retornou null, e Supabase também retornou null
+                        addToast("Nenhum dado encontrado na nuvem para este CNPJ.")
+                    } else {
+                        addToast("Nenhum dado encontrado no Supabase para este CNPJ.")
+                    }
                 }
             }.onFailure { e ->
                 addToast("Erro ao sincronizar da nuvem: ${e.message}")
@@ -1073,6 +1148,24 @@ class PostoViewModel(application: Application) : AndroidViewModel(application) {
     fun clearSupabaseConfig() {
         SupabaseHelper.clearCredentials(getApplication())
         addToast("Configuração do Supabase removida.")
+    }
+
+    fun isVercelAvailable(): Boolean {
+        return VercelHelper.isConfigured(getApplication())
+    }
+
+    fun getSavedVercelConfig(): Pair<String, String> {
+        return VercelHelper.getCredentials(getApplication())
+    }
+
+    fun saveVercelConfig(url: String, token: String) {
+        VercelHelper.saveCredentials(getApplication(), url, token)
+        addToast("Configuração da Vercel salva!")
+    }
+
+    fun clearVercelConfig() {
+        VercelHelper.clearCredentials(getApplication())
+        addToast("Configuração da Vercel removida.")
     }
 
     // Interactive operations

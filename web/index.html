@@ -1577,6 +1577,33 @@
                             </div>
                         </div>
 
+                        <!-- Vercel Platform Sync Card -->
+                        <div class="bg-white border border-hdBorder rounded-3xl p-6">
+                            <div class="flex flex-col gap-4">
+                                <div>
+                                    <h3 class="text-sm font-bold text-hdTextPrimary flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-indigo-600 font-bold">bolt</span>
+                                        Sincronização na Plataforma Vercel ⚡
+                                    </h3>
+                                    <p class="text-xs text-hdTextSecondary">Vincule o sistema à sua própria API/Backend hospedado na Vercel para backup em tempo real.</p>
+                                </div>
+                                <div id="vercelStatusBadge" class="p-3 rounded-xl bg-yellow-50 text-yellow-800 text-[11px] font-semibold border border-yellow-100 flex items-center justify-between">
+                                    <span>⚠️ Vercel Inativa (Banco local ativo)</span>
+                                    <button onclick="toggleVercelModal()" class="text-hdPrimary font-bold hover:underline">Configurar Integração</button>
+                                </div>
+                                <div class="flex flex-wrap gap-3">
+                                    <button onclick="uploadToVercelWeb()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2.5 rounded-xl transition text-xs flex items-center space-x-1.5">
+                                        <span class="material-symbols-outlined text-sm">cloud_upload</span>
+                                        <span>Enviar Backup para Vercel</span>
+                                    </button>
+                                    <button onclick="downloadFromVercelWeb()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-xl transition text-xs flex items-center space-x-1.5">
+                                        <span class="material-symbols-outlined text-sm">cloud_download</span>
+                                        <span>Baixar Dados da Vercel</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -1637,6 +1664,46 @@ create table posto_backups (
                 <button onclick="toggleSupabaseModal()" class="px-4 py-2 text-xs font-semibold hover:bg-hdSurfaceContainer rounded-xl transition">Cancelar</button>
                 <button onclick="clearSupabaseConfigWeb()" class="bg-red-600 text-white font-bold px-4 py-2 rounded-xl hover:bg-red-700 transition text-xs">Apagar Config</button>
                 <button onclick="saveSupabaseConfigWeb()" class="bg-emerald-600 text-white font-bold px-4 py-2 rounded-xl hover:bg-emerald-700 transition text-xs">Salvar e Conectar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vercel Credentials Setup Modal -->
+    <div id="vercelModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white border border-hdBorder rounded-3xl max-w-lg w-full p-6 shadow-2xl relative">
+            <button onclick="toggleVercelModal()" class="absolute right-4 top-4 w-8 h-8 rounded-full hover:bg-hdSurfaceContainer flex items-center justify-center">
+                <span class="material-symbols-outlined text-lg">close</span>
+            </button>
+            <h3 class="text-lg font-bold text-indigo-600 flex items-center gap-2 mb-2">
+                <span class="material-symbols-outlined">api</span>
+                Conectar à Plataforma Vercel ⚡
+            </h3>
+            <p class="text-xs text-hdTextSecondary mb-4">
+                Insira as informações do seu projeto ou API hospedada na Vercel para sincronizar seus dados.
+            </p>
+
+            <div class="space-y-4 mb-4">
+                <div>
+                    <label class="block text-xs font-bold text-hdTextPrimary mb-1">URL da API na Vercel</label>
+                    <input id="vercelUrlInput" type="text" placeholder="https://meu-projeto.vercel.app" class="w-full text-xs p-3 bg-hdSurface border border-hdBorder rounded-xl focus:outline-none focus:border-hdPrimary">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-hdTextPrimary mb-1">Token de Autorização (Opcional)</label>
+                    <input id="vercelTokenInput" type="password" placeholder="Bearer ou Secret..." class="w-full text-xs p-3 bg-hdSurface border border-hdBorder rounded-xl focus:outline-none focus:border-hdPrimary">
+                </div>
+            </div>
+
+            <!-- SQL/Guide setup guide inside modal -->
+            <div class="p-3 bg-hdSurfaceContainer rounded-xl text-[10px] text-hdTextSecondary mb-4 leading-relaxed">
+                <p class="font-bold text-hdTextPrimary mb-1">💡 Estrutura de Retorno esperada na Vercel:</p>
+                <p>POST /api/backup receberá id, cnpj e data no body.</p>
+                <p>GET /api/backup?cnpj=... deve retornar o backup JSON.</p>
+            </div>
+
+            <div class="flex space-x-3 justify-end">
+                <button onclick="toggleVercelModal()" class="px-4 py-2 text-xs font-semibold hover:bg-hdSurfaceContainer rounded-xl transition">Cancelar</button>
+                <button onclick="clearVercelConfigWeb()" class="bg-red-600 text-white font-bold px-4 py-2 rounded-xl hover:bg-red-700 transition text-xs">Apagar Config</button>
+                <button onclick="saveVercelConfigWeb()" class="bg-indigo-600 text-white font-bold px-4 py-2 rounded-xl hover:bg-indigo-700 transition text-xs">Salvar e Conectar</button>
             </div>
         </div>
     </div>
@@ -2533,54 +2600,87 @@ create table posto_backups (
         async function autoSyncToSupabase() {
             if (!state.activeUser) return; // Don't sync if no user is active
 
-            let savedConfig = localStorage.getItem('posto_supabase_config_web');
-            if (!savedConfig) {
-                savedConfig = JSON.stringify({
+            const cnpj = state.activeUser.stationCnpj;
+            const text = document.getElementById('connectionBadgeText');
+            const dot = document.getElementById('connectionBadgeDot');
+
+            let synced = false;
+
+            // 1. Try Vercel if configured
+            const savedVercel = localStorage.getItem('posto_vercel_config_web');
+            if (savedVercel) {
+                const { url, token } = JSON.parse(savedVercel);
+                if (url) {
+                    try {
+                        if (text && dot) {
+                            text.innerText = "Sincronizando Vercel...";
+                            dot.className = "w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse";
+                        }
+                        const endpoint = url.includes("/api/") ? url : `${url.replace(/\/$/, '')}/api/backup`;
+                        const payload = {
+                            id: cnpj,
+                            cnpj: cnpj,
+                            data: state,
+                            updated_at: new Date().toISOString()
+                        };
+                        const headers = { 'Content-Type': 'application/json' };
+                        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+                        const response = await fetch(endpoint, {
+                            method: 'POST',
+                            headers: headers,
+                            body: JSON.stringify(payload)
+                        });
+                        if (response.ok) {
+                            synced = true;
+                            console.log("Vercel auto-sync bem sucedido.");
+                        }
+                    } catch(err) {
+                        console.warn("Vercel auto-sync falhou:", err.message);
+                    }
+                }
+            }
+
+            // 2. Try Supabase
+            let savedSupabase = localStorage.getItem('posto_supabase_config_web');
+            if (!savedSupabase) {
+                savedSupabase = JSON.stringify({
                     url: "https://fgogbzscfqkwlqazugkx.supabase.co",
                     key: "sb_publishable_Zp5YN0CWKy0nV8Ku5C7ALw_uqMe6HUG"
                 });
             }
-            
-            const { url, key } = JSON.parse(savedConfig);
-            if (!url || !key) return;
-            const cnpj = state.activeUser.stationCnpj;
-
-            const text = document.getElementById('connectionBadgeText');
-            const dot = document.getElementById('connectionBadgeDot');
-            
-            try {
-                if (text && dot) {
-                    text.innerText = "Sincronizando Nuvem...";
-                    dot.className = "w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse";
+            const { url, key } = JSON.parse(savedSupabase);
+            if (url && key) {
+                try {
+                    if (!synced && text && dot) {
+                        text.innerText = "Sincronizando Supabase...";
+                        dot.className = "w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse";
+                    }
+                    const payload = {
+                        id: cnpj,
+                        data: state,
+                        updated_at: new Date().toISOString()
+                    };
+                    const response = await fetch(`${url}/rest/v1/posto_backups?id=eq.${cnpj}`, {
+                        method: 'POST',
+                        headers: {
+                            'apikey': key,
+                            'Authorization': `Bearer ${key}`,
+                            'Content-Type': 'application/json',
+                            'Prefer': 'resolution=merge-duplicates'
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    if (response.ok) {
+                        synced = true;
+                        console.log("Supabase auto-sync bem sucedido.");
+                    }
+                } catch(err) {
+                    console.warn("Supabase auto-sync falhou:", err.message);
                 }
+            }
 
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-                const payload = {
-                    id: cnpj,
-                    data: state,
-                    updated_at: new Date().toISOString()
-                };
-                
-                const response = await fetch(`${url}/rest/v1/posto_backups?id=eq.${cnpj}`, {
-                    method: 'POST',
-                    headers: {
-                        'apikey': key,
-                        'Authorization': `Bearer ${key}`,
-                        'Content-Type': 'application/json',
-                        'Prefer': 'resolution=merge-duplicates'
-                    },
-                    body: JSON.stringify(payload),
-                    signal: controller.signal
-                });
-                clearTimeout(timeoutId);
-
-                if (!response.ok) {
-                    throw new Error(`Erro Supabase: ${response.statusText}`);
-                }
-
-                console.log("Supabase sincronizado com sucesso em background.");
+            if (synced) {
                 if (text && dot) {
                     text.innerText = "Sincronizado na Nuvem";
                     dot.className = "w-2.5 h-2.5 rounded-full bg-green-600";
@@ -2590,8 +2690,7 @@ create table posto_backups (
                         }
                     }, 3000);
                 }
-            } catch (e) {
-                console.warn("Falha no auto-sync do Supabase:", e.message);
+            } else {
                 if (text && dot) {
                     text.innerText = "Erro ao Sincronizar";
                     dot.className = "w-2.5 h-2.5 rounded-full bg-red-500";
@@ -2608,109 +2707,127 @@ create table posto_backups (
                     text.innerText = "Aguardando Login";
                     dot.className = "w-2.5 h-2.5 rounded-full bg-gray-400";
                 }
-                return; // Prevent overwriting account list when logged out
-            }
-
-            let savedConfig = localStorage.getItem('posto_supabase_config_web');
-            if (!savedConfig) {
-                savedConfig = JSON.stringify({
-                    url: "https://fgogbzscfqkwlqazugkx.supabase.co",
-                    key: "sb_publishable_Zp5YN0CWKy0nV8Ku5C7ALw_uqMe6HUG"
-                });
-            }
-            
-            const { url, key } = JSON.parse(savedConfig);
-            if (!url || !key) {
-                if (text && dot) {
-                    text.innerText = "Configuração Nuvem Ausente";
-                    dot.className = "w-2.5 h-2.5 rounded-full bg-orange-400";
-                }
                 return;
             }
-            
+
             const cnpj = state.activeUser.stationCnpj;
+            let loadedBackup = null;
 
-            try {
-                if (text && dot) {
-                    text.innerText = "Baixando Nuvem...";
-                    dot.className = "w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse";
-                }
-
-                // Add a timeout to the fetch
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 seconds timeout
-
-                const response = await fetch(`${url}/rest/v1/posto_backups?id=eq.${cnpj}&select=data`, {
-                    method: 'GET',
-                    headers: {
-                        'apikey': key,
-                        'Authorization': `Bearer ${key}`,
-                        'Content-Type': 'application/json'
-                    },
-                    signal: controller.signal
-                });
-                clearTimeout(timeoutId);
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data && data.length > 0 && data[0].data) {
-                        const backupState = data[0].data;
-                        const currentUser = state.activeUser;
-                        const localUsers = state.users; // Preserve local accounts
-
-                        state = backupState;
-                        state.activeUser = currentUser;
-                        
-                        // Merge users to avoid losing local accounts
-                        if (localUsers && Array.isArray(localUsers)) {
-                            if (!state.users) state.users = [];
-                            localUsers.forEach(lu => {
-                                if (!state.users.find(su => su.email.toLowerCase() === lu.email.toLowerCase())) {
-                                    state.users.push(lu);
-                                }
-                            });
-                        }
-                        
-                        // Integrity checks for new properties that might be missing in old backups
-                        if (!state.lmc || !Array.isArray(state.lmc)) {
-                            state.lmc = Array.isArray(defaultState.lmc) ? [...defaultState.lmc] : [];
-                        }
-                        if (!state.tanks) state.tanks = [...defaultState.tanks];
-                        if (!state.employees) state.employees = [...defaultState.employees];
-                        if (!state.shifts) state.shifts = [...defaultState.shifts];
-                        if (!state.reports) state.reports = [...defaultState.reports];
-                        if (!state.nozzles) state.nozzles = [...defaultState.nozzles];
-                        if (!state.nozzleSales) state.nozzleSales = [...defaultState.nozzleSales];
-                        if (!state.calibrations) state.calibrations = [...defaultState.calibrations];
-                        if (!state.conformities) state.conformities = [...defaultState.conformities];
-                        if (!state.audits) state.audits = [...defaultState.audits];
-                        if (!state.appointments) state.appointments = [...defaultState.appointments];
-                        if (!state.deliveries) state.deliveries = [...defaultState.deliveries];
-                        if (!state.systemCredentials) state.systemCredentials = [...defaultState.systemCredentials];
-                        
-                        // Sincroniza o ponteiro global
-                        window.state = state; 
-                        
-                        localStorage.setItem('posto_admin_local_db', JSON.stringify(state));
-                        renderWorkspace();
-                        console.log("Supabase database loaded and synced automatically.");
-                        
+            // 1. Try Vercel first
+            const savedVercel = localStorage.getItem('posto_vercel_config_web');
+            if (savedVercel) {
+                const { url, token } = JSON.parse(savedVercel);
+                if (url) {
+                    try {
                         if (text && dot) {
-                            text.innerText = "Conectado (Nuvem)";
-                            dot.className = "w-2.5 h-2.5 rounded-full bg-green-600";
+                            text.innerText = "Carregando Vercel...";
+                            dot.className = "w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse";
                         }
-                    } else {
-                        if (text && dot) {
-                            text.innerText = "Conectado (Vazio)";
-                            dot.className = "w-2.5 h-2.5 rounded-full bg-green-600";
+                        let endpoint = url.includes("/api/") ? url : `${url.replace(/\/$/, '')}/api/backup`;
+                        endpoint = endpoint.includes("?") ? `${endpoint}&cnpj=${cnpj}` : `${endpoint}?cnpj=${cnpj}`;
+
+                        const headers = { 'Content-Type': 'application/json' };
+                        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+                        const response = await fetch(endpoint, { method: 'GET', headers: headers });
+                        if (response.ok) {
+                            const resData = await response.json();
+                            if (Array.isArray(resData) && resData.length > 0) {
+                                loadedBackup = resData[0].data || resData[0];
+                            } else if (resData && typeof resData === 'object') {
+                                loadedBackup = resData.data || resData;
+                            }
+                            if (loadedBackup) console.log("Dados carregados com sucesso do Vercel.");
                         }
+                    } catch(err) {
+                        console.warn("Erro ao auto-carregar do Vercel:", err.message);
                     }
                 }
-            } catch (e) {
-                console.warn("Supabase autoload failed:", e.message);
+            }
+
+            // 2. Try Supabase
+            if (!loadedBackup) {
+                let savedSupabase = localStorage.getItem('posto_supabase_config_web');
+                if (!savedSupabase) {
+                    savedSupabase = JSON.stringify({
+                        url: "https://fgogbzscfqkwlqazugkx.supabase.co",
+                        key: "sb_publishable_Zp5YN0CWKy0nV8Ku5C7ALw_uqMe6HUG"
+                    });
+                }
+                const { url, key } = JSON.parse(savedSupabase);
+                if (url && key) {
+                    try {
+                        if (text && dot) {
+                            text.innerText = "Carregando Supabase...";
+                            dot.className = "w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse";
+                        }
+                        const response = await fetch(`${url}/rest/v1/posto_backups?id=eq.${cnpj}&select=data`, {
+                            method: 'GET',
+                            headers: {
+                                'apikey': key,
+                                'Authorization': `Bearer ${key}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data && data.length > 0 && data[0].data) {
+                                loadedBackup = data[0].data;
+                                console.log("Dados carregados com sucesso do Supabase.");
+                            }
+                        }
+                    } catch(err) {
+                        console.warn("Erro ao auto-carregar do Supabase:", err.message);
+                    }
+                }
+            }
+
+            // Process loaded backup
+            if (loadedBackup && typeof loadedBackup === 'object' && (loadedBackup.users || loadedBackup.fuelTanks || loadedBackup.nozzles)) {
+                const currentUser = state.activeUser;
+                const localUsers = state.users;
+
+                state = loadedBackup;
+                state.activeUser = currentUser;
+
+                if (localUsers && Array.isArray(localUsers)) {
+                    if (!state.users) state.users = [];
+                    localUsers.forEach(lu => {
+                        if (!state.users.find(su => su.email.toLowerCase() === lu.email.toLowerCase())) {
+                            state.users.push(lu);
+                        }
+                    });
+                }
+
+                // Integrity checks
+                if (!state.lmc || !Array.isArray(state.lmc)) {
+                    state.lmc = Array.isArray(defaultState.lmc) ? [...defaultState.lmc] : [];
+                }
+                if (!state.tanks) state.tanks = [...defaultState.tanks];
+                if (!state.employees) state.employees = [...defaultState.employees];
+                if (!state.shifts) state.shifts = [...defaultState.shifts];
+                if (!state.reports) state.reports = [...defaultState.reports];
+                if (!state.nozzles) state.nozzles = [...defaultState.nozzles];
+                if (!state.nozzleSales) state.nozzleSales = [...defaultState.nozzleSales];
+                if (!state.calibrations) state.calibrations = [...defaultState.calibrations];
+                if (!state.conformities) state.conformities = [...defaultState.conformities];
+                if (!state.audits) state.audits = [...defaultState.audits];
+                if (!state.appointments) state.appointments = [...defaultState.appointments];
+                if (!state.deliveries) state.deliveries = [...defaultState.deliveries];
+                if (!state.systemCredentials) state.systemCredentials = [...defaultState.systemCredentials];
+
+                window.state = state;
+                localStorage.setItem('posto_admin_local_db', JSON.stringify(state));
+                renderWorkspace();
+
                 if (text && dot) {
-                    text.innerText = "Erro ao Conectar";
-                    dot.className = "w-2.5 h-2.5 rounded-full bg-red-500";
+                    text.innerText = "Conectado (Nuvem)";
+                    dot.className = "w-2.5 h-2.5 rounded-full bg-green-600";
+                }
+            } else {
+                if (text && dot) {
+                    text.innerText = "Conectado (Local)";
+                    dot.className = "w-2.5 h-2.5 rounded-full bg-green-600";
                 }
             }
         }
@@ -3069,6 +3186,9 @@ create table posto_backups (
             // Update Supabase UI state
             if (window.updateSupabaseStatusUI) {
                 window.updateSupabaseStatusUI();
+            }
+            if (window.updateVercelStatusUI) {
+                window.updateVercelStatusUI();
             }
 
             const u = state.activeUser;
@@ -5867,6 +5987,166 @@ create table posto_backups (
                 }
             } catch (e) {
                 alert("Falha na conexão com o Supabase: " + e.message);
+            }
+        };
+
+        // Vercel Cloud Sync Web Functions
+        window.toggleVercelModal = function() {
+            const modal = document.getElementById('vercelModal');
+            modal.classList.toggle('hidden');
+            let savedConfig = localStorage.getItem('posto_vercel_config_web');
+            if (savedConfig) {
+                const { url, token } = JSON.parse(savedConfig);
+                document.getElementById('vercelUrlInput').value = url || "";
+                document.getElementById('vercelTokenInput').value = token || "";
+            } else {
+                document.getElementById('vercelUrlInput').value = "";
+                document.getElementById('vercelTokenInput').value = "";
+            }
+        };
+
+        window.saveVercelConfigWeb = function() {
+            const url = document.getElementById('vercelUrlInput').value.trim();
+            const token = document.getElementById('vercelTokenInput').value.trim();
+            if (!url) {
+                alert("A URL da API Vercel é obrigatória!");
+                return;
+            }
+            localStorage.setItem('posto_vercel_config_web', JSON.stringify({ url, token }));
+            toggleVercelModal();
+            updateVercelStatusUI();
+            alert("Configuração da Vercel salva com sucesso!");
+        };
+
+        window.clearVercelConfigWeb = function() {
+            localStorage.removeItem('posto_vercel_config_web');
+            document.getElementById('vercelUrlInput').value = "";
+            document.getElementById('vercelTokenInput').value = "";
+            toggleVercelModal();
+            updateVercelStatusUI();
+            alert("Configuração da Vercel apagada.");
+        };
+
+        window.updateVercelStatusUI = function() {
+            const badge = document.getElementById('vercelStatusBadge');
+            if (!badge) return;
+            let savedConfig = localStorage.getItem('posto_vercel_config_web');
+            if (savedConfig) {
+                const { url } = JSON.parse(savedConfig);
+                let displayUrl = url;
+                try {
+                    displayUrl = new URL(url).hostname;
+                } catch(e) {}
+                badge.className = "p-3 rounded-xl bg-indigo-50 text-indigo-800 text-[11px] font-semibold border border-indigo-100 flex items-center justify-between";
+                badge.innerHTML = `
+                    <span>⚡ Vercel Cloud: ATIVO (${displayUrl})</span>
+                    <button onclick="toggleVercelModal()" class="text-indigo-700 font-bold hover:underline">Alterar Parâmetros</button>
+                `;
+            } else {
+                badge.className = "p-3 rounded-xl bg-yellow-50 text-yellow-800 text-[11px] font-semibold border border-yellow-100 flex items-center justify-between";
+                badge.innerHTML = `
+                    <span>⚠️ Vercel Inativa (Utilizando banco local ativo)</span>
+                    <button onclick="toggleVercelModal()" class="text-hdPrimary font-bold hover:underline">Configurar Integração</button>
+                `;
+            }
+        };
+
+        window.uploadToVercelWeb = async function() {
+            let savedConfig = localStorage.getItem('posto_vercel_config_web');
+            if (!savedConfig) {
+                alert("Por favor, configure as credenciais da Vercel antes de enviar.");
+                toggleVercelModal();
+                return;
+            }
+            const { url, token } = JSON.parse(savedConfig);
+            const cnpj = (state.activeUser && state.activeUser.stationCnpj) || "12.345.678/0001-99";
+            
+            try {
+                const endpoint = url.includes("/api/") ? url : `${url.replace(/\/$/, '')}/api/backup`;
+                const payload = {
+                    id: cnpj,
+                    cnpj: cnpj,
+                    data: state,
+                    updated_at: new Date().toISOString()
+                };
+                
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(payload)
+                });
+                
+                if (response.ok) {
+                    alert("Backup enviado com sucesso para a plataforma Vercel! ⚡⚡");
+                } else {
+                    const errText = await response.text();
+                    alert("Erro ao enviar para Vercel: " + errText);
+                }
+            } catch (e) {
+                alert("Falha na conexão com a Vercel: " + e.message);
+            }
+        };
+
+        window.downloadFromVercelWeb = async function() {
+            let savedConfig = localStorage.getItem('posto_vercel_config_web');
+            if (!savedConfig) {
+                alert("Por favor, configure as credenciais da Vercel antes de carregar.");
+                toggleVercelModal();
+                return;
+            }
+            const { url, token } = JSON.parse(savedConfig);
+            const cnpj = (state.activeUser && state.activeUser.stationCnpj) || "12.345.678/0001-99";
+            
+            try {
+                let endpoint = url.includes("/api/") ? url : `${url.replace(/\/$/, '')}/api/backup`;
+                endpoint = endpoint.includes("?") ? `${endpoint}&cnpj=${cnpj}` : `${endpoint}?cnpj=${cnpj}`;
+
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+
+                const response = await fetch(endpoint, {
+                    method: 'GET',
+                    headers: headers
+                });
+                
+                if (response.ok) {
+                    const responseData = await response.json();
+                    let backupState = null;
+                    if (Array.isArray(responseData)) {
+                        if (responseData.length > 0) {
+                            backupState = responseData[0].data || responseData[0];
+                        }
+                    } else if (responseData && typeof responseData === 'object') {
+                        backupState = responseData.data || responseData;
+                    }
+
+                    if (backupState && typeof backupState === 'object' && (backupState.users || backupState.fuelTanks || backupState.nozzles)) {
+                        const currentUser = state.activeUser;
+                        state = backupState;
+                        state.activeUser = currentUser;
+                        saveLocalDb();
+                        renderWorkspace();
+                        alert("Dados sincronizados / restaurados com sucesso da plataforma Vercel! ⚡⚡");
+                    } else {
+                        alert("Nenhum backup válido encontrado para o CNPJ " + cnpj + " na Vercel.");
+                    }
+                } else {
+                    const errText = await response.text();
+                    alert("Erro ao carregar do Vercel: " + errText);
+                }
+            } catch (e) {
+                alert("Falha na conexão com a Vercel: " + e.message);
             }
         };
 
