@@ -1691,6 +1691,20 @@ create table posto_backups (
                     <label class="block text-xs font-bold text-hdTextPrimary mb-1">Token de Autorização (Opcional)</label>
                     <input id="vercelTokenInput" type="password" placeholder="Bearer ou Secret..." class="w-full text-xs p-3 bg-hdSurface border border-hdBorder rounded-xl focus:outline-none focus:border-hdPrimary">
                 </div>
+                <!-- Auto-Sync Toggle -->
+                <div class="flex items-center justify-between p-3 bg-hdSurface border border-hdBorder rounded-xl">
+                    <div class="pr-2">
+                        <label class="block text-xs font-bold text-hdTextPrimary flex items-center gap-1.5">
+                            Sincronização Automática (Auto-Sync)
+                            <span id="vercelAutoSyncStatusIndicator" class="inline-block w-2.5 h-2.5 rounded-full transition-all duration-300"></span>
+                        </label>
+                        <span class="text-[10px] text-hdTextSecondary block leading-tight mt-0.5">Enviar alterações para a Vercel em tempo real ao salvar</span>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer select-none">
+                        <input id="vercelAutoSyncToggle" type="checkbox" class="sr-only peer" onchange="updateVercelAutoSyncIndicator()" checked>
+                        <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-4 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                    </label>
+                </div>
             </div>
 
             <!-- SQL/Guide setup guide inside modal -->
@@ -2606,11 +2620,11 @@ create table posto_backups (
 
             let synced = false;
 
-            // 1. Try Vercel if configured
+            // 1. Try Vercel if configured & Auto-Sync is enabled
             const savedVercel = localStorage.getItem('posto_vercel_config_web');
             if (savedVercel) {
-                const { url, token } = JSON.parse(savedVercel);
-                if (url) {
+                const { url, token, autoSync } = JSON.parse(savedVercel);
+                if (url && autoSync !== false) {
                     try {
                         if (text && dot) {
                             text.innerText = "Sincronizando Vercel...";
@@ -5991,28 +6005,44 @@ create table posto_backups (
         };
 
         // Vercel Cloud Sync Web Functions
+        window.updateVercelAutoSyncIndicator = function() {
+            const toggle = document.getElementById('vercelAutoSyncToggle');
+            const indicator = document.getElementById('vercelAutoSyncStatusIndicator');
+            if (toggle && indicator) {
+                if (toggle.checked) {
+                    indicator.className = "inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] transition-all duration-300";
+                } else {
+                    indicator.className = "inline-block w-2.5 h-2.5 rounded-full bg-gray-400 transition-all duration-300";
+                }
+            }
+        };
+
         window.toggleVercelModal = function() {
             const modal = document.getElementById('vercelModal');
             modal.classList.toggle('hidden');
             let savedConfig = localStorage.getItem('posto_vercel_config_web');
             if (savedConfig) {
-                const { url, token } = JSON.parse(savedConfig);
+                const { url, token, autoSync } = JSON.parse(savedConfig);
                 document.getElementById('vercelUrlInput').value = url || "";
                 document.getElementById('vercelTokenInput').value = token || "";
+                document.getElementById('vercelAutoSyncToggle').checked = autoSync !== false;
             } else {
                 document.getElementById('vercelUrlInput').value = "";
                 document.getElementById('vercelTokenInput').value = "";
+                document.getElementById('vercelAutoSyncToggle').checked = true;
             }
+            window.updateVercelAutoSyncIndicator();
         };
 
         window.saveVercelConfigWeb = function() {
             const url = document.getElementById('vercelUrlInput').value.trim();
             const token = document.getElementById('vercelTokenInput').value.trim();
+            const autoSync = document.getElementById('vercelAutoSyncToggle').checked;
             if (!url) {
                 alert("A URL da API Vercel é obrigatória!");
                 return;
             }
-            localStorage.setItem('posto_vercel_config_web', JSON.stringify({ url, token }));
+            localStorage.setItem('posto_vercel_config_web', JSON.stringify({ url, token, autoSync }));
             toggleVercelModal();
             updateVercelStatusUI();
             alert("Configuração da Vercel salva com sucesso!");
@@ -6022,6 +6052,8 @@ create table posto_backups (
             localStorage.removeItem('posto_vercel_config_web');
             document.getElementById('vercelUrlInput').value = "";
             document.getElementById('vercelTokenInput').value = "";
+            document.getElementById('vercelAutoSyncToggle').checked = true;
+            window.updateVercelAutoSyncIndicator();
             toggleVercelModal();
             updateVercelStatusUI();
             alert("Configuração da Vercel apagada.");
